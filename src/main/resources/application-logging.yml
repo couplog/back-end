@@ -1,0 +1,20 @@
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "logging-local"
+
+logging:
+  level:
+    org.apache.coyote.http11: debug
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "logging-dev"
+
+logging:
+  level:
+    org.apache.coyote.http11: debug

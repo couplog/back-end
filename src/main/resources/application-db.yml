@@ -1,0 +1,55 @@
+spring:
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "db-local"
+
+  jpa:
+    show-sql: true
+    database: MYSQL
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ENC(BchTnOY3ot0JGeZcDCyfjtqeyNz/W8c0Q/+HHLhlAnWwPLevbAVhG1jcZ/P5UCgC8xvWfUHoOvuruhXDevejwPgO/A5ij2lciC5O0CSO6Ksj7SFt0FW+KTRDrHZPL15gipQrWEfnQDhZw3p/iTM8MY0fEDDRY2dtYTvX5VOQy21SZ7xDhseHhA==)
+    username: ENC(RLnBJtbjYugHdhyyZcLycQ==)
+    password: ENC(nLnsdxYgE0mgCBowhsuF1g==)
+    hikari:
+      max-lifetime: 60000
+      connection-timeout: 30000
+      maximum-pool-size: 10
+---
+spring:
+  config:
+    activate:
+      on-profile: "db-dev"
+
+  jpa:
+    show-sql: true
+    database: MYSQL
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ENC(IN+GQjlEIX4ePDN/0eNfsWqzhQ25IYPfprjK23cA9k+ojOjK30bgC7ycNbts68OfaGYsuUpXAuvQyZPWuZlXl73CPPQnsbME2QnlHurHGqWZMJiXqe09dLBPgUEC1pMU2m32TXE7UWVLGijRL0Of8dXlKg+SIhog0qsTOnfnDOlHSO3XouVp9Xc/EZT5Lvq3srcvLzab801cqoUPrFNfEgxubCltOtFSa3NCaRQJyzQ=)
+    username: ENC(yJuQnspYSDCbL46e75qlJw==)
+    password: ENC(BJkU4JUqt2rujKlM42LoZr50842ns5zlxdeu6sdt/FE=)
+    hikari:
+      max-lifetime: 60000
+      connection-timeout: 30000
+      maximum-pool-size: 10

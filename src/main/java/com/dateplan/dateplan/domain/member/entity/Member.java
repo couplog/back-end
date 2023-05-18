@@ -40,18 +40,24 @@ public class Member {
 		@Column(name = "profile_image_url", length = 200)
 		private String profileImageUrl;
 
+		@NotNull
+		@Column(name = "password", length = 20)
+		private String password;
+
 		@Builder
 		public Member(
 				String name,
 				String phone,
 				LocalDate birth,
 				String gender,
-				String profileImageUrl
+				String profileImageUrl,
+				String password
 		) {
 				this.name = name;
 				this.phone = phone;
 				this.birth = birth;
 				this.gender = gender;
 				this.profileImageUrl = profileImageUrl;
+				this.password = password;
 		}
 }

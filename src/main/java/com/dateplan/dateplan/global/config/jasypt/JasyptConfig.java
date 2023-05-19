@@ -1,13 +1,12 @@
 package com.dateplan.dateplan.global.config.jasypt;
 
+import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Configuration
@@ -17,7 +16,7 @@ public class JasyptConfig {
 	private String encryptKey;
 
 	@Bean("jasyptStringEncryptor")
-	public StringEncryptor stringEncryptor(){
+	public StringEncryptor stringEncryptor() {
 		PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
 		SimpleStringPBEConfig config = new SimpleStringPBEConfig();
 		config.setPassword(encryptKey);

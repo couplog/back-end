@@ -18,46 +18,53 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 public class Member {
 
-		@Id
-		@GeneratedValue(strategy = GenerationType.IDENTITY)
-		private Long id;
+	@Id
+	@Column(columnDefinition = "BIGINT")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-		@NotNull
-		@Column(name = "name", length = 30)
-		private String name;
+	@NotNull
+	@Column(name = "name", columnDefinition = "VARCHAR(30)")
+	private String name;
 
-		@NotNull
-		@Column(name = "phone", length = 20)
-		private String phone;
+	@NotNull
+	@Column(name = "phone", columnDefinition = "VARCHAR(20)")
+	private String phone;
 
-		@Column(name = "birth")
-		private LocalDate birth;
+	@NotNull
+	@Column(name = "nickname", columnDefinition = "VARCHAR(30)")
+	private String nickname;
 
-		@Column(name = "gender", length = 20)
-		private String gender;
+	@Column(name = "birth", columnDefinition = "DATE")
+	private LocalDate birth;
 
-		@NotNull
-		@Column(name = "profile_image_url", length = 200)
-		private String profileImageUrl;
+	@Column(name = "gender", columnDefinition = "VARCHAR(10)")
+	private String gender;
 
-		@NotNull
-		@Column(name = "password", length = 20)
-		private String password;
+	@NotNull
+	@Column(name = "profile_image_url", columnDefinition = "VARCHAR(200)")
+	private String profileImageUrl;
 
-		@Builder
-		public Member(
-				String name,
-				String phone,
-				LocalDate birth,
-				String gender,
-				String profileImageUrl,
-				String password
-		) {
-				this.name = name;
-				this.phone = phone;
-				this.birth = birth;
-				this.gender = gender;
-				this.profileImageUrl = profileImageUrl;
-				this.password = password;
-		}
+	@NotNull
+	@Column(name = "password", columnDefinition = "VARCHAR(100)")
+	private String password;
+
+	@Builder
+	public Member(
+		String name,
+		String phone,
+		String nickname,
+		LocalDate birth,
+		String gender,
+		String profileImageUrl,
+		String password
+	) {
+		this.name = name;
+		this.phone = phone;
+		this.nickname = nickname;
+		this.birth = birth;
+		this.gender = gender;
+		this.profileImageUrl = profileImageUrl;
+		this.password = password;
+	}
 }

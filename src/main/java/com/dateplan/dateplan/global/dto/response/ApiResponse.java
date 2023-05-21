@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.global.dto.response;
 
+import com.dateplan.dateplan.global.exception.ApplicationException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,5 +20,9 @@ public class ApiResponse<T> {
 
 	public static <T> ApiResponse<T> ofSuccess(T data) {
 		return new ApiResponse<>(true, data, null, null);
+	}
+
+	public static ApiResponse<Void> ofFail(ApplicationException e) {
+		return new ApiResponse<>(false, null, e.getErrorCode().getCode(), e.getMessage());
 	}
 }

@@ -1,11 +1,11 @@
 package com.dateplan.dateplan.global.exception.handler;
 
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
+import com.dateplan.dateplan.global.exception.ApplicationException;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -80,5 +80,15 @@ public class GlobalExceptionHandler {
 		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
 
 		return ResponseEntity.status(errorCode.getHttpStatusCode()).body(response);
+	}
+
+	@ExceptionHandler(ApplicationException.class)
+	public ResponseEntity<ApiResponse<Void>> handleRuntimeException(ApplicationException e) {
+
+		ErrorCode errorCode = e.getErrorCode();
+		String message = e.getMessage();
+		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
+
+		return ResponseEntity.status(e.getErrorCode().getHttpStatusCode()).body(response);
 	}
 }

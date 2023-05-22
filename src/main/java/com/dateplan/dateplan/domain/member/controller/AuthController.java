@@ -23,11 +23,7 @@ public class AuthController {
 	public ApiResponse<Void> login(
 		@RequestBody @Valid LoginRequest loginRequest,
 		HttpServletResponse response) {
-		LoginServiceRequest loginServiceRequest = LoginServiceRequest.builder()
-			.phone(loginRequest.getPhone())
-			.password(loginRequest.getPassword())
-			.build();
-		authService.login(loginServiceRequest, response);
+		authService.login(loginRequest.toServiceRequest(), response);
 		return ApiResponse.ofSuccess();
 	}
 }

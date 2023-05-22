@@ -10,4 +10,11 @@ public class LoginRequest {
 	private String phone;
 	@NotNull
 	private String password;
+
+	public LoginServiceRequest toServiceRequest() {
+		return LoginServiceRequest.builder()
+			.phone(this.phone)
+			.password(this.password)
+			.build();
+	}
 }

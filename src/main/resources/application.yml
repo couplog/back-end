@@ -6,9 +6,12 @@ spring:
       local:
         - db-local
         - logging-local
+        - web
       dev:
         - db-dev
         - logging-dev
+        - web
     include:
       - db
       - logging
+      - web

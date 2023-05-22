@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -21,6 +22,14 @@ public class AuthController {
 	public ApiResponse<Void> sendCode(@RequestBody @Valid PhoneRequest request) {
 
 		authService.sendSms(request.toServiceRequest());
+
+		return ApiResponse.ofSuccess();
+	}
+
+	@PostMapping("/phone/code")
+	public ApiResponse<Void> authenticateCode(@RequestBody @Valid PhoneAuthCodeRequest request) {
+
+		authService.authenticateAuthCode(request.toServiceRequest());
 
 		return ApiResponse.ofSuccess();
 	}

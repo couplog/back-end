@@ -3,13 +3,13 @@ package com.dateplan.dateplan.global.exception.handler;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,6 +19,18 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<Void>> methodArgumentNotValidException(
+		MethodArgumentNotValidException e) {
+
+		ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+		String message = e.getAllErrors().get(0).getDefaultMessage();
+
+		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
+
+		return ResponseEntity.status(errorCode.getHttpStatusCode()).body(response);
+	}
 
 	@ExceptionHandler(NoHandlerFoundException.class)
 	public ResponseEntity<ApiResponse<Void>> noHandlerFoundException(NoHandlerFoundException e) {
@@ -77,17 +89,6 @@ public class GlobalExceptionHandler {
 		ErrorCode errorCode = ErrorCode.MEDIA_TYPE_NOT_SUPPORTED;
 		String message = String.format(DetailMessage.MEDIA_TYPE_NOT_SUPPORTED, e.getContentType(),
 			e.getSupportedMediaTypes());
-
-		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
-
-		return ResponseEntity.status(errorCode.getHttpStatusCode()).body(response);
-	}
-
-	@ExceptionHandler(SmsSendFailException.class)
-	public ResponseEntity<ApiResponse<Void>> smsSendFailException(SmsSendFailException e) {
-
-		ErrorCode errorCode = e.getErrorCode();
-		String message = e.getMessage();
 
 		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
 

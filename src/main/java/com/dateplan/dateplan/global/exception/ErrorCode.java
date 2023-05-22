@@ -16,6 +16,7 @@ public enum ErrorCode {
 	MEDIA_TYPE_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE, "C005"),
 	ALREADY_REGISTERED_PHONE(CONFLICT, "C010"),
 	INVALID_INPUT_VALUE(BAD_REQUEST, "C011"),
+	INVALID_PHONE_AUTH_CODE(CONFLICT, "C012"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -42,6 +43,9 @@ public enum ErrorCode {
 		public static final String MEDIA_TYPE_NOT_SUPPORTED = "%s : 지원하지 않는 media type 입니다. 지원 type : %s";
 		public static final String ALREADY_REGISTERED_PHONE = "이미 가입된 전화번호입니다.";
 		public static final String INVALID_PHONE_PATTERN = "전화번호는 010AAAABBBB 형식으로 입력해 주세요";
+		public static final String INVALID_PHONE_AUTH_CODE_PATTERN = "전화번호 인증코드는 6자리 숫자입니다.";
+		public static final String PHONE_AUTH_CODE_NOT_EXISTS = "전화번호 인증코드가 존재하지 않습니다. 다시 인증해 주세요.";
+		public static final String PHONE_AUTH_CODE_NOT_MATCH = "전화번호 인증코드가 일치하지 않습니다.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

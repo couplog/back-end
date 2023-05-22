@@ -14,6 +14,8 @@ public enum ErrorCode {
 	METHOD_ARGUMENT_TYPE_MISMATCH(BAD_REQUEST, "C003"),
 	MISSING_REQUEST_PARAMETER(BAD_REQUEST, "C004"),
 	MEDIA_TYPE_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE, "C005"),
+	ALREADY_REGISTERED_PHONE(CONFLICT, "C010"),
+	INVALID_INPUT_VALUE(BAD_REQUEST, "C011"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -38,6 +40,8 @@ public enum ErrorCode {
 		public static final String METHOD_ARGUMENT_TYPE_MISMATCH = "요청 파라미터에서 %s 값은 %s 타입이어야 합니다.";
 		public static final String MISSING_REQUEST_PARAMETER = "요청 파라미터에서 %s 값은 필수입니다.";
 		public static final String MEDIA_TYPE_NOT_SUPPORTED = "%s : 지원하지 않는 media type 입니다. 지원 type : %s";
+		public static final String ALREADY_REGISTERED_PHONE = "이미 가입된 전화번호입니다.";
+		public static final String INVALID_PHONE_PATTERN = "전화번호는 010AAAABBBB 형식으로 입력해 주세요";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

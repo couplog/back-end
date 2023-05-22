@@ -6,15 +6,13 @@ import static com.dateplan.dateplan.global.constant.Auth.HEADER_REFRESH_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
-import static com.dateplan.dateplan.global.exception.ErrorCode.PASSWORD_MISMATCH;
-import static com.dateplan.dateplan.global.exception.ErrorCode.USER_NOT_FOUND;
 
 import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.auth.JwtProvider;
-import com.dateplan.dateplan.global.exception.ApplicationException;
-import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
+import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.util.password.PasswordEncryptor;
@@ -30,11 +28,10 @@ public class AuthService {
 
 	public void login(LoginServiceRequest request, HttpServletResponse response) {
 		Member member = memberRepository.findByPhone(request.getPhone())
-			.orElseThrow(
-				() -> new ApplicationException(DetailMessage.USER_NOT_FOUND, USER_NOT_FOUND));
+			.orElseThrow(MemberNotFoundException::new);
 
 		if (mismatchPassword(request, member)) {
-			throw new ApplicationException(DetailMessage.PASSWORD_MISMATCH, PASSWORD_MISMATCH);
+			throw new PasswordMismatchException();
 		}
 
 		String accessToken = "Bearer " + jwtProvider.generateToken(

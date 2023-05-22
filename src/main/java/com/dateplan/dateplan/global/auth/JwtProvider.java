@@ -1,14 +1,12 @@
 package com.dateplan.dateplan.global.auth;
 
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
-import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_EXPIRED;
-import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_INVALID;
-import static com.dateplan.dateplan.global.exception.ErrorCode.USER_NOT_FOUND;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
-import com.dateplan.dateplan.global.exception.ApplicationException;
-import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
+import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
+import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -33,8 +31,7 @@ public class JwtProvider {
 
 	public Member findMemberByToken(String token) {
 		return memberRepository.findById(getIdByToken(token))
-			.orElseThrow(
-				() -> new ApplicationException(DetailMessage.USER_NOT_FOUND, USER_NOT_FOUND));
+			.orElseThrow(MemberNotFoundException::new);
 	}
 
 	private Long getIdByToken(String token) {
@@ -45,9 +42,9 @@ public class JwtProvider {
 				.getBody()
 				.get("id");
 		} catch (ExpiredJwtException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_EXPIRED, TOKEN_EXPIRED);
+			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_INVALID, TOKEN_INVALID);
+			throw new TokenInvalidException();
 		}
 	}
 
@@ -78,9 +75,9 @@ public class JwtProvider {
 				.parseClaimsJws(token);
 			return true;
 		} catch (ExpiredJwtException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_EXPIRED, TOKEN_EXPIRED);
+			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_INVALID, TOKEN_INVALID);
+			throw new TokenInvalidException();
 		}
 	}
 

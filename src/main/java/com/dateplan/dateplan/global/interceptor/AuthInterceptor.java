@@ -1,13 +1,10 @@
 package com.dateplan.dateplan.global.interceptor;
 
-import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_EXPIRED;
-import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_INVALID;
-
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
-import com.dateplan.dateplan.global.exception.ApplicationException;
-import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
+import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -40,9 +37,9 @@ public class AuthInterceptor implements HandlerInterceptor {
 				MemberThreadLocal.set(member);
 			}
 		} catch (ExpiredJwtException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_EXPIRED, TOKEN_EXPIRED);
+			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
-			throw new ApplicationException(DetailMessage.TOKEN_INVALID, TOKEN_INVALID);
+			throw new TokenInvalidException();
 		}
 
 		return true;

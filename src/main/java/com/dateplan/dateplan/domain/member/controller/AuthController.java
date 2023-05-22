@@ -1,7 +1,6 @@
 package com.dateplan.dateplan.domain.member.controller;
 
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;

@@ -3,6 +3,7 @@ package com.dateplan.dateplan.global.exception.handler;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,6 +77,17 @@ public class GlobalExceptionHandler {
 		ErrorCode errorCode = ErrorCode.MEDIA_TYPE_NOT_SUPPORTED;
 		String message = String.format(DetailMessage.MEDIA_TYPE_NOT_SUPPORTED, e.getContentType(),
 			e.getSupportedMediaTypes());
+
+		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
+
+		return ResponseEntity.status(errorCode.getHttpStatusCode()).body(response);
+	}
+
+	@ExceptionHandler(SmsSendFailException.class)
+	public ResponseEntity<ApiResponse<Void>> smsSendFailException(SmsSendFailException e) {
+
+		ErrorCode errorCode = e.getErrorCode();
+		String message = e.getMessage();
 
 		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
 

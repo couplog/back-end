@@ -16,7 +16,8 @@ public enum ErrorCode {
 	MEDIA_TYPE_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE, "C005"),
 
 	// SERVER
-	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001");
+	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
+	SMS_SEND_FAIL(INTERNAL_SERVER_ERROR, "S002");
 
 	private final HttpStatus httpStatusCode;
 	private final String code;
@@ -40,5 +41,6 @@ public enum ErrorCode {
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";
+		public static final String SMS_SEND_FAIL = "%s 문자를 전송하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요.";
 	}
 }

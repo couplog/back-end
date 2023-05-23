@@ -11,11 +11,9 @@ import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.member.repository.MemberRepository;
-import com.dateplan.dateplan.domain.sms.service.SmsService;
+import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
-import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,10 +32,9 @@ public class AuthService {
 	private static final String AUTH_KEY_PREFIX = "[AUTH]";
 
 	private final MemberReadService memberReadService;
-	private final SmsService smsService;
+	private final SmsSendClient smsSendClient;
 	private final StringRedisTemplate redisTemplate;
 	private final PasswordEncryptor passwordEncryptor;
-	private final MemberRepository memberRepository;
 	private final JwtProvider jwtProvider;
 
 	public void sendSms(PhoneServiceRequest request) {
@@ -46,7 +43,7 @@ public class AuthService {
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
-		smsService.sendSmsForPhoneAuthentication(phone, code);
+		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
 	}
@@ -86,8 +83,7 @@ public class AuthService {
 	}
 
 	public void login(LoginServiceRequest request, HttpServletResponse response) {
-		Member member = memberRepository.findByPhone(request.getPhone())
-			.orElseThrow(MemberNotFoundException::new);
+		Member member = memberReadService.findMemberByPhoneOrElseThrow(request.getPhone());
 
 		if (mismatchPassword(request, member)) {
 			throw new PasswordMismatchException();

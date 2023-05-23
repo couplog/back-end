@@ -7,11 +7,14 @@ spring:
         - db-local
         - logging-local
         - web
+        - sms
       dev:
         - db-dev
         - logging-dev
         - web
+        - sms
     include:
       - db
       - logging
       - web
+      - sms

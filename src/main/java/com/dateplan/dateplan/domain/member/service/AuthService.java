@@ -46,7 +46,7 @@ public class AuthService {
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
-		//smsService.sendSmsForPhoneAuthentication(phone, code);
+		smsService.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
 	}

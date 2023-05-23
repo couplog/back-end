@@ -7,14 +7,17 @@ spring:
         - db-local
         - logging-local
         - web
+        - sms
       dev:
         - db-dev
         - logging-dev
         - web
+        - sms
     include:
       - db
       - logging
       - web
+      - sms
 
 jwt:
   secret: ENC(zRA35QWRUW63BIC/4hk6PzpSloySv3iGNAeDyvmNR+GoIB5HqlpvdtQA1EJPCpb43dmZC1XFUTVnWbfJA6WuqQ==)

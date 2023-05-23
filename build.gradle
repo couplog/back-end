@@ -29,6 +29,9 @@ dependencies {
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	// sms
+	implementation 'net.nurigo:sdk:4.2.7'
+
 	// else
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

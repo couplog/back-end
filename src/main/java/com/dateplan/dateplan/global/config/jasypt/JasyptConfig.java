@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
+import org.jasypt.util.password.BasicPasswordEncryptor;
+import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +31,11 @@ public class JasyptConfig {
 		config.setStringOutputType("base64");
 		encryptor.setConfig(config);
 		return encryptor;
+	}
+
+	@Bean
+	public PasswordEncryptor passwordEncryptor() {
+		return new BasicPasswordEncryptor();
 	}
 }
 

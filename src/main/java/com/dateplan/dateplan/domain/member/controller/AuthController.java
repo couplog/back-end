@@ -1,9 +1,11 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +32,14 @@ public class AuthController {
 	public ApiResponse<Void> authenticateCode(@RequestBody @Valid PhoneAuthCodeRequest request) {
 
 		authService.authenticateAuthCode(request.toServiceRequest());
+		return ApiResponse.ofSuccess();
+	}
 
+	@PostMapping("/login")
+	public ApiResponse<Void> login(
+		@RequestBody @Valid LoginRequest loginRequest,
+		HttpServletResponse response) {
+		authService.login(loginRequest.toServiceRequest(), response);
 		return ApiResponse.ofSuccess();
 	}
 }

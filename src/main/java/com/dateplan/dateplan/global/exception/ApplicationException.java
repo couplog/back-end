@@ -4,7 +4,7 @@ import java.io.Serial;
 import lombok.Getter;
 
 @Getter
-public class ApplicationException extends RuntimeException{
+public class ApplicationException extends RuntimeException {
 
 	@Serial
 	private static final long serialVersionUID = -8808014635391651324L;

@@ -1,7 +1,10 @@
 package com.dateplan.dateplan.domain.member.entity;
 
+import com.dateplan.dateplan.global.constant.Gender;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,7 +23,7 @@ import lombok.NoArgsConstructor;
 public class Member {
 
 	@Id
-	@Column(columnDefinition = "BIGINT")
+	@Column(name = "member_id", columnDefinition = "BIGINT", updatable = false, unique = true)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
@@ -29,18 +32,19 @@ public class Member {
 	private String name;
 
 	@NotNull
-	@Column(name = "phone", columnDefinition = "VARCHAR(20)")
+	@Column(name = "phone", columnDefinition = "VARCHAR(20)", unique = true)
 	private String phone;
 
 	@NotNull
 	@Column(name = "nickname", columnDefinition = "VARCHAR(30)")
 	private String nickname;
 
-	@Column(name = "birth", columnDefinition = "DATE")
+	@Column(name = "birth", columnDefinition = "DATE", updatable = false)
 	private LocalDate birth;
 
+	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", columnDefinition = "VARCHAR(10)")
-	private String gender;
+	private Gender gender;
 
 	@NotNull
 	@Column(name = "profile_image_url", columnDefinition = "VARCHAR(200)")
@@ -56,7 +60,7 @@ public class Member {
 		String phone,
 		String nickname,
 		LocalDate birth,
-		String gender,
+		Gender gender,
 		String profileImageUrl,
 		String password
 	) {

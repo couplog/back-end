@@ -13,8 +13,9 @@ public class MemberReadService {
 
 	private final MemberRepository memberRepository;
 
-	public void throwIfPhoneExists(String phone){
-		if(memberRepository.existsByPhone(phone))
+	public void throwIfPhoneExists(String phone) {
+		if (memberRepository.existsByPhone(phone)) {
 			throw new AlReadyRegisteredPhoneException();
+		}
 	}
 }

@@ -1,6 +1,10 @@
 package com.dateplan.dateplan.global.exception;
 
-import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -14,9 +18,14 @@ public enum ErrorCode {
 	METHOD_ARGUMENT_TYPE_MISMATCH(BAD_REQUEST, "C003"),
 	MISSING_REQUEST_PARAMETER(BAD_REQUEST, "C004"),
 	MEDIA_TYPE_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE, "C005"),
-	ALREADY_REGISTERED_PHONE(CONFLICT, "C010"),
-	INVALID_INPUT_VALUE(BAD_REQUEST, "C011"),
-	INVALID_PHONE_AUTH_CODE(CONFLICT, "C012"),
+	MEMBER_NOT_FOUND(BAD_REQUEST, "C006"),
+	TOKEN_EXPIRED(UNAUTHORIZED, "C007"),
+	TOKEN_INVALID(UNAUTHORIZED, "C008"),
+	PASSWORD_MISMATCH(UNAUTHORIZED, "C009"),
+	METHOD_ARGUMENT_INVALID(BAD_REQUEST, "C010"),
+	ALREADY_REGISTERED_PHONE(CONFLICT, "C011"),
+	INVALID_INPUT_VALUE(BAD_REQUEST, "C012"),
+	INVALID_PHONE_AUTH_CODE(CONFLICT, "C013"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -46,6 +55,10 @@ public enum ErrorCode {
 		public static final String INVALID_PHONE_AUTH_CODE_PATTERN = "전화번호 인증코드는 6자리 숫자입니다.";
 		public static final String PHONE_AUTH_CODE_NOT_EXISTS = "전화번호 인증코드가 존재하지 않습니다. 다시 인증해 주세요.";
 		public static final String PHONE_AUTH_CODE_NOT_MATCH = "전화번호 인증코드가 일치하지 않습니다.";
+		public static final String MEMBER_NOT_FOUND = "유저가 존재하지 않습니다.";
+		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";
+		public static final String TOKEN_INVALID = "유효하지 않은 토큰입니다.";
+		public static final String PASSWORD_MISMATCH = "비밀번호가 올바르지 않습니다.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

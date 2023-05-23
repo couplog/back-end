@@ -10,11 +10,11 @@ import net.nurigo.sdk.message.request.SingleMessageSendingRequest;
 import net.nurigo.sdk.message.response.SingleMessageSentResponse;
 import net.nurigo.sdk.message.service.DefaultMessageService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 @Slf4j
-public class SmsService {
+public class SmsSendClient {
 
 	private static final String DOMAIN = "https://api.coolsms.co.kr";
 	private static final String PHONE_AUTH_TEXT = "[date-plan] 휴대전화 인증을 위한 인증 코드입니다. \n %s";
@@ -23,7 +23,7 @@ public class SmsService {
 	private final DefaultMessageService messageService;
 	private final String sendNumber;
 
-	public SmsService(@Value("${sms.key}") String key,
+	public SmsSendClient(@Value("${sms.key}") String key,
 		@Value("${sms.secret}") String secret,
 		@Value("${sms.send-number}") String sendNumber) {
 		this.messageService = NurigoApp.INSTANCE.initialize(key, secret, DOMAIN);

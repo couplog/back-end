@@ -41,11 +41,11 @@ public class JwtProvider {
 
 	private Long getIdByToken(String token) {
 		try {
-			return (Long) Jwts.parser()
+			return Long.parseLong(String.valueOf(Jwts.parser()
 				.setSigningKey(generateKey())
 				.parseClaimsJws(token)
 				.getBody()
-				.get("id");
+				.get("id")));
 		} catch (ExpiredJwtException e) {
 			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {

@@ -53,7 +53,7 @@ public class AuthService {
 		ListOperations<String, String> opsForList = redisTemplate.opsForList();
 
 		String phone = request.getPhone();
-		String key = AUTH_KEY_PREFIX + phone;
+		String key = getAuthKey(phone);
 		String savedCode = opsForList.index(key, 0);
 
 		validateCode(savedCode, request.getCode());
@@ -66,7 +66,7 @@ public class AuthService {
 
 		ListOperations<String, String> opsForList = redisTemplate.opsForList();
 
-		String key = AUTH_KEY_PREFIX + phone;
+		String key = getAuthKey(phone);
 
 		redisTemplate.delete(key);
 
@@ -80,6 +80,11 @@ public class AuthService {
 		if (code == null || !Objects.equals(input, code)) {
 			throw new InvalidPhoneAuthCodeException(code);
 		}
+	}
+
+	private String getAuthKey(String phone){
+
+		return AUTH_KEY_PREFIX + phone;
 	}
 
 	public void login(LoginServiceRequest request, HttpServletResponse response) {

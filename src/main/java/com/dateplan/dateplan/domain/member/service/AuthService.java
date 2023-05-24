@@ -105,10 +105,19 @@ public class AuthService {
 		response.setHeader(HEADER_AUTHORIZATION.getContent(), accessToken);
 		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), refreshToken);
 
-		// redis에 저장해야함
+		ListOperations<String, String> opsForList = redisTemplate.opsForList();
+		String key = String.valueOf(member.getId());
+
+		opsForList.rightPop(key);
+		opsForList.rightPush(key, refreshToken);
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {
 		return !passwordEncryptor.checkPassword(request.getPassword(), member.getPassword());
+	}
+
+	public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
+		String accessToken = jwtProvider.generateAccessTokenByRefreshToken(refreshToken);
+		response.setHeader(HEADER_AUTHORIZATION.getContent(), accessToken);
 	}
 }

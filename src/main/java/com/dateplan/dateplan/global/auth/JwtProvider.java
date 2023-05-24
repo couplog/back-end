@@ -1,6 +1,8 @@
 package com.dateplan.dateplan.global.auth;
 
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
+import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -19,6 +21,8 @@ import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ public class JwtProvider {
 	@Value("${jwt.secret}")
 	private String secret;
 	private final MemberRepository memberRepository;
+	private final StringRedisTemplate redisTemplate;
 
 	public Member findMemberByToken(String token) {
 		return memberRepository.findById(getIdByToken(token))
@@ -60,6 +65,34 @@ public class JwtProvider {
 			.setExpiration(expireDate)
 			.signWith(SignatureAlgorithm.HS256, generateKey())
 			.compact();
+	}
+
+	public String generateAccessTokenByRefreshToken(String refreshToken) {
+		Member member = findMemberByToken(refreshToken);
+
+		if (!checkRefreshTokenEquals(member, refreshToken)) {
+			throw new TokenInvalidException();
+		}
+
+		return generateToken(
+			member.getId(),
+			REFRESH_TOKEN_EXPIRATION.getExpiration(),
+			SUBJECT_REFRESH_TOKEN.getContent()
+		);
+	}
+
+	private boolean checkRefreshTokenEquals(Member member, String refreshToken) {
+		ListOperations<String, String> opsForList = redisTemplate.opsForList();
+
+		String key = String.valueOf(member.getId());
+		String value = opsForList.rightPop(key);
+
+		if (value == null || !value.equals(refreshToken)) {
+			return false;
+		}
+
+		opsForList.rightPush(key, value);
+		return true;
 	}
 
 	private Claims generateClaims(Long id) {

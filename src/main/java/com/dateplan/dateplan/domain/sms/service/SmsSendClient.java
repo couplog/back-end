@@ -3,16 +3,19 @@ package com.dateplan.dateplan.domain.sms.service;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.nurigo.sdk.NurigoApp;
 import net.nurigo.sdk.message.model.Message;
 import net.nurigo.sdk.message.request.SingleMessageSendingRequest;
 import net.nurigo.sdk.message.response.SingleMessageSentResponse;
 import net.nurigo.sdk.message.service.DefaultMessageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
+@AllArgsConstructor
 @Slf4j
 public class SmsSendClient {
 
@@ -23,6 +26,7 @@ public class SmsSendClient {
 	private final DefaultMessageService messageService;
 	private final String sendNumber;
 
+	@Autowired
 	public SmsSendClient(@Value("${sms.key}") String key,
 		@Value("${sms.secret}") String secret,
 		@Value("${sms.send-number}") String sendNumber) {

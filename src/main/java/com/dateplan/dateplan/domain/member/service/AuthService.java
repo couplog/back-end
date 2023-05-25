@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -106,11 +107,10 @@ public class AuthService {
 		response.setHeader(HEADER_AUTHORIZATION.getContent(), accessToken);
 		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), refreshToken);
 
-		ListOperations<String, String> opsForList = redisTemplate.opsForList();
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 		String key = String.valueOf(member.getId());
 
-		opsForList.rightPop(key);
-		opsForList.rightPush(key, refreshToken);
+		stringValueOperations.set(key, refreshToken);
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {

@@ -1,7 +1,13 @@
 package com.dateplan.dateplan.global.auth;
 
+import static com.dateplan.dateplan.global.constant.Auth.ACCESS_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
+import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
+import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
+import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
@@ -19,6 +25,8 @@ import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
@@ -28,6 +36,7 @@ public class JwtProvider {
 	@Value("${jwt.secret}")
 	private String secret;
 	private final MemberRepository memberRepository;
+	private final StringRedisTemplate redisTemplate;
 
 	public Member findMemberByToken(String token) {
 		return memberRepository.findById(getIdByToken(token))
@@ -36,11 +45,11 @@ public class JwtProvider {
 
 	private Long getIdByToken(String token) {
 		try {
-			return (Long) Jwts.parser()
+			return Long.parseLong(String.valueOf(Jwts.parser()
 				.setSigningKey(generateKey())
 				.parseClaimsJws(token)
 				.getBody()
-				.get("id");
+				.get("id")));
 		} catch (ExpiredJwtException e) {
 			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
@@ -60,6 +69,46 @@ public class JwtProvider {
 			.setExpiration(expireDate)
 			.signWith(SignatureAlgorithm.HS256, generateKey())
 			.compact();
+	}
+
+	public AuthToken generateTokenByRefreshToken(String refreshToken) {
+		Member member = findMemberByToken(refreshToken);
+
+		if (!checkRefreshTokenEquals(member, refreshToken)) {
+			throw new TokenInvalidException();
+		}
+
+		String newAccessToken = BEARER.getContent() + generateToken(
+			member.getId(),
+			ACCESS_TOKEN_EXPIRATION.getExpiration(),
+			SUBJECT_ACCESS_TOKEN.getContent()
+		);
+
+		String newRefreshToken = BEARER.getContent() + generateToken(
+			member.getId(),
+			REFRESH_TOKEN_EXPIRATION.getExpiration(),
+			SUBJECT_REFRESH_TOKEN.getContent()
+		);
+
+		return AuthToken.builder()
+			.accessToken(newAccessToken)
+			.refreshToken(newRefreshToken)
+			.build();
+	}
+
+	private boolean checkRefreshTokenEquals(Member member, String refreshToken) {
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+
+		String key = String.valueOf(member.getId());
+		String value = stringValueOperations.get(key);
+
+		if (value == null || !value.equals(refreshToken)) {
+			stringValueOperations.getAndDelete(key);
+			return false;
+		}
+
+		stringValueOperations.set(key, value);
+		return true;
 	}
 
 	private Claims generateClaims(Long id) {

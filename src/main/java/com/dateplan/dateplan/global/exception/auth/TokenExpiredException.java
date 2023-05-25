@@ -11,7 +11,7 @@ public class TokenExpiredException extends ApplicationException {
 	private static final long serialVersionUID = 7231517269055889719L;
 
 	public TokenExpiredException() {
-		super(DetailMessage.TOKEN_INVALID, ErrorCode.TOKEN_INVALID);
+		super(DetailMessage.TOKEN_EXPIRED, ErrorCode.TOKEN_EXPIRED);
 	}
 
 }

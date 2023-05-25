@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.domain.member.service;
 
 import static com.dateplan.dateplan.global.constant.Auth.ACCESS_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_REFRESH_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
@@ -95,11 +96,11 @@ public class AuthService {
 			throw new PasswordMismatchException();
 		}
 
-		String accessToken = "Bearer " + jwtProvider.generateToken(
+		String accessToken = BEARER.getContent() + jwtProvider.generateToken(
 			member.getId(),
 			ACCESS_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_ACCESS_TOKEN.getContent());
-		String refreshToken = "Bearer " + jwtProvider.generateToken(
+		String refreshToken = BEARER.getContent() + jwtProvider.generateToken(
 			member.getId(),
 			REFRESH_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_REFRESH_TOKEN.getContent());
@@ -118,8 +119,7 @@ public class AuthService {
 	}
 
 	public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
-		Pair<String, String> tokenPair = jwtProvider.generateTokenByRefreshToken(
-			refreshToken);
+		Pair<String, String> tokenPair = jwtProvider.generateTokenByRefreshToken(refreshToken);
 
 		response.setHeader(HEADER_AUTHORIZATION.getContent(), tokenPair.getFirst());
 		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), tokenPair.getSecond());

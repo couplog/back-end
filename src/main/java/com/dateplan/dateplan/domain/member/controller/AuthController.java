@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
+
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
@@ -48,7 +50,7 @@ public class AuthController {
 	public ApiResponse<Void> refresh(
 		@RequestHeader(value = "Authorization") String refreshToken,
 		HttpServletResponse response) {
-		authService.refreshAccessToken(refreshToken.replaceAll("Bearer ", ""), response);
+		authService.refreshAccessToken(refreshToken.replaceAll(BEARER.getContent(), ""), response);
 		return ApiResponse.ofSuccess();
 	}
 }

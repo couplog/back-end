@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.global.auth;
 
 import static com.dateplan.dateplan.global.constant.Auth.ACCESS_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
 import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
@@ -77,13 +78,13 @@ public class JwtProvider {
 			throw new TokenInvalidException();
 		}
 
-		String newAccessToken = generateToken(
+		String newAccessToken = BEARER.getContent() + generateToken(
 			member.getId(),
 			ACCESS_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_ACCESS_TOKEN.getContent()
 		);
 
-		String newRefreshToken = generateToken(
+		String newRefreshToken = BEARER.getContent() + generateToken(
 			member.getId(),
 			REFRESH_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_REFRESH_TOKEN.getContent()

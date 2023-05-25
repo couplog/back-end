@@ -3,6 +3,7 @@ package com.dateplan.dateplan.global.interceptor;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Auth;
 import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -29,7 +30,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 		if (tokenByHeader.isEmpty()) {
 			return true;
 		}
-		String token = tokenByHeader.get().replaceFirst("Bearer ", "");
+		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");
 
 		try {
 			if (jwtProvider.isValid(token)) {

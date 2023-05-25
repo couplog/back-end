@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
+
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
@@ -10,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,6 +43,14 @@ public class AuthController {
 		@RequestBody @Valid LoginRequest loginRequest,
 		HttpServletResponse response) {
 		authService.login(loginRequest.toServiceRequest(), response);
+		return ApiResponse.ofSuccess();
+	}
+
+	@PostMapping("/refresh")
+	public ApiResponse<Void> refresh(
+		@RequestHeader(value = "Authorization") String refreshToken,
+		HttpServletResponse response) {
+		authService.refreshAccessToken(refreshToken.replaceAll(BEARER.getContent(), ""), response);
 		return ApiResponse.ofSuccess();
 	}
 }

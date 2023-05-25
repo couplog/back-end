@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -117,7 +118,10 @@ public class AuthService {
 	}
 
 	public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
-		String accessToken = jwtProvider.generateAccessTokenByRefreshToken(refreshToken);
-		response.setHeader(HEADER_AUTHORIZATION.getContent(), accessToken);
+		Pair<String, String> tokenPair = jwtProvider.generateTokenByRefreshToken(
+			refreshToken);
+
+		response.setHeader(HEADER_AUTHORIZATION.getContent(), tokenPair.getFirst());
+		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), tokenPair.getSecond());
 	}
 }

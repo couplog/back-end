@@ -1,7 +1,9 @@
 package com.dateplan.dateplan.global.auth;
 
+import static com.dateplan.dateplan.global.constant.Auth.ACCESS_TOKEN_EXPIRATION;
 import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
 import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
+import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -21,8 +23,9 @@ import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
@@ -67,31 +70,40 @@ public class JwtProvider {
 			.compact();
 	}
 
-	public String generateAccessTokenByRefreshToken(String refreshToken) {
+	public Pair<String, String> generateTokenByRefreshToken(String refreshToken) {
 		Member member = findMemberByToken(refreshToken);
 
 		if (!checkRefreshTokenEquals(member, refreshToken)) {
 			throw new TokenInvalidException();
 		}
 
-		return generateToken(
+		String newAccessToken = generateToken(
+			member.getId(),
+			ACCESS_TOKEN_EXPIRATION.getExpiration(),
+			SUBJECT_ACCESS_TOKEN.getContent()
+		);
+
+		String newRefreshToken = generateToken(
 			member.getId(),
 			REFRESH_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_REFRESH_TOKEN.getContent()
 		);
+
+		return Pair.of(newAccessToken, newRefreshToken);
 	}
 
 	private boolean checkRefreshTokenEquals(Member member, String refreshToken) {
-		ListOperations<String, String> opsForList = redisTemplate.opsForList();
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 
 		String key = String.valueOf(member.getId());
-		String value = opsForList.rightPop(key);
+		String value = stringValueOperations.get(key);
 
 		if (value == null || !value.equals(refreshToken)) {
+			stringValueOperations.getAndDelete(key);
 			return false;
 		}
 
-		opsForList.rightPush(key, value);
+		stringValueOperations.set(key, value);
 		return true;
 	}
 

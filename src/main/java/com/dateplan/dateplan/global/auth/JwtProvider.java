@@ -7,6 +7,7 @@ import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATIO
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
+import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
@@ -26,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
@@ -71,7 +71,7 @@ public class JwtProvider {
 			.compact();
 	}
 
-	public Pair<String, String> generateTokenByRefreshToken(String refreshToken) {
+	public AuthToken generateTokenByRefreshToken(String refreshToken) {
 		Member member = findMemberByToken(refreshToken);
 
 		if (!checkRefreshTokenEquals(member, refreshToken)) {
@@ -90,7 +90,10 @@ public class JwtProvider {
 			SUBJECT_REFRESH_TOKEN.getContent()
 		);
 
-		return Pair.of(newAccessToken, newRefreshToken);
+		return AuthToken.builder()
+			.accessToken(newAccessToken)
+			.refreshToken(newRefreshToken)
+			.build();
 	}
 
 	private boolean checkRefreshTokenEquals(Member member, String refreshToken) {

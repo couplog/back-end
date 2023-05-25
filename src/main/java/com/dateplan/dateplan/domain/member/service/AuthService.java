@@ -8,6 +8,7 @@ import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATIO
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
+import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
@@ -27,7 +28,6 @@ import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -119,9 +119,9 @@ public class AuthService {
 	}
 
 	public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
-		Pair<String, String> tokenPair = jwtProvider.generateTokenByRefreshToken(refreshToken);
+		AuthToken authToken = jwtProvider.generateTokenByRefreshToken(refreshToken);
 
-		response.setHeader(HEADER_AUTHORIZATION.getContent(), tokenPair.getFirst());
-		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), tokenPair.getSecond());
+		response.setHeader(HEADER_AUTHORIZATION.getContent(), authToken.getAccessToken());
+		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), authToken.getRefreshToken());
 	}
 }

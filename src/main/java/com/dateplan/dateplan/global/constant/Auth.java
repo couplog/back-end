@@ -11,7 +11,8 @@ public enum Auth {
 	HEADER_REFRESH_TOKEN("refreshToken"),
 
 	SUBJECT_ACCESS_TOKEN("accessToken"),
-	SUBJECT_REFRESH_TOKEN("refreshToken");
+	SUBJECT_REFRESH_TOKEN("refreshToken"),
+	BEARER("BEARER ");
 
 	private Long expiration;
 	private String content;

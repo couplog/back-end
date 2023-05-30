@@ -3,6 +3,7 @@ package com.dateplan.dateplan.global.exception;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -29,7 +30,7 @@ public enum ErrorCode {
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
-	SMS_SEND_FAIL(INTERNAL_SERVER_ERROR, "S002");
+	SMS_SEND_FAIL(SERVICE_UNAVAILABLE, "S002");
 
 	private final HttpStatus httpStatusCode;
 	private final String code;

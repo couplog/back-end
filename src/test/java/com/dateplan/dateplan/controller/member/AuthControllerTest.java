@@ -104,7 +104,7 @@ class AuthControllerTest extends ControllerTestSupport {
 			//When & Then
 			mockMvc.perform(post(REQUEST_URL).content(om.writeValueAsString(request))
 					.contentType(MediaType.APPLICATION_JSON).characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isInternalServerError())
+				.andExpect(status().isServiceUnavailable())
 				.andExpectAll(jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(SMS_SEND_FAIL.getCode()),
 					jsonPath("$.message").value(smsSendFailException.getMessage()));

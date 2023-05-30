@@ -61,3 +61,32 @@ spring:
   redis:
     port: 6379
     host: localhost
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "db-test"
+
+  jpa:
+    show-sql: true
+    database: MYSQL
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ENC(hkypxQE6ffYRdY9ev1HjUlymQJMclk1tGH6B5AliKKxJmBR9n4suEoEbWprgWS57YJlts97xR2AfztydNBWS9oEGYn6osWbvK0WFDFLKzAO01pvph1arBHPJQumonfUg2B8GvopQLKz+DvGNFeaAyZdx2mfUT+bV8vVu14hHL0Y=)
+    username: ENC(PsJ4IZm58TJkm2kpxsy+Kg==)
+    password: ENC(HC5aZC9e1uoiyKV5i2mAmw==)
+    hikari:
+      max-lifetime: 60000
+      connection-timeout: 30000
+      maximum-pool-size: 10
+
+  redis:
+    port: 6379
+    host: localhost

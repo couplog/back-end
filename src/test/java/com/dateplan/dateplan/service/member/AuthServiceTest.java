@@ -1,6 +1,5 @@
 package com.dateplan.dateplan.service.member;
 
-import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.PASSWORD_MISMATCH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +21,6 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
-import com.dateplan.dateplan.global.constant.Auth;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
@@ -257,12 +255,11 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 			// When
 			AuthToken authToken = authService.login(loginServiceRequest);
+			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+			String savedToken = stringValueOperations.get(String.valueOf(member.getId()));
 
 			// Then
-			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
-			assertThat(stringValueOperations.get(
-				String.valueOf(member.getId())))
-				.isEqualTo(authToken.getRefreshToken().replaceAll(BEARER.getContent(), ""));
+			assertThat(savedToken).isEqualTo(authToken.getRefreshTokenWithoutPrefix());
 		}
 
 		@DisplayName("올바르지 않은 패스워드를 입력하면 예외를 반환한다")
@@ -275,6 +272,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			assertThatThrownBy(() -> authService.login(loginServiceRequest))
 				.isInstanceOf(PasswordMismatchException.class)
 				.hasMessage(PASSWORD_MISMATCH);
+
+			then(redisTemplate).shouldHaveNoInteractions();
 		}
 	}
 

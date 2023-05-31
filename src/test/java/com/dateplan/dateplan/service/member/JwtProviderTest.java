@@ -153,11 +153,15 @@ public class JwtProviderTest extends ServiceTestSupport {
 		@DisplayName("올바른 리프레시 토큰이 주어지면 엑세스 토큰을 반환한다")
 		@Test
 		void returnAccessTokenGivenRefreshToken() {
+
+			// Given
 			AuthToken authToken = jwtProvider.generateTokenByRefreshToken(savedRefreshToken);
 
+			// When
 			String accessToken = authToken.getAccessToken().replaceAll("Bearer ", "");
 			String refreshToken = authToken.getRefreshToken().replaceAll("Bearer ", "");
 
+			// Then
 			assertThat(
 				jwtProvider.findMemberByToken(accessToken).getId()).isEqualTo(member.getId());
 			assertThat(
@@ -185,21 +189,27 @@ public class JwtProviderTest extends ServiceTestSupport {
 		@DisplayName("올바른 토큰이 주어지면 true를 반환한다.")
 		@Test
 		void returnTrue() {
+
+			// Given & When
 			String token = jwtProvider.generateToken(1L, ACCESS_TOKEN_EXPIRATION.getExpiration(),
 				SUBJECT_ACCESS_TOKEN.getContent());
 
+			// then
 			assertThat(jwtProvider.isValid(token)).isTrue();
 		}
 
 		@DisplayName("만료된 토큰이 주어지면 예외를 반환한다")
 		@Test
 		void returnExpiredExceptionGivenExpiredToken() {
+
+			// Given & When
 			String token = jwtProvider.generateToken(
 				1L,
 				1L,
 				SUBJECT_ACCESS_TOKEN.getContent()
 			);
 
+			// Then
 			assertThatThrownBy(() -> jwtProvider.findMemberByToken(token))
 				.isInstanceOf(TokenExpiredException.class)
 				.hasMessage(TOKEN_EXPIRED);
@@ -208,8 +218,11 @@ public class JwtProviderTest extends ServiceTestSupport {
 		@DisplayName("유효하지 않은 토큰이 주어지면 예외를 반환한다")
 		@Test
 		void returnInvalidExceptionGivenInvalidToken() {
+
+			// Given
 			String token = "this_is_invalid_token";
 
+			// When & Then
 			assertThatThrownBy(() -> jwtProvider.findMemberByToken(token))
 				.isInstanceOf(TokenInvalidException.class)
 				.hasMessage(TOKEN_INVALID);

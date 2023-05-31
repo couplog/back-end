@@ -101,7 +101,7 @@ public class AuthService {
 		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 		String key = String.valueOf(member.getId());
 
-		stringValueOperations.set(key, refreshToken);
+		stringValueOperations.set(key, refreshToken.replaceAll(BEARER.getContent(), ""));
 
 		return AuthToken.builder()
 			.accessToken(accessToken)

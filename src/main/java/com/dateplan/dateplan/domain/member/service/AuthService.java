@@ -11,7 +11,7 @@ import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.sms.service.SmsService;
+import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
@@ -32,7 +32,7 @@ public class AuthService {
 	private static final String AUTH_KEY_PREFIX = "[AUTH]";
 
 	private final MemberReadService memberReadService;
-	private final SmsService smsService;
+	private final SmsSendClient smsSendClient;
 	private final StringRedisTemplate redisTemplate;
 	private final PasswordEncryptor passwordEncryptor;
 	private final JwtProvider jwtProvider;
@@ -43,7 +43,7 @@ public class AuthService {
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
-		//smsService.sendSmsForPhoneAuthentication(phone, code);
+		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
 	}
@@ -53,7 +53,7 @@ public class AuthService {
 		ListOperations<String, String> opsForList = redisTemplate.opsForList();
 
 		String phone = request.getPhone();
-		String key = AUTH_KEY_PREFIX + phone;
+		String key = getAuthKey(phone);
 		String savedCode = opsForList.index(key, 0);
 
 		validateCode(savedCode, request.getCode());
@@ -66,7 +66,7 @@ public class AuthService {
 
 		ListOperations<String, String> opsForList = redisTemplate.opsForList();
 
-		String key = AUTH_KEY_PREFIX + phone;
+		String key = getAuthKey(phone);
 
 		redisTemplate.delete(key);
 
@@ -80,6 +80,11 @@ public class AuthService {
 		if (code == null || !Objects.equals(input, code)) {
 			throw new InvalidPhoneAuthCodeException(code);
 		}
+	}
+
+	private String getAuthKey(String phone){
+
+		return AUTH_KEY_PREFIX + phone;
 	}
 
 	public AuthToken login(LoginServiceRequest request) {

@@ -10,7 +10,6 @@ import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,7 +60,6 @@ public class AuthController {
 			.body(ApiResponse.ofSuccess());
 	}
 
-	@NotNull
 	private static HttpHeaders setHeaderTokens(AuthToken authToken) {
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.set("Authorization", authToken.getAccessToken());

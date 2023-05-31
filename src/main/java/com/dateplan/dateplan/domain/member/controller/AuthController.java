@@ -60,7 +60,7 @@ public class AuthController {
 			.body(ApiResponse.ofSuccess());
 	}
 
-	private static HttpHeaders setHeaderTokens(AuthToken authToken) {
+	private HttpHeaders setHeaderTokens(AuthToken authToken) {
 		HttpHeaders responseHeaders = new HttpHeaders();
 		responseHeaders.set("Authorization", authToken.getAccessToken());
 		responseHeaders.set("refreshToken", authToken.getRefreshToken());

@@ -12,7 +12,7 @@ public enum Auth {
 
 	SUBJECT_ACCESS_TOKEN("accessToken"),
 	SUBJECT_REFRESH_TOKEN("refreshToken"),
-	BEARER("BEARER ");
+	BEARER("Bearer ");
 
 	private Long expiration;
 	private String content;

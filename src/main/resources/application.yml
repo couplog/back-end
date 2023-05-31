@@ -13,6 +13,10 @@ spring:
         - logging-dev
         - web
         - sms
+      test:
+        - db-test
+        - web
+        - sms
     include:
       - db
       - logging

@@ -40,14 +40,14 @@ public class JwtProviderTest extends ServiceTestSupport {
 	@SpyBean
 	private StringRedisTemplate redisTemplate;
 
-	@AfterEach
-	void tearDown() {
-		memberRepository.deleteAllInBatch();
-	}
-
 	@Nested
 	@DisplayName("토큰이 주어졌을 때")
 	class givenToken {
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
+		}
 
 		@DisplayName("올바른 엑세스 토큰이 주어지면 올바른 유저를 반환한다")
 		@Test
@@ -69,7 +69,7 @@ public class JwtProviderTest extends ServiceTestSupport {
 				.isEqualTo(member.getId());
 		}
 
-		@DisplayName("올바른 리스레시 토큰이 주어지면 올바른 유저를 반환한다")
+		@DisplayName("올바른 리프레시 토큰이 주어지면 올바른 유저를 반환한다")
 		@Test
 		void returnMemberGivenValidRefreshToken() {
 
@@ -132,6 +132,7 @@ public class JwtProviderTest extends ServiceTestSupport {
 		@AfterEach
 		void tearDown() {
 			redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+			memberRepository.deleteAllInBatch();
 		}
 
 		@DisplayName("올바른 값이 주어지면 토큰을 반환한다")
@@ -148,6 +149,8 @@ public class JwtProviderTest extends ServiceTestSupport {
 			assertThat(accessToken).isNotEmpty();
 			assertThat(refreshToken).isNotNull();
 			assertThat(refreshToken).isNotEmpty();
+			assertThat(jwtProvider.isValid(accessToken)).isTrue();
+			assertThat(jwtProvider.isValid(refreshToken)).isTrue();
 		}
 
 		@DisplayName("올바른 리프레시 토큰이 주어지면 엑세스 토큰을 반환한다")
@@ -158,8 +161,8 @@ public class JwtProviderTest extends ServiceTestSupport {
 			AuthToken authToken = jwtProvider.generateTokenByRefreshToken(savedRefreshToken);
 
 			// When
-			String accessToken = authToken.getAccessToken().replaceAll("Bearer ", "");
-			String refreshToken = authToken.getRefreshToken().replaceAll("Bearer ", "");
+			String accessToken = authToken.getAccessTokenWithoutPrefix();
+			String refreshToken = authToken.getRefreshTokenWithoutPrefix();
 
 			// Then
 			assertThat(

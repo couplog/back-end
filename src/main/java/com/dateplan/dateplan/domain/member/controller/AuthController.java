@@ -2,14 +2,16 @@ package com.dateplan.dateplan.domain.member.controller;
 
 import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 
+import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -39,18 +41,29 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ApiResponse<Void> login(
-		@RequestBody @Valid LoginRequest loginRequest,
-		HttpServletResponse response) {
-		authService.login(loginRequest.toServiceRequest(), response);
-		return ApiResponse.ofSuccess();
+	public ResponseEntity<ApiResponse<Void>> login(@RequestBody @Valid LoginRequest loginRequest) {
+		AuthToken authToken = authService.login(loginRequest.toServiceRequest());
+		HttpHeaders responseHeaders = setHeaderTokens(authToken);
+		return ResponseEntity.ok()
+			.headers(responseHeaders)
+			.body(ApiResponse.ofSuccess());
 	}
 
 	@PostMapping("/refresh")
-	public ApiResponse<Void> refresh(
-		@RequestHeader(value = "Authorization") String refreshToken,
-		HttpServletResponse response) {
-		authService.refreshAccessToken(refreshToken.replaceAll(BEARER.getContent(), ""), response);
-		return ApiResponse.ofSuccess();
+	public ResponseEntity<ApiResponse<Void>> refresh(
+		@RequestHeader(value = "Authorization") String refreshToken) {
+		AuthToken authToken = authService.refreshAccessToken(
+			refreshToken.replaceAll(BEARER.getContent(), ""));
+		HttpHeaders responseHeaders = setHeaderTokens(authToken);
+		return ResponseEntity.ok()
+			.headers(responseHeaders)
+			.body(ApiResponse.ofSuccess());
+	}
+
+	private HttpHeaders setHeaderTokens(AuthToken authToken) {
+		HttpHeaders responseHeaders = new HttpHeaders();
+		responseHeaders.set("Authorization", authToken.getAccessToken());
+		responseHeaders.set("refreshToken", authToken.getRefreshToken());
+		return responseHeaders;
 	}
 }

@@ -49,9 +49,6 @@ public class AuthServiceTest extends ServiceTestSupport {
 	@Autowired
 	private MemberRepository memberRepository;
 
-	@Autowired
-	private PasswordEncryptor passwordEncryptor;
-
 	@SpyBean
 	private StringRedisTemplate redisTemplate;
 
@@ -105,7 +102,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 		void sendCodeWithExistsPhoneNumber() {
 
 			// Given
-			Member member = createMember("01012341234");
+			Member member = createMember("01012341234", "password");
 			memberRepository.save(member);
 
 			String phoneNumber = member.getPhone();
@@ -244,7 +241,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createEncryptedMember(phone, password));
+			member = memberRepository.save(createMember(phone, password));
 		}
 
 		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 레디스에 리프레시 토큰이 저장된다")
@@ -277,17 +274,6 @@ public class AuthServiceTest extends ServiceTestSupport {
 		}
 	}
 
-	private Member createEncryptedMember(String phone, String password) {
-		return Member.builder()
-			.name("name")
-			.nickname("nickname")
-			.phone(phone)
-			.password(passwordEncryptor.encryptPassword(password))
-			.gender(Gender.FEMALE)
-			.profileImageUrl("url")
-			.build();
-	}
-
 	private LoginServiceRequest createLoginServiceRequest(String phone, String password) {
 		return LoginServiceRequest.builder()
 			.phone(phone)
@@ -306,13 +292,13 @@ public class AuthServiceTest extends ServiceTestSupport {
 		return new PhoneAuthCodeServiceRequest(phone, code);
 	}
 
-	private Member createMember(String phone) {
+	private Member createMember(String phone, String password) {
 
 		return Member.builder()
 			.name("name")
 			.nickname("nickname")
 			.phone(phone)
-			.password("password")
+			.password(password)
 			.gender(Gender.FEMALE)
 			.profileImageUrl("url")
 			.build();

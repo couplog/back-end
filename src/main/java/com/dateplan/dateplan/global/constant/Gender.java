@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.global.constant;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public enum Gender {
 
 	MALE("남"),
@@ -13,5 +15,14 @@ public enum Gender {
 
 	public String getGender() {
 		return gender;
+	}
+
+	@JsonCreator
+	public static Gender from(String genderStr) {
+		try {
+			return Gender.valueOf(genderStr.toUpperCase());
+		} catch (NullPointerException | IllegalArgumentException e) {
+			return null;
+		}
 	}
 }

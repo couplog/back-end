@@ -275,8 +275,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			String phone2 = "01012345679";
 			String phone3 = "01012345670";
 
-			Member member2 = memberRepository.save(createEncryptedMember(phone2, password));
-			Member member3 = memberRepository.save(createEncryptedMember(phone3, password));
+			Member member2 = memberRepository.save(createMember(phone2, password));
+			Member member3 = memberRepository.save(createMember(phone3, password));
 
 			LoginServiceRequest connectedRequest = createLoginServiceRequest(phone2, password);
 			LoginServiceRequest disconnectedRequest = createLoginServiceRequest(phone3, password);

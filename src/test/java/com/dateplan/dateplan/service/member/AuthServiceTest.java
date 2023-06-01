@@ -31,7 +31,6 @@ import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
-import org.jasypt.util.password.PasswordEncryptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

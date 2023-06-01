@@ -4,8 +4,10 @@ import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import com.dateplan.dateplan.global.exception.ApplicationException;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -103,5 +105,13 @@ public class GlobalExceptionHandler {
 		ApiResponse<Void> response = ApiResponse.ofFail(errorCode, message);
 
 		return ResponseEntity.status(e.getErrorCode().getHttpStatusCode()).body(response);
+	}
+
+	@ExceptionHandler(DateTimeParseException.class)
+	public ResponseEntity<ApiResponse<Void>> handleDateTimeParseException(DateTimeParseException e) {
+
+		ApiResponse<Void> response = ApiResponse.ofFail(ErrorCode.INVALID_INPUT_VALUE, DetailMessage.INVALID_DATE_PATTERN);
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 	}
 }

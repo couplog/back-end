@@ -134,8 +134,7 @@ public class AuthService {
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {
-		System.out.println(request.getPassword());
-		System.out.println(member.getPassword());
+
 		return !passwordEncryptor.checkPassword(request.getPassword(), member.getPassword());
 	}
 

@@ -13,8 +13,10 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
+import com.dateplan.dateplan.domain.couple.entity.Couple;
+import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -28,6 +30,7 @@ import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
+import java.time.LocalDate;
 import org.jasypt.util.password.PasswordEncryptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +54,9 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 	@SpyBean
 	private StringRedisTemplate redisTemplate;
+
+	@Autowired
+	private CoupleRepository coupleRepository;
 
 	@Nested
 	@DisplayName("코드 전송시")
@@ -236,6 +242,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 		@AfterEach
 		void tearDown() {
 			redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
 		}
 
@@ -251,12 +258,44 @@ public class AuthServiceTest extends ServiceTestSupport {
 			LoginServiceRequest loginServiceRequest = createLoginServiceRequest(phone, password);
 
 			// When
-			AuthToken authToken = authService.login(loginServiceRequest);
+			LoginServiceResponse response = authService.login(loginServiceRequest);
 			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 			String savedToken = stringValueOperations.get(String.valueOf(member.getId()));
 
 			// Then
-			assertThat(savedToken).isEqualTo(authToken.getRefreshTokenWithoutPrefix());
+			assertThat(savedToken).isEqualTo(
+				response.getAuthToken().getRefreshTokenWithoutPrefix());
+		}
+
+		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 커플 연결 여부를 반환한다")
+		@Test
+		void loginWithValidRequestAndConnected() {
+			// Given
+
+			String phone2 = "01012345679";
+			String phone3 = "01012345670";
+
+			Member member2 = memberRepository.save(createEncryptedMember(phone2, password));
+			Member member3 = memberRepository.save(createEncryptedMember(phone3, password));
+
+			LoginServiceRequest connectedRequest = createLoginServiceRequest(phone2, password);
+			LoginServiceRequest disconnectedRequest = createLoginServiceRequest(phone3, password);
+
+			Couple couple = Couple.builder()
+				.member1(member)
+				.member2(member2)
+				.firstDate(LocalDate.now().minusDays(1L))
+				.build();
+			coupleRepository.save(couple);
+
+			// When
+			LoginServiceResponse connectedResponse = authService.login(connectedRequest);
+			LoginServiceResponse disconnectedResponse = authService.login(disconnectedRequest);
+
+			// Then
+			assertThat(connectedResponse.getIsConnected()).isTrue();
+			assertThat(disconnectedResponse.getIsConnected()).isFalse();
+
 		}
 
 		@DisplayName("올바르지 않은 패스워드를 입력하면 예외를 반환한다")

@@ -44,7 +44,7 @@ public class AuthService {
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
-		//smsSendClient.sendSmsForPhoneAuthentication(phone, code);
+		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
 	}
@@ -134,6 +134,8 @@ public class AuthService {
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {
+		System.out.println(request.getPassword());
+		System.out.println(member.getPassword());
 		return !passwordEncryptor.checkPassword(request.getPassword(), member.getPassword());
 	}
 

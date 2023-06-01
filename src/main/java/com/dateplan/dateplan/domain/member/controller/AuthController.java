@@ -4,6 +4,8 @@ import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
+import com.dateplan.dateplan.domain.member.dto.LoginResponse;
+import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
@@ -41,12 +43,12 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponse<Void>> login(@RequestBody @Valid LoginRequest loginRequest) {
-		AuthToken authToken = authService.login(loginRequest.toServiceRequest());
-		HttpHeaders responseHeaders = setHeaderTokens(authToken);
+	public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest loginRequest) {
+		LoginServiceResponse response = authService.login(loginRequest.toServiceRequest());
+		HttpHeaders responseHeaders = setHeaderTokens(response.getAuthToken());
 		return ResponseEntity.ok()
 			.headers(responseHeaders)
-			.body(ApiResponse.ofSuccess());
+			.body(ApiResponse.ofSuccess(response.toLoginResponse()));
 	}
 
 	@PostMapping("/refresh")

@@ -2,8 +2,6 @@ package com.dateplan.dateplan.domain.member.service;
 
 import static com.dateplan.dateplan.global.constant.Auth.ACCESS_TOKEN_EXPIRATION;
 import static com.dateplan.dateplan.global.constant.Auth.BEARER;
-import static com.dateplan.dateplan.global.constant.Auth.HEADER_AUTHORIZATION;
-import static com.dateplan.dateplan.global.constant.Auth.HEADER_REFRESH_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATION;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
@@ -19,7 +17,6 @@ import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
-import jakarta.servlet.http.HttpServletResponse;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -109,7 +106,7 @@ public class AuthService {
 		return AUTH_KEY_PREFIX + phone;
 	}
 
-	public void login(LoginServiceRequest request, HttpServletResponse response) {
+	public AuthToken login(LoginServiceRequest request) {
 		Member member = memberReadService.findMemberByPhoneOrElseThrow(request.getPhone());
 
 		if (mismatchPassword(request, member)) {
@@ -125,23 +122,22 @@ public class AuthService {
 			REFRESH_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_REFRESH_TOKEN.getContent());
 
-		response.setHeader(HEADER_AUTHORIZATION.getContent(), accessToken);
-		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), refreshToken);
-
 		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 		String key = String.valueOf(member.getId());
 
-		stringValueOperations.set(key, refreshToken);
+		stringValueOperations.set(key, refreshToken.replaceAll(BEARER.getContent(), ""));
+
+		return AuthToken.builder()
+			.accessToken(accessToken)
+			.refreshToken(refreshToken)
+			.build();
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {
 		return !passwordEncryptor.checkPassword(request.getPassword(), member.getPassword());
 	}
 
-	public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
-		AuthToken authToken = jwtProvider.generateTokenByRefreshToken(refreshToken);
-
-		response.setHeader(HEADER_AUTHORIZATION.getContent(), authToken.getAccessToken());
-		response.setHeader(HEADER_REFRESH_TOKEN.getContent(), authToken.getRefreshToken());
+	public AuthToken refreshAccessToken(String refreshToken) {
+		return jwtProvider.generateTokenByRefreshToken(refreshToken);
 	}
 }

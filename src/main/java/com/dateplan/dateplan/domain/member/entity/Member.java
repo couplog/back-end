@@ -1,7 +1,9 @@
 package com.dateplan.dateplan.domain.member.entity;
 
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.converter.PasswordConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,10 +48,11 @@ public class Member {
 	@Column(name = "gender", columnDefinition = "VARCHAR(10)")
 	private Gender gender;
 
-	@NotNull
+	//@NotNull
 	@Column(name = "profile_image_url", columnDefinition = "VARCHAR(200)")
 	private String profileImageUrl;
 
+	@Convert(converter = PasswordConverter.class)
 	@NotNull
 	@Column(name = "password", columnDefinition = "VARCHAR(100)")
 	private String password;

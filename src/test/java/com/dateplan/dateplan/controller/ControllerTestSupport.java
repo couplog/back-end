@@ -2,6 +2,7 @@ package com.dateplan.dateplan.controller;
 
 import com.dateplan.dateplan.domain.member.controller.AuthController;
 import com.dateplan.dateplan.domain.member.service.AuthService;
+import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +24,9 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected AuthService authService;
+
+	@MockBean
+	protected MemberService memberService;
 
 	@MockBean
 	protected SmsSendClient smsSendClient;

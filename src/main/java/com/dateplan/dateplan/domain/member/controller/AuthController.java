@@ -6,16 +6,20 @@ import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
+import com.dateplan.dateplan.domain.member.dto.SignUpRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
+import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
 	private final AuthService authService;
+	private final MemberService memberService;
 
 	@PostMapping("/phone")
 	public ApiResponse<Void> sendCode(@RequestBody @Valid PhoneRequest request) {
@@ -37,6 +42,15 @@ public class AuthController {
 	public ApiResponse<Void> authenticateCode(@RequestBody @Valid PhoneAuthCodeRequest request) {
 
 		authService.authenticateAuthCode(request.toServiceRequest());
+		return ApiResponse.ofSuccess();
+	}
+
+	@PostMapping("/signup")
+	@ResponseStatus(HttpStatus.CREATED)
+	public ApiResponse<Void> signup(@RequestBody @Valid SignUpRequest request) {
+
+		memberService.signUp(request.toServiceRequest());
+
 		return ApiResponse.ofSuccess();
 	}
 

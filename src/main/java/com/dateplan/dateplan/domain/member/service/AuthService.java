@@ -16,6 +16,7 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
+import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,7 +47,7 @@ public class AuthService {
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
-		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
+		//smsSendClient.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
 	}
@@ -63,6 +64,24 @@ public class AuthService {
 
 		opsForList.rightPop(key);
 		opsForList.rightPush(key, Boolean.TRUE.toString());
+	}
+
+	public void throwIfPhoneNotAuthenticated(String phone) {
+
+		ListOperations<String, String> opsForList = redisTemplate.opsForList();
+		String key = getAuthKey(phone);
+		String status = opsForList.index(key, 1);
+
+		if (!Boolean.parseBoolean(status)) {
+			throw new PhoneNotAuthenticatedException();
+		}
+	}
+
+	public void deleteAuthenticationInfoInRedis(String phone) {
+
+		String key = getAuthKey(phone);
+
+		redisTemplate.delete(key);
 	}
 
 	private void saveAuthCodeInRedis(String phone, int code) {
@@ -85,7 +104,7 @@ public class AuthService {
 		}
 	}
 
-	private String getAuthKey(String phone){
+	private String getAuthKey(String phone) {
 
 		return AUTH_KEY_PREFIX + phone;
 	}

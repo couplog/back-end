@@ -266,19 +266,17 @@ public class AuthServiceTest extends ServiceTestSupport {
 				response.getAuthToken().getRefreshTokenWithoutPrefix());
 		}
 
-		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 커플 연결 여부를 반환한다")
+		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 커플 연결 여부를 반환한다, 연결이 되었을 때")
 		@Test
 		void loginWithValidRequestAndConnected() {
-			// Given
 
+			// Given
 			String phone2 = "01012345679";
-			String phone3 = "01012345670";
 
 			Member member2 = memberRepository.save(createMember(phone2, password));
-			Member member3 = memberRepository.save(createMember(phone3, password));
 
-			LoginServiceRequest connectedRequest = createLoginServiceRequest(phone2, password);
-			LoginServiceRequest disconnectedRequest = createLoginServiceRequest(phone3, password);
+			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
+			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
 
 			Couple couple = Couple.builder()
 				.member1(member)
@@ -288,12 +286,34 @@ public class AuthServiceTest extends ServiceTestSupport {
 			coupleRepository.save(couple);
 
 			// When
-			LoginServiceResponse connectedResponse = authService.login(connectedRequest);
-			LoginServiceResponse disconnectedResponse = authService.login(disconnectedRequest);
+			LoginServiceResponse member1Response = authService.login(member1Request);
+			LoginServiceResponse member2Response = authService.login(member2Request);
 
 			// Then
-			assertThat(connectedResponse.getIsConnected()).isTrue();
-			assertThat(disconnectedResponse.getIsConnected()).isFalse();
+			assertThat(member1Response.getIsConnected()).isTrue();
+			assertThat(member2Response.getIsConnected()).isTrue();
+
+		}
+
+		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 커플 연결 여부를 반환한다, 연결이 되지 않았을 때")
+		@Test
+		void loginWithValidRequestAndDisconnected() {
+
+			// Given
+			String phone2 = "01012345679";
+
+			memberRepository.save(createMember(phone2, password));
+
+			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
+			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
+
+			// When
+			LoginServiceResponse member1Response = authService.login(member1Request);
+			LoginServiceResponse member2Response = authService.login(member2Request);
+
+			// Then
+			assertThat(member1Response.getIsConnected()).isFalse();
+			assertThat(member2Response.getIsConnected()).isFalse();
 
 		}
 

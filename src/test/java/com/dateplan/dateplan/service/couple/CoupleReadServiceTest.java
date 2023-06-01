@@ -38,7 +38,6 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 		String phone1 = "01012345678";
 		String phone2 = "01012345679";
-		String phone3 = "01012345670";
 
 		@AfterEach
 		void tearDown() {
@@ -50,20 +49,17 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 		void setUp() {
 			Member member1 = createMember(phone1, "password");
 			Member member2 = createMember(phone2, "password");
-			Member member3 = createMember(phone3, "password");
 			memberRepository.save(member1);
 			memberRepository.save(member2);
-			memberRepository.save(member3);
 		}
 
-		@DisplayName("커플 여부를 확인한다")
+		@DisplayName("커플 연결되었을 때 커플 여부를 확인한다")
 		@Test
-		void checkWhetherCoupleOrNot() {
+		void checkCoupleConnected() {
 
 			// Given
 			Member member1 = memberReadService.findMemberByPhoneOrElseThrow(phone1);
 			Member member2 = memberReadService.findMemberByPhoneOrElseThrow(phone2);
-			Member member3 = memberReadService.findMemberByPhoneOrElseThrow(phone3);
 
 			// When
 			Couple couple = Couple.builder()
@@ -76,7 +72,19 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			// Then
 			assertThat(coupleReadService.isMemberConnected(member1)).isTrue();
 			assertThat(coupleReadService.isMemberConnected(member2)).isTrue();
-			assertThat(coupleReadService.isMemberConnected(member3)).isFalse();
+		}
+
+		@DisplayName("커플 연결 되지 않았을 때 커플 여부를 확인한다")
+		@Test
+		void checkCoupleDisconnected() {
+
+			// Given
+			Member member1 = memberReadService.findMemberByPhoneOrElseThrow(phone1);
+			Member member2 = memberReadService.findMemberByPhoneOrElseThrow(phone2);
+
+			// When & Then
+			assertThat(coupleReadService.isMemberConnected(member1)).isFalse();
+			assertThat(coupleReadService.isMemberConnected(member2)).isFalse();
 		}
 	}
 

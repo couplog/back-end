@@ -6,7 +6,9 @@ import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATIO
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
+import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
@@ -37,6 +39,7 @@ public class AuthService {
 	private final StringRedisTemplate redisTemplate;
 	private final PasswordEncryptor passwordEncryptor;
 	private final JwtProvider jwtProvider;
+	private final CoupleReadService coupleReadService;
 
 	public void sendSms(PhoneServiceRequest request) {
 
@@ -106,13 +109,23 @@ public class AuthService {
 		return AUTH_KEY_PREFIX + phone;
 	}
 
-	public AuthToken login(LoginServiceRequest request) {
+	public LoginServiceResponse login(LoginServiceRequest request) {
 		Member member = memberReadService.findMemberByPhoneOrElseThrow(request.getPhone());
 
 		if (mismatchPassword(request, member)) {
 			throw new PasswordMismatchException();
 		}
 
+		AuthToken authToken = createAuthToken(member);
+		saveRefreshTokenInRedis(member, authToken.getRefreshTokenWithoutPrefix());
+		boolean isConnected = coupleReadService.isMemberConnected(member);
+		return LoginServiceResponse.builder()
+			.authToken(authToken)
+			.isConnected(isConnected)
+			.build();
+	}
+
+	private AuthToken createAuthToken(Member member) {
 		String accessToken = BEARER.getContent() + jwtProvider.generateToken(
 			member.getId(),
 			ACCESS_TOKEN_EXPIRATION.getExpiration(),
@@ -121,16 +134,17 @@ public class AuthService {
 			member.getId(),
 			REFRESH_TOKEN_EXPIRATION.getExpiration(),
 			SUBJECT_REFRESH_TOKEN.getContent());
-
-		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
-		String key = String.valueOf(member.getId());
-
-		stringValueOperations.set(key, refreshToken.replaceAll(BEARER.getContent(), ""));
-
 		return AuthToken.builder()
 			.accessToken(accessToken)
 			.refreshToken(refreshToken)
 			.build();
+	}
+
+	private void saveRefreshTokenInRedis(Member member, String refreshToken) {
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+		String key = String.valueOf(member.getId());
+
+		stringValueOperations.set(key, refreshToken);
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {

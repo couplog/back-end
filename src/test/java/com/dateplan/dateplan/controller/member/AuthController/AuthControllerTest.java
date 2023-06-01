@@ -20,6 +20,7 @@ import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import com.dateplan.dateplan.domain.member.dto.LoginRequest;
 import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
@@ -243,24 +244,30 @@ class AuthControllerTest extends ControllerTestSupport {
 
 		private static final String REQUEST_URL = "/api/auth/login";
 
-		@DisplayName("올바른 전화번호와 패스워드를 입력하면 성공한다.")
+		@DisplayName("올바른 전화번호와 패스워드를 입력하면 성공하고, 연결 여부를 리턴한다.")
 		@Test
 		void loginWithValidInput() throws Exception {
 
 			// Given
 			String phone = "01057840360";
 			String password = "abcd1234";
+			Boolean isConnected = true;
 
 			LoginRequest request = createLoginRequest(phone, password);
 			AuthToken authToken = createAuthToken();
+			LoginServiceResponse response = LoginServiceResponse.builder()
+				.authToken(authToken)
+				.isConnected(isConnected)
+				.build();
 
-			willReturn(authToken).given(authService).login(any(LoginServiceRequest.class));
+			willReturn(response).given(authService).login(any(LoginServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL).content(om.writeValueAsString(request))
 					.contentType(MediaType.APPLICATION_JSON).characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(jsonPath("$.data.isConnected").value(isConnected))
 				.andExpect(header().string("Authorization", authToken.getAccessToken()))
 				.andExpect(header().string("refreshToken", authToken.getRefreshToken()));
 		}
@@ -273,11 +280,16 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// Given
 			String password = "abcd1234";
+			Boolean isConnected = true;
 
 			LoginRequest request = createLoginRequest(phone, password);
 			AuthToken authToken = createAuthToken();
+			LoginServiceResponse response = LoginServiceResponse.builder()
+				.authToken(authToken)
+				.isConnected(isConnected)
+				.build();
 
-			willReturn(authToken).given(authService).login(any(LoginServiceRequest.class));
+			willReturn(response).given(authService).login(any(LoginServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL).content(om.writeValueAsString(request))

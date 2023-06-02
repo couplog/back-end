@@ -1,8 +1,10 @@
 package com.dateplan.dateplan.service.member;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.NOT_AUTHENTICATED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.PASSWORD_MISMATCH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,11 +28,14 @@ import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
+import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -114,9 +119,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
 
 			// When & Then
-			assertThatThrownBy(() -> authService.sendSms(request))
-				.isInstanceOf(AlReadyRegisteredPhoneException.class)
-				.hasMessage(ALREADY_REGISTERED_PHONE);
+			assertThatThrownBy(() -> authService.sendSms(request)).isInstanceOf(
+				AlReadyRegisteredPhoneException.class).hasMessage(ALREADY_REGISTERED_PHONE);
 
 			then(smsSendClient).shouldHaveNoInteractions();
 
@@ -139,9 +143,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 				.sendSmsForPhoneAuthentication(anyString(), anyInt());
 
 			// When & Then
-			assertThatThrownBy(() -> authService.sendSms(request))
-				.isInstanceOf(SmsSendFailException.class)
-				.hasMessage(smsSendFailException.getMessage());
+			assertThatThrownBy(() -> authService.sendSms(request)).isInstanceOf(
+				SmsSendFailException.class).hasMessage(smsSendFailException.getMessage());
 
 			then(redisTemplate).shouldHaveNoInteractions();
 		}
@@ -201,9 +204,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 				invalidAuthCode);
 
 			//When & Then
-			assertThatThrownBy(() -> authService.authenticateAuthCode(request))
-				.isInstanceOf(InvalidPhoneAuthCodeException.class)
-				.hasMessage(expectedException.getMessage());
+			assertThatThrownBy(() -> authService.authenticateAuthCode(request)).isInstanceOf(
+				InvalidPhoneAuthCodeException.class).hasMessage(expectedException.getMessage());
 
 			ListOperations<String, String> opsForList = redisTemplate.opsForList();
 			String authStatus = opsForList.index(savedAuthKey, 1);
@@ -224,9 +226,103 @@ public class AuthServiceTest extends ServiceTestSupport {
 				null);
 
 			//When & Then
-			assertThatThrownBy(() -> authService.authenticateAuthCode(request))
-				.isInstanceOf(InvalidPhoneAuthCodeException.class)
-				.hasMessage(expectedException.getMessage());
+			assertThatThrownBy(() -> authService.authenticateAuthCode(request)).isInstanceOf(
+				InvalidPhoneAuthCodeException.class).hasMessage(expectedException.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("전화번호 인증 여부 확인시")
+	class ThrowIfPhoneNotAuthenticated {
+
+		@AfterEach
+		void tearDown() {
+			redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+		}
+
+		@DisplayName("요청한 전화번호가 인증 성공 상태라면 예외를 발생시키지 않는다.")
+		@Test
+		void withAuthenticatedPhone() {
+
+			// Given
+			String authenticatedPhoneNumber = "01012341234";
+			String authKey = "[AUTH]" + authenticatedPhoneNumber;
+			String authCode = "123456";
+
+			ListOperations<String, String> opsForList = redisTemplate.opsForList();
+			opsForList.rightPush(authKey, authCode);
+			opsForList.rightPush(authKey, Boolean.TRUE.toString());
+
+			// When & Then
+			assertThatNoException().isThrownBy(
+				() -> authService.throwIfPhoneNotAuthenticated(authenticatedPhoneNumber));
+		}
+
+		@DisplayName("요청한 전화번호의 인증 기록이 없다면 예외를 발생시킨다.")
+		@Test
+		void withNeverAuthenticatedPhone() {
+
+			// Given
+			String neverAuthenticatedPhone = "01012341234";
+
+			// When & Then
+			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(
+				neverAuthenticatedPhone)).isInstanceOf(PhoneNotAuthenticatedException.class)
+				.hasMessage(NOT_AUTHENTICATED_PHONE);
+		}
+
+		@DisplayName("요청한 전화번호의 인증 기록은 있지만, 인증 성공 상태가 아니라면 예외를 발생시킨다.")
+		@Test
+		void withNotAuthenticatedPhone() {
+
+			// Given
+			String notAuthenticatedPhoneNumber = "01012341234";
+			String authKey = "[AUTH]" + notAuthenticatedPhoneNumber;
+			String authCode = "123456";
+
+			ListOperations<String, String> opsForList = redisTemplate.opsForList();
+			opsForList.rightPush(authKey, authCode);
+			opsForList.rightPush(authKey, Boolean.FALSE.toString());
+
+			// When & Then
+			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(
+				notAuthenticatedPhoneNumber)).isInstanceOf(PhoneNotAuthenticatedException.class)
+				.hasMessage(NOT_AUTHENTICATED_PHONE);
+		}
+	}
+
+	@Nested
+	@DisplayName("인증 정보 삭제시")
+	class DeleteAuthenticationInfoInRedis {
+
+		String authenticatedPhoneNumber = "01012341234";
+		String authKey = "[AUTH]" + authenticatedPhoneNumber;
+
+		@BeforeEach
+		void setUp() {
+			String authCode = "123456";
+
+			ListOperations<String, String> opsForList = redisTemplate.opsForList();
+			opsForList.rightPush(authKey, authCode);
+			opsForList.rightPush(authKey, Boolean.TRUE.toString());
+		}
+
+		@AfterEach
+		void tearDown() {
+			redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+		}
+
+		@DisplayName("내부에 인증되어 있는 번호로 요청하면, 주어진 번호의 인증 기록이 삭제된다.")
+		@Test
+		void withAuthenticatedPhone() {
+
+			// When
+			authService.deleteAuthenticationInfoInRedis(authenticatedPhoneNumber);
+
+			// Then
+			ListOperations<String, String> opsForList = redisTemplate.opsForList();
+			Long size = opsForList.size(authKey);
+			assertThat(size).isZero();
 		}
 	}
 
@@ -278,11 +374,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
 
-			Couple couple = Couple.builder()
-				.member1(member)
-				.member2(member2)
-				.firstDate(LocalDate.now().minusDays(1L))
-				.build();
+			Couple couple = Couple.builder().member1(member).member2(member2)
+				.firstDate(LocalDate.now().minusDays(1L)).build();
 			coupleRepository.save(couple);
 
 			// When
@@ -324,19 +417,15 @@ public class AuthServiceTest extends ServiceTestSupport {
 			LoginServiceRequest loginServiceRequest = createLoginServiceRequest(phone, "invalid");
 
 			// When & Then
-			assertThatThrownBy(() -> authService.login(loginServiceRequest))
-				.isInstanceOf(PasswordMismatchException.class)
-				.hasMessage(PASSWORD_MISMATCH);
+			assertThatThrownBy(() -> authService.login(loginServiceRequest)).isInstanceOf(
+				PasswordMismatchException.class).hasMessage(PASSWORD_MISMATCH);
 
 			then(redisTemplate).shouldHaveNoInteractions();
 		}
 	}
 
 	private LoginServiceRequest createLoginServiceRequest(String phone, String password) {
-		return LoginServiceRequest.builder()
-			.phone(phone)
-			.password(password)
-			.build();
+		return LoginServiceRequest.builder().phone(phone).password(password).build();
 	}
 
 	private PhoneServiceRequest createPhoneServiceRequest(String phone) {
@@ -352,13 +441,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 	private Member createMember(String phone, String password) {
 
-		return Member.builder()
-			.name("name")
-			.nickname("nickname")
-			.phone(phone)
-			.password(password)
-			.gender(Gender.FEMALE)
-			.profileImageUrl("url")
-			.build();
+		return Member.builder().name("name").nickname("nickname").phone(phone).password(password)
+			.gender(Gender.FEMALE).profileImageUrl("url").build();
 	}
 }

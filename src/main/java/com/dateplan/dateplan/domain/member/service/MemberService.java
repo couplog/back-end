@@ -40,7 +40,7 @@ public class MemberService {
 		authService.deleteAuthenticationInfoInRedis(phone);
 	}
 
-	public ConnectionServiceResponse readConnection() {
+	public ConnectionServiceResponse getConnectionCode() {
 		Member member = MemberThreadLocal.get();
 
 		String key = getConnectionKey(member.getId());

@@ -18,7 +18,7 @@ public class MemberController {
 
 	@GetMapping("/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode() {
-		ConnectionServiceResponse connectionServiceResponse = memberService.readConnection();
+		ConnectionServiceResponse connectionServiceResponse = memberService.getConnectionCode();
 		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
 	}
 

@@ -42,14 +42,17 @@ public class MemberService {
 
 	public ConnectionServiceResponse getConnectionCode() {
 		Member member = MemberThreadLocal.get();
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 
 		String key = getConnectionKey(member.getId());
-		String connectionCode = RandomCodeGenerator.generateConnectionCode(6);
+		String connectionCode = stringValueOperations.get(key);
 
-		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+		if (connectionCode == null) {
+			connectionCode = RandomCodeGenerator.generateConnectionCode(6);
+		}
 		stringValueOperations.set(key, connectionCode);
 		stringValueOperations.getAndExpire(key, Duration.ofHours(24L));
-			return ConnectionServiceResponse.builder()
+		return ConnectionServiceResponse.builder()
 			.connectionCode(connectionCode)
 			.build();
 	}

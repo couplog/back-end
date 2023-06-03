@@ -85,8 +85,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		void IfExists() {
 
 			// When & Then
-			Member findMember = memberReadService.findMemberByPhoneOrElseThrow(
-				existsPhoneNumber);
+			Member findMember = memberReadService.findMemberByPhoneOrElseThrow(existsPhoneNumber);
 
 			assertThat(findMember.getPhone()).isEqualTo(existsPhoneNumber);
 		}
@@ -99,8 +98,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			String notExistsPhoneNumber = "01012341234";
 
 			// When & Then
-			assertThatThrownBy(() -> memberReadService.findMemberByPhoneOrElseThrow(
-				notExistsPhoneNumber))
+			assertThatThrownBy(() -> memberReadService.findMemberByPhoneOrElseThrow(notExistsPhoneNumber))
 				.isInstanceOf(MemberNotFoundException.class)
 				.hasMessage(DetailMessage.MEMBER_NOT_FOUND);
 		}

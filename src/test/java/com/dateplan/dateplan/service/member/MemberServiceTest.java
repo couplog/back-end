@@ -62,18 +62,37 @@ public class MemberServiceTest extends ServiceTestSupport {
 			memberService.signUp(request);
 
 			// Then
-			then(memberReadService).should(times(1)).throwIfPhoneExists(phone);
-			then(memberReadService).should(times(1)).throwIfNicknameExists(nickname);
-			then(authService).should(times(1)).throwIfPhoneNotAuthenticated(phone);
-			then(authService).should(times(1)).deleteAuthenticationInfoInRedis(phone);
-			then(memberRepository).should(times(1)).save(any(Member.class));
+			then(memberReadService)
+				.should(times(1))
+				.throwIfPhoneExists(phone);
+			then(memberReadService)
+				.should(times(1))
+				.throwIfNicknameExists(nickname);
+			then(authService)
+				.should(times(1))
+				.throwIfPhoneNotAuthenticated(phone);
+			then(authService)
+				.should(times(1))
+				.deleteAuthenticationInfoInRedis(phone);
+			then(memberRepository)
+				.should(times(1))
+				.save(any(Member.class));
 
 			Member savedMember = memberRepository.findByPhone(phone).orElse(null);
 			assertThat(savedMember).isNotNull();
 			assertThat(savedMember.getId()).isNotNull();
-			assertThat(savedMember).extracting("name", "phone", "nickname", "birth", "gender")
-				.contains(request.getName(), request.getPhone(), request.getNickname(),
-					request.getBirth(), request.getGender());
+			assertThat(savedMember).extracting(
+				"name",
+					"phone",
+					"nickname",
+					"birth",
+					"gender")
+				.contains(
+					request.getName(),
+					request.getPhone(),
+					request.getNickname(),
+					request.getBirth(),
+					request.getGender());
 		}
 
 		@DisplayName("이미 가입된 전화번호일 때, 회원가입에 실패한다.")
@@ -87,7 +106,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			// Stub
 			AlReadyRegisteredPhoneException expectedException = new AlReadyRegisteredPhoneException();
-			willThrow(expectedException).given(memberReadService).throwIfPhoneExists(anyString());
+			willThrow(expectedException)
+				.given(memberReadService)
+				.throwIfPhoneExists(anyString());
 
 			// When
 			assertThatThrownBy(() -> memberService.signUp(request))
@@ -95,11 +116,21 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.hasMessage(ALREADY_REGISTERED_PHONE);
 
 			// Then
-			then(memberReadService).should(times(1)).throwIfPhoneExists(phone);
-			then(memberReadService).should(never()).throwIfNicknameExists(anyString());
-			then(authService).should(never()).throwIfPhoneNotAuthenticated(anyString());
-			then(authService).should(never()).deleteAuthenticationInfoInRedis(anyString());
-			then(memberRepository).should(never()).save(any(Member.class));
+			then(memberReadService)
+				.should(times(1))
+				.throwIfPhoneExists(phone);
+			then(memberReadService)
+				.should(never())
+				.throwIfNicknameExists(anyString());
+			then(authService)
+				.should(never())
+				.throwIfPhoneNotAuthenticated(anyString());
+			then(authService)
+				.should(never())
+				.deleteAuthenticationInfoInRedis(anyString());
+			then(memberRepository)
+				.should(never())
+				.save(any(Member.class));
 		}
 
 		@DisplayName("이미 가입된 닉네임일 때, 회원가입에 실패한다.")
@@ -113,7 +144,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			// Stub
 			AlReadyRegisteredNicknameException expectedException = new AlReadyRegisteredNicknameException();
-			willThrow(expectedException).given(memberReadService).throwIfNicknameExists(anyString());
+			willThrow(expectedException)
+				.given(memberReadService)
+				.throwIfNicknameExists(anyString());
 
 			// When
 			assertThatThrownBy(() -> memberService.signUp(request))
@@ -121,11 +154,21 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.hasMessage(ALREADY_REGISTERED_NICKNAME);
 
 			// Then
-			then(memberReadService).should(times(1)).throwIfPhoneExists(phone);
-			then(memberReadService).should(times(1)).throwIfNicknameExists(nickname);
-			then(authService).should(never()).throwIfPhoneNotAuthenticated(anyString());
-			then(authService).should(never()).deleteAuthenticationInfoInRedis(anyString());
-			then(memberRepository).should(never()).save(any(Member.class));
+			then(memberReadService)
+				.should(times(1))
+				.throwIfPhoneExists(phone);
+			then(memberReadService)
+				.should(times(1))
+				.throwIfNicknameExists(nickname);
+			then(authService)
+				.should(never())
+				.throwIfPhoneNotAuthenticated(anyString());
+			then(authService)
+				.should(never())
+				.deleteAuthenticationInfoInRedis(anyString());
+			then(memberRepository)
+				.should(never())
+				.save(any(Member.class));
 		}
 
 		@DisplayName("전화번호 인증이 되어있지 않을 때, 회원가입에 실패한다.")
@@ -139,7 +182,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			// Stub
 			PhoneNotAuthenticatedException expectedException = new PhoneNotAuthenticatedException();
-			willThrow(expectedException).given(authService).throwIfPhoneNotAuthenticated(anyString());
+			willThrow(expectedException)
+				.given(authService)
+				.throwIfPhoneNotAuthenticated(anyString());
 
 			// When
 			assertThatThrownBy(() -> memberService.signUp(request))
@@ -147,11 +192,21 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.hasMessage(NOT_AUTHENTICATED_PHONE);
 
 			// Then
-			then(memberReadService).should(times(1)).throwIfPhoneExists(phone);
-			then(memberReadService).should(times(1)).throwIfNicknameExists(nickname);
-			then(authService).should(times(1)).throwIfPhoneNotAuthenticated(phone);
-			then(authService).should(never()).deleteAuthenticationInfoInRedis(anyString());
-			then(memberRepository).should(never()).save(any(Member.class));
+			then(memberReadService)
+				.should(times(1))
+				.throwIfPhoneExists(phone);
+			then(memberReadService)
+				.should(times(1))
+				.throwIfNicknameExists(nickname);
+			then(authService)
+				.should(times(1))
+				.throwIfPhoneNotAuthenticated(phone);
+			then(authService)
+				.should(never())
+				.deleteAuthenticationInfoInRedis(anyString());
+			then(memberRepository)
+				.should(never())
+				.save(any(Member.class));
 		}
 	}
 

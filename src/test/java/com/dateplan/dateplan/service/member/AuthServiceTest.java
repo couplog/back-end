@@ -34,8 +34,6 @@ import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
-import java.util.List;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -81,12 +79,14 @@ public class AuthServiceTest extends ServiceTestSupport {
 			int authCode = 123123;
 			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
 
-			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(
-				RandomCodeGenerator.class)) {
-				// Stub
-				given(RandomCodeGenerator.generateCode(6)).willReturn(authCode);
+			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(RandomCodeGenerator.class)) {
 
-				willDoNothing().given(smsSendClient)
+				// Stub
+				given(RandomCodeGenerator.generateCode(6))
+					.willReturn(authCode);
+
+				willDoNothing()
+					.given(smsSendClient)
 					.sendSmsForPhoneAuthentication(anyString(), anyInt());
 
 				// When
@@ -103,7 +103,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			assertThat(savedCode).isEqualTo(String.valueOf(authCode));
 			assertThat(savedStatus).isEqualTo(Boolean.FALSE.toString());
 
-			then(smsSendClient).should(times(1))
+			then(smsSendClient)
+				.should(times(1))
 				.sendSmsForPhoneAuthentication(anyString(), anyInt());
 		}
 
@@ -119,10 +120,12 @@ public class AuthServiceTest extends ServiceTestSupport {
 			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
 
 			// When & Then
-			assertThatThrownBy(() -> authService.sendSms(request)).isInstanceOf(
-				AlReadyRegisteredPhoneException.class).hasMessage(ALREADY_REGISTERED_PHONE);
+			assertThatThrownBy(() -> authService.sendSms(request))
+				.isInstanceOf(AlReadyRegisteredPhoneException.class)
+				.hasMessage(ALREADY_REGISTERED_PHONE);
 
-			then(smsSendClient).shouldHaveNoInteractions();
+			then(smsSendClient)
+				.shouldHaveNoInteractions();
 
 			// teardown
 			memberRepository.deleteAllInBatch();
@@ -139,14 +142,17 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// Stub
 			SmsSendFailException smsSendFailException = new SmsSendFailException(
 				SmsType.PHONE_AUTHENTICATION);
-			willThrow(smsSendFailException).given(smsSendClient)
+			willThrow(smsSendFailException)
+				.given(smsSendClient)
 				.sendSmsForPhoneAuthentication(anyString(), anyInt());
 
 			// When & Then
-			assertThatThrownBy(() -> authService.sendSms(request)).isInstanceOf(
-				SmsSendFailException.class).hasMessage(smsSendFailException.getMessage());
+			assertThatThrownBy(() -> authService.sendSms(request))
+				.isInstanceOf(SmsSendFailException.class)
+				.hasMessage(smsSendFailException.getMessage());
 
-			then(redisTemplate).shouldHaveNoInteractions();
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
 		}
 	}
 
@@ -179,8 +185,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 		void authenticateAuthCode() {
 
 			//Given
-			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(
-				savedPhoneNumber, savedAuthCode);
+			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(savedPhoneNumber, savedAuthCode);
 
 			//When
 			authService.authenticateAuthCode(request);
@@ -198,14 +203,15 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 			//Given
 			String invalidAuthCode = "000000";
-			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(
-				savedPhoneNumber, invalidAuthCode);
-			InvalidPhoneAuthCodeException expectedException = new InvalidPhoneAuthCodeException(
-				invalidAuthCode);
+			PhoneAuthCodeServiceRequest request =
+				createPhoneAuthCodeServiceRequest(savedPhoneNumber, invalidAuthCode);
+			InvalidPhoneAuthCodeException expectedException =
+				new InvalidPhoneAuthCodeException(invalidAuthCode);
 
 			//When & Then
-			assertThatThrownBy(() -> authService.authenticateAuthCode(request)).isInstanceOf(
-				InvalidPhoneAuthCodeException.class).hasMessage(expectedException.getMessage());
+			assertThatThrownBy(() -> authService.authenticateAuthCode(request))
+				.isInstanceOf(InvalidPhoneAuthCodeException.class)
+				.hasMessage(expectedException.getMessage());
 
 			ListOperations<String, String> opsForList = redisTemplate.opsForList();
 			String authStatus = opsForList.index(savedAuthKey, 1);
@@ -220,14 +226,15 @@ public class AuthServiceTest extends ServiceTestSupport {
 			//Given
 			String neverSendSmsPhoneNumber = "01011112222";
 			String authCode = "123456";
-			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(
-				neverSendSmsPhoneNumber, authCode);
-			InvalidPhoneAuthCodeException expectedException = new InvalidPhoneAuthCodeException(
-				null);
+			PhoneAuthCodeServiceRequest request =
+				createPhoneAuthCodeServiceRequest(neverSendSmsPhoneNumber, authCode);
+			InvalidPhoneAuthCodeException expectedException =
+				new InvalidPhoneAuthCodeException(null);
 
 			//When & Then
-			assertThatThrownBy(() -> authService.authenticateAuthCode(request)).isInstanceOf(
-				InvalidPhoneAuthCodeException.class).hasMessage(expectedException.getMessage());
+			assertThatThrownBy(() -> authService.authenticateAuthCode(request))
+				.isInstanceOf(InvalidPhoneAuthCodeException.class)
+				.hasMessage(expectedException.getMessage());
 		}
 	}
 
@@ -254,8 +261,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			opsForList.rightPush(authKey, Boolean.TRUE.toString());
 
 			// When & Then
-			assertThatNoException().isThrownBy(
-				() -> authService.throwIfPhoneNotAuthenticated(authenticatedPhoneNumber));
+			assertThatNoException()
+				.isThrownBy(() -> authService.throwIfPhoneNotAuthenticated(authenticatedPhoneNumber));
 		}
 
 		@DisplayName("요청한 전화번호의 인증 기록이 없다면 예외를 발생시킨다.")
@@ -266,8 +273,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			String neverAuthenticatedPhone = "01012341234";
 
 			// When & Then
-			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(
-				neverAuthenticatedPhone)).isInstanceOf(PhoneNotAuthenticatedException.class)
+			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(neverAuthenticatedPhone))
+				.isInstanceOf(PhoneNotAuthenticatedException.class)
 				.hasMessage(NOT_AUTHENTICATED_PHONE);
 		}
 
@@ -285,8 +292,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			opsForList.rightPush(authKey, Boolean.FALSE.toString());
 
 			// When & Then
-			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(
-				notAuthenticatedPhoneNumber)).isInstanceOf(PhoneNotAuthenticatedException.class)
+			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(notAuthenticatedPhoneNumber))
+				.isInstanceOf(PhoneNotAuthenticatedException.class)
 				.hasMessage(NOT_AUTHENTICATED_PHONE);
 		}
 	}
@@ -358,8 +365,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			String savedToken = stringValueOperations.get(String.valueOf(member.getId()));
 
 			// Then
-			assertThat(savedToken).isEqualTo(
-				response.getAuthToken().getRefreshTokenWithoutPrefix());
+			assertThat(savedToken)
+				.isEqualTo(response.getAuthToken().getRefreshTokenWithoutPrefix());
 		}
 
 		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 커플 연결 여부를 반환한다, 연결이 되었을 때")
@@ -374,8 +381,11 @@ public class AuthServiceTest extends ServiceTestSupport {
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
 
-			Couple couple = Couple.builder().member1(member).member2(member2)
-				.firstDate(LocalDate.now().minusDays(1L)).build();
+			Couple couple = Couple.builder()
+				.member1(member)
+				.member2(member2)
+				.firstDate(LocalDate.now().minusDays(1L))
+				.build();
 			coupleRepository.save(couple);
 
 			// When
@@ -417,15 +427,20 @@ public class AuthServiceTest extends ServiceTestSupport {
 			LoginServiceRequest loginServiceRequest = createLoginServiceRequest(phone, "invalid");
 
 			// When & Then
-			assertThatThrownBy(() -> authService.login(loginServiceRequest)).isInstanceOf(
-				PasswordMismatchException.class).hasMessage(PASSWORD_MISMATCH);
+			assertThatThrownBy(() -> authService.login(loginServiceRequest))
+				.isInstanceOf(PasswordMismatchException.class)
+				.hasMessage(PASSWORD_MISMATCH);
 
-			then(redisTemplate).shouldHaveNoInteractions();
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
 		}
 	}
 
 	private LoginServiceRequest createLoginServiceRequest(String phone, String password) {
-		return LoginServiceRequest.builder().phone(phone).password(password).build();
+		return LoginServiceRequest.builder()
+			.phone(phone)
+			.password(password)
+			.build();
 	}
 
 	private PhoneServiceRequest createPhoneServiceRequest(String phone) {
@@ -441,7 +456,13 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 	private Member createMember(String phone, String password) {
 
-		return Member.builder().name("name").nickname("nickname").phone(phone).password(password)
-			.gender(Gender.FEMALE).profileImageUrl("url").build();
+		return Member.builder()
+			.name("name")
+			.nickname("nickname")
+			.phone(phone)
+			.password(password)
+			.gender(Gender.FEMALE)
+			.profileImageUrl("url")
+			.build();
 	}
 }

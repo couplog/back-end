@@ -126,7 +126,7 @@ public class JwtProviderTest extends ServiceTestSupport {
 				SUBJECT_REFRESH_TOKEN.getContent());
 
 			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
-			stringValueOperations.set(String.valueOf(member.getId()), savedRefreshToken);
+			stringValueOperations.set("[REFRESH]" + member.getId(), savedRefreshToken);
 		}
 
 		@AfterEach

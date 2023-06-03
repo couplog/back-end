@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
+	private static final String REFRESH_KEY_PREFIX = "[REFRESH]";
 	private static final String AUTH_KEY_PREFIX = "[AUTH]";
 
 	private final MemberReadService memberReadService;
@@ -142,9 +143,13 @@ public class AuthService {
 
 	private void saveRefreshTokenInRedis(Member member, String refreshToken) {
 		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
-		String key = String.valueOf(member.getId());
+		String key = getRefreshKey(member.getId());
 
 		stringValueOperations.set(key, refreshToken);
+	}
+
+	private String getRefreshKey(Long id) {
+		return REFRESH_KEY_PREFIX + id;
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {

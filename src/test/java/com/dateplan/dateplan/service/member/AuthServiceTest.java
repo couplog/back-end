@@ -259,7 +259,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// When
 			LoginServiceResponse response = authService.login(loginServiceRequest);
 			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
-			String savedToken = stringValueOperations.get(String.valueOf(member.getId()));
+			String savedToken = stringValueOperations.get("[REFRESH]" + member.getId());
 
 			// Then
 			assertThat(savedToken).isEqualTo(

@@ -79,15 +79,12 @@ public class MemberService {
 
 	public void connectCouple(ConnectionServiceRequest request) {
 		final Member member = MemberThreadLocal.get();
-		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 		String connectionCode = request.getConnectionCode();
-		String oppositeMemberId = stringValueOperations.get(connectionCode);
+		Long oppositeMemberId = getIdOrThrowIfConnectionCodeInvalid(connectionCode);
 
-		throwIfInvalidConnectionCode(oppositeMemberId);
-		Member oppositeMember = memberReadService.findMemberByIdOrElseThrow(
-			Long.valueOf(oppositeMemberId));
+		Member oppositeMember = memberReadService.findMemberByIdOrElseThrow(oppositeMemberId);
 		throwIfAlreadyConnected(oppositeMember);
-		throwIfSelfConnection(Long.valueOf(oppositeMemberId), member.getId());
+		throwIfSelfConnection(oppositeMemberId, member.getId());
 
 		Couple couple = Couple.builder()
 			.member1(member)
@@ -103,10 +100,13 @@ public class MemberService {
 		}
 	}
 
-	private void throwIfInvalidConnectionCode(String oppositeMemberId) {
-		if (oppositeMemberId == null) {
+	private Long getIdOrThrowIfConnectionCodeInvalid(String connectionCode) {
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+		String id = stringValueOperations.get(connectionCode);
+		if (id == null) {
 			throw new InvalidConnectionCodeException();
 		}
+		return Long.valueOf(id);
 	}
 
 	private void throwIfSelfConnection(Long valueOf, Long id) {

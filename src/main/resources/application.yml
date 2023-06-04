@@ -8,20 +8,24 @@ spring:
         - logging-local
         - web
         - sms
+        - cloud
       dev:
         - db-dev
         - logging-dev
         - web
         - sms
+        - cloud
       test:
         - db-test
         - web
         - sms
+        - cloud
     include:
       - db
       - logging
       - web
       - sms
+      - cloud
 
 jwt:
   secret: ENC(zRA35QWRUW63BIC/4hk6PzpSloySv3iGNAeDyvmNR+GoIB5HqlpvdtQA1EJPCpb43dmZC1XFUTVnWbfJA6WuqQ==)

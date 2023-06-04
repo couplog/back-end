@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.S3Exception;
+import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import java.net.URL;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +34,24 @@ public class S3Client {
 
 		GeneratePresignedUrlRequest request = getGeneratePresignedUrlRequest(fullPath);
 
-		try{
+		try {
 			return amazonS3.generatePresignedUrl(request);
-		}catch (SdkClientException e) {
+		} catch (SdkClientException e) {
 
 			throw new S3Exception(DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL, e);
 		}
+	}
+
+	public void throwIfImageNotFound(S3ImageType type, String fileName) {
+
+		if (!amazonS3.doesObjectExist(bucket, type.getFullPath(fileName))) {
+			throw new S3ImageNotFoundException();
+		}
+	}
+
+	public URL getObjectUrl(S3ImageType type, String fileName){
+
+		return amazonS3.getUrl(bucket, type.getFullPath(fileName));
 	}
 
 	private GeneratePresignedUrlRequest getGeneratePresignedUrlRequest(String fullPath) {

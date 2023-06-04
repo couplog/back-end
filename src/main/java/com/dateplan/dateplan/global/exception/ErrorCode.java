@@ -29,6 +29,9 @@ public enum ErrorCode {
 	INVALID_PHONE_AUTH_CODE(CONFLICT, "C013"),
 	ALREADY_REGISTERED_NICKNAME(CONFLICT, "C014"),
 	NOT_AUTHENTICATED_PHONE(CONFLICT, "C015"),
+	INVALID_CONNECTION_CODE(BAD_REQUEST, "C016"),
+	ALREADY_CONNECTED(CONFLICT, "C017"),
+	SELF_CONNECTION_NOT_ALLOWED(BAD_REQUEST, "C018"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -73,6 +76,11 @@ public enum ErrorCode {
 		public static final String INVALID_PASSWORD_PATTERN = "비밀번호는 5-20 자의 영문, 숫자로 입력해 주세요.";
 		public static final String INVALID_GENDER = "성별은 필수 값이며, male, female 중 하나로 입력해 주세요.";
 		public static final String INVALID_BIRTH_RANGE = "생일은 현재 시간 이전의 범위에서 입력해 주세요.";
+		public static final String INVALID_CONNECTION_CODE_PATTERN = "연결 코드는 6자리의 숫자와 영문 대문자 입니다.";
+		public static final String INVALID_FIRST_DATE_RANGE = "처음 만난 날은 현재 시간 이전의 범위에서 입력해 주세요.";
+		public static final String INVALID_CONNECTION_CODE = "존재하지 않는 연결 코드입니다.";
+		public static final String ALREADY_CONNECTED = "이미 상대방이 연결되어 있습니다.";
+		public static final String SELF_CONNECTION_NOT_ALLOWED = "자기 자신과 연결할 수 없습니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";

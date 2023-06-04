@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.global.s3;
+package com.dateplan.dateplan.domain.s3;
 
 public enum S3ImageType {
 

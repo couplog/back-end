@@ -40,6 +40,7 @@ public class SignUpRequest {
 
 	@DateTimeFormat(iso = ISO.DATE)
 	@Past(message = INVALID_BIRTH_RANGE)
+	@NotNull(message = INVALID_DATE_PATTERN)
 	private LocalDate birth;
 
 	@NotNull(message = INVALID_GENDER)

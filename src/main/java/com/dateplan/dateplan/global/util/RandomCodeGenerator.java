@@ -16,4 +16,23 @@ public final class RandomCodeGenerator {
 
 		return secureRandom.nextInt(startNumber, endNumber);
 	}
+
+	public static String generateConnectionCode(int length) {
+		StringBuilder res = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			int startNumber;
+			int endNumber;
+			if (secureRandom.nextBoolean()) {
+				startNumber = 0;
+				endNumber = 10;
+				res.append(secureRandom.nextInt(startNumber, endNumber));
+			} else {
+				startNumber = 0;
+				endNumber = 'Z' - 'A' + 1;
+				res.append((char) (secureRandom.nextInt(startNumber, endNumber) + 'A'));
+			}
+		}
+		return res.toString();
+	}
+
 }

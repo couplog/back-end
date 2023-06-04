@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -37,6 +38,7 @@ public class JwtProvider {
 	private String secret;
 	private final MemberRepository memberRepository;
 	private final StringRedisTemplate redisTemplate;
+	private static final String REFRESH_KEY_PREFIX = "[REFRESH]";
 
 	public Member findMemberByToken(String token) {
 		return memberRepository.findById(getIdByToken(token))
@@ -99,7 +101,7 @@ public class JwtProvider {
 	private boolean checkRefreshTokenEquals(Member member, String refreshToken) {
 		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
 
-		String key = String.valueOf(member.getId());
+		String key = getRefreshKey(member);
 		String value = stringValueOperations.get(key);
 
 		if (value == null || !value.equals(refreshToken)) {
@@ -109,6 +111,11 @@ public class JwtProvider {
 
 		stringValueOperations.set(key, value);
 		return true;
+	}
+
+	@NotNull
+	private static String getRefreshKey(Member member) {
+		return REFRESH_KEY_PREFIX + member.getId();
 	}
 
 	private Claims generateClaims(Long id) {

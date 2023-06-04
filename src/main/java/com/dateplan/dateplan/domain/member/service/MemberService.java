@@ -66,6 +66,19 @@ public class MemberService {
 		return PresignedURLResponse.builder().presignedURL(preSignedUrl.toString()).build();
 	}
 
+	public void checkAndSaveImage(S3ImageType imageType) {
+
+		Member member = MemberThreadLocal.get();
+		String memberIdStr = member.getId().toString();
+
+		s3Client.throwIfImageNotFound(imageType, memberIdStr);
+		URL url = s3Client.getObjectUrl(imageType, memberIdStr);
+
+		member.updateProfileImageUrl(url.toString());
+
+		memberRepository.save(member);
+	}
+
 	public ConnectionServiceResponse getConnectionCode() {
 		final Member member = MemberThreadLocal.get();
 		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();

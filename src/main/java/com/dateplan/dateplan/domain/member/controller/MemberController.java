@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +30,14 @@ public class MemberController {
 			S3ImageType.MEMBER_PROFILE);
 
 		return ApiResponse.ofSuccess(presingedURL);
+	}
+
+	@PutMapping("/profile/image")
+	public ApiResponse<Void> modifyProfileImage(){
+
+		memberService.checkAndSaveImage(S3ImageType.MEMBER_PROFILE);
+
+		return ApiResponse.ofSuccess();
 	}
 
 	@GetMapping("/connect")

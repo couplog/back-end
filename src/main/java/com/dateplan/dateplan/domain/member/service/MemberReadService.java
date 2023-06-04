@@ -23,7 +23,7 @@ public class MemberReadService {
 	}
 
 	public void throwIfNicknameExists(String nickname) {
-		if(memberRepository.existsByNickname(nickname)){
+		if (memberRepository.existsByNickname(nickname)) {
 			throw new AlReadyRegisteredNicknameException();
 		}
 	}
@@ -31,6 +31,11 @@ public class MemberReadService {
 	public Member findMemberByPhoneOrElseThrow(String phone) {
 
 		return memberRepository.findByPhone(phone)
+			.orElseThrow(MemberNotFoundException::new);
+	}
+
+	public Member findMemberByIdOrElseThrow(Long id) {
+		return memberRepository.findById(id)
 			.orElseThrow(MemberNotFoundException::new);
 	}
 }

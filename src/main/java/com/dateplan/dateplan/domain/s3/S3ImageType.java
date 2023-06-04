@@ -2,7 +2,7 @@ package com.dateplan.dateplan.domain.s3;
 
 public enum S3ImageType {
 
-	MEMBER_PROFILE("회원 프로필", "members/profile");
+	MEMBER_PROFILE("회원 프로필", "members/profile/");
 
 	private final String type;
 	private final String savedPath;

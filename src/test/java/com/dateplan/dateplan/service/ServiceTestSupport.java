@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.service;
 
+import com.dateplan.dateplan.domain.s3.S3Client;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -12,4 +13,7 @@ public abstract class ServiceTestSupport {
 
 	@MockBean
 	protected SmsSendClient smsSendClient;
+
+	@MockBean
+	protected S3Client s3Client;
 }

@@ -63,7 +63,9 @@ public class MemberService {
 
 		URL preSignedUrl = s3Client.getPreSignedUrl(imageType, member.getId().toString());
 
-		return PresignedURLResponse.builder().presignedURL(preSignedUrl.toString()).build();
+		return PresignedURLResponse.builder()
+			.presignedURL(preSignedUrl.toString())
+			.build();
 	}
 
 	public void checkAndSaveImage(S3ImageType imageType) {

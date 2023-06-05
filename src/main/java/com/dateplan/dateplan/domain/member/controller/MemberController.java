@@ -1,9 +1,9 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
-import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +18,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/members")
 public class MemberController {
 
-	private final MemberService memberService;
+	private final CoupleService coupleService;
 
 	@GetMapping("/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode() {
-		ConnectionServiceResponse connectionServiceResponse = memberService.getConnectionCode();
+		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode();
 		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
 	}
 
 	@PostMapping("/connect")
 	public ApiResponse<Void> connectCouple(@Valid @RequestBody ConnectionRequest request) {
-		memberService.connectCouple(request.toConnectionServiceRequest());
+		coupleService.connectCouple(request.toConnectionServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 }

@@ -32,6 +32,9 @@ dependencies {
 	// sms
 	implementation 'net.nurigo:sdk:4.2.7'
 
+	// s3
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.470'
+
 	// else
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

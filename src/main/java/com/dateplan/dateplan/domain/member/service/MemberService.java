@@ -7,13 +7,17 @@ import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.dto.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
+import com.dateplan.dateplan.domain.s3.S3Client;
+import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,7 @@ public class MemberService {
 	private final MemberRepository memberRepository;
 	private final MemberReadService memberReadService;
 	private final AuthService authService;
+	private final S3Client s3Client;
 	private final StringRedisTemplate redisTemplate;
 	private final CoupleRepository coupleRepository;
 	private final CoupleReadService coupleReadService;
@@ -50,6 +55,30 @@ public class MemberService {
 		memberRepository.save(member);
 
 		authService.deleteAuthenticationInfoInRedis(phone);
+	}
+
+	public PresignedURLResponse getPresingedURL(S3ImageType imageType) {
+
+		Member member = MemberThreadLocal.get();
+
+		URL preSignedUrl = s3Client.getPreSignedUrl(imageType, member.getId().toString());
+
+		return PresignedURLResponse.builder()
+			.presignedURL(preSignedUrl.toString())
+			.build();
+	}
+
+	public void checkAndSaveImage(S3ImageType imageType) {
+
+		Member member = MemberThreadLocal.get();
+		String memberIdStr = member.getId().toString();
+
+		s3Client.throwIfImageNotFound(imageType, memberIdStr);
+		URL url = s3Client.getObjectUrl(imageType, memberIdStr);
+
+		member.updateProfileImageUrl(url.toString());
+
+		memberRepository.save(member);
 	}
 
 	public ConnectionServiceResponse getConnectionCode() {

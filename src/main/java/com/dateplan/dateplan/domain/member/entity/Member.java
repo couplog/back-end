@@ -75,4 +75,9 @@ public class Member {
 		this.profileImageUrl = profileImageUrl;
 		this.password = password;
 	}
+
+	public void updateProfileImageUrl(String profileImageUrl){
+
+		this.profileImageUrl = profileImageUrl;
+	}
 }

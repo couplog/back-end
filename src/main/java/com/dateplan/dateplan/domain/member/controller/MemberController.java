@@ -26,7 +26,7 @@ public class MemberController {
 	@GetMapping("/profile/image/presigned-url")
 	public ApiResponse<PresignedURLResponse> getPresignedURL() {
 
-		PresignedURLResponse presingedURL = memberService.getPresingedURL(
+		PresignedURLResponse presingedURL = memberService.getPresignedURL(
 			S3ImageType.MEMBER_PROFILE);
 
 		return ApiResponse.ofSuccess(presingedURL);

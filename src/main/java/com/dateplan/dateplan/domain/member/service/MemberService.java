@@ -99,7 +99,9 @@ public class MemberService {
 			stringValueOperations.getAndExpire(connectionCode, Duration.ofHours(24L));
 		}
 
-		return ConnectionServiceResponse.builder().connectionCode(connectionCode).build();
+		return ConnectionServiceResponse.builder()
+			.connectionCode(connectionCode)
+			.build();
 	}
 
 	public void connectCouple(ConnectionServiceRequest request) {

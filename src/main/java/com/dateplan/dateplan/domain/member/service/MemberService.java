@@ -111,8 +111,11 @@ public class MemberService {
 		throwIfAlreadyConnected(oppositeMember);
 		throwIfSelfConnection(oppositeMemberId, member.getId());
 
-		Couple couple = Couple.builder().member1(member).member2(oppositeMember)
-			.firstDate(request.getFirstDate()).build();
+		Couple couple = Couple.builder()
+			.member1(member)
+			.member2(oppositeMember)
+			.firstDate(request.getFirstDate())
+			.build();
 		coupleRepository.save(couple);
 	}
 

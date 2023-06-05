@@ -1,6 +1,8 @@
 package com.dateplan.dateplan.controller;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.AuthController;
+import com.dateplan.dateplan.domain.member.controller.MemberController;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
@@ -13,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @ActiveProfiles("test")
-@WebMvcTest(controllers = AuthController.class)
+@WebMvcTest(controllers = {AuthController.class, MemberController.class})
 public abstract class ControllerTestSupport {
 
 	@Autowired
@@ -33,4 +35,7 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected JwtProvider jwtProvider;
+
+	@MockBean
+	protected CoupleService coupleService;
 }

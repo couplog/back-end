@@ -10,6 +10,7 @@ import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,9 +36,17 @@ public class MemberController {
 	}
 
 	@PutMapping("/profile/image")
-	public ApiResponse<Void> modifyProfileImage(){
+	public ApiResponse<Void> modifyProfileImage() {
 
 		memberService.checkAndSaveImage(S3ImageType.MEMBER_PROFILE);
+
+		return ApiResponse.ofSuccess();
+	}
+
+	@DeleteMapping("/profile/image")
+	public ApiResponse<Void> deleteProfileImage() {
+
+		memberService.deleteProfileImage();
 
 		return ApiResponse.ofSuccess();
 	}

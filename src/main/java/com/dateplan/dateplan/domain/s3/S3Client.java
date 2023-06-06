@@ -53,10 +53,10 @@ public class S3Client {
 		return amazonS3.getUrl(bucket, type.getFullPath(fileName));
 	}
 
-	public void deleteObject(String fullPath) {
+	public void deleteObject(S3ImageType type, String fileName) {
 
 		try {
-			amazonS3.deleteObject(bucket, fullPath);
+			amazonS3.deleteObject(bucket, type.getFullPath(fileName));
 		} catch (SdkClientException e) {
 			throw new S3Exception(DetailMessage.S3_DELETE_OBJECT_FAIL, e);
 		}

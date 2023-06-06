@@ -4,11 +4,15 @@ import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +23,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
 	private final CoupleService coupleService;
+	private final MemberService memberService;
+
+	@GetMapping("/profile/image/presigned-url")
+	public ApiResponse<PresignedURLResponse> getPresignedURL() {
+
+		PresignedURLResponse presingedURL = memberService.getPresingedURL(
+			S3ImageType.MEMBER_PROFILE);
+
+		return ApiResponse.ofSuccess(presingedURL);
+	}
+
+	@PutMapping("/profile/image")
+	public ApiResponse<Void> modifyProfileImage(){
+
+		memberService.checkAndSaveImage(S3ImageType.MEMBER_PROFILE);
+
+		return ApiResponse.ofSuccess();
+	}
 
 	@GetMapping("/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode() {

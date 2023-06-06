@@ -32,10 +32,12 @@ public enum ErrorCode {
 	INVALID_CONNECTION_CODE(BAD_REQUEST, "C016"),
 	ALREADY_CONNECTED(CONFLICT, "C017"),
 	SELF_CONNECTION_NOT_ALLOWED(BAD_REQUEST, "C018"),
+	S3_IMAGE_NOT_FOUND(CONFLICT, "C019"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
-	SMS_SEND_FAIL(SERVICE_UNAVAILABLE, "S002");
+	SMS_SEND_FAIL(SERVICE_UNAVAILABLE, "S002"),
+	S3_ERROR(SERVICE_UNAVAILABLE, "S003");
 
 	private final HttpStatus httpStatusCode;
 	private final String code;
@@ -80,6 +82,7 @@ public enum ErrorCode {
 		public static final String INVALID_CONNECTION_CODE = "존재하지 않는 연결 코드입니다.";
 		public static final String ALREADY_CONNECTED = "이미 상대방이 연결되어 있습니다.";
 		public static final String SELF_CONNECTION_NOT_ALLOWED = "자기 자신과 연결할 수 없습니다.";
+		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";
@@ -89,5 +92,6 @@ public enum ErrorCode {
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";
 		public static final String SMS_SEND_FAIL = "%s 문자를 전송하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요.";
+		public static final String S3_CREATE_PRESIGNED_URL_FAIL = "Presigned URL 을 생성하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요.";
 	}
 }

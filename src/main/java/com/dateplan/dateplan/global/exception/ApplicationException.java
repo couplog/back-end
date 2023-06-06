@@ -15,4 +15,9 @@ public class ApplicationException extends RuntimeException {
 		super(message);
 		this.errorCode = errorCode;
 	}
+
+	public ApplicationException(String message, ErrorCode errorCode, Throwable t) {
+		super(message, t);
+		this.errorCode = errorCode;
+	}
 }

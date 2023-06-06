@@ -14,7 +14,7 @@ public class LoginRequest {
 	@Pattern(regexp = "^010\\d{4}\\d{4}$", message = DetailMessage.INVALID_PHONE_PATTERN)
 	@NotEmpty(message = DetailMessage.INVALID_PHONE_PATTERN)
 	private String phone;
-	@NotNull
+	@NotNull(message = DetailMessage.INVALID_PASSWORD_PATTERN)
 	private String password;
 
 	public LoginServiceRequest toServiceRequest() {

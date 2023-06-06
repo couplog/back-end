@@ -6,6 +6,7 @@ import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Auth;
 import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
+import com.dateplan.dateplan.global.exception.auth.TokenNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -28,7 +29,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 		Object handler) throws Exception {
 		Optional<String> tokenByHeader = jwtProvider.resolveToken(request);
 		if (tokenByHeader.isEmpty()) {
-			return true;
+			throw new TokenNotFoundException();
 		}
 		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");
 

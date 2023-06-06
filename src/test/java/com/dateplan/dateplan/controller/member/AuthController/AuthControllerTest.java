@@ -10,7 +10,6 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.PASSWORD_MISMATCH
 import static com.dateplan.dateplan.global.exception.ErrorCode.SMS_SEND_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_INVALID;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
@@ -34,7 +33,6 @@ import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
-import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
@@ -77,10 +75,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"));
 		}
@@ -101,10 +99,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -128,10 +126,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -157,10 +155,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isServiceUnavailable())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -192,10 +190,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"));
 		}
@@ -217,10 +215,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -244,10 +242,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -266,17 +264,18 @@ class AuthControllerTest extends ControllerTestSupport {
 			PhoneAuthCodeRequest request = createPhoneAuthCodeRequest(phoneNumber, code);
 
 			//Stub
-			InvalidPhoneAuthCodeException invalidPhoneAuthCodeException = new InvalidPhoneAuthCodeException(null);
+			InvalidPhoneAuthCodeException invalidPhoneAuthCodeException = new InvalidPhoneAuthCodeException(
+				null);
 			willThrow(invalidPhoneAuthCodeException)
 				.given(authService)
 				.authenticateAuthCode(any(PhoneAuthCodeServiceRequest.class));
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -293,17 +292,18 @@ class AuthControllerTest extends ControllerTestSupport {
 			String phoneNumber = "01012341234";
 			String code = "123123";
 			PhoneAuthCodeRequest request = createPhoneAuthCodeRequest(phoneNumber, code);
-			InvalidPhoneAuthCodeException invalidPhoneAuthCodeException = new InvalidPhoneAuthCodeException(code);
+			InvalidPhoneAuthCodeException invalidPhoneAuthCodeException = new InvalidPhoneAuthCodeException(
+				code);
 			willThrow(invalidPhoneAuthCodeException)
 				.given(authService)
 				.authenticateAuthCode(any(PhoneAuthCodeServiceRequest.class));
 
 			//When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -332,10 +332,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isCreated());
 		}
 
@@ -353,10 +353,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -379,10 +379,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -405,10 +405,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -431,10 +431,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -455,10 +455,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -478,10 +478,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -502,10 +502,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -533,10 +533,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -564,10 +564,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -595,10 +595,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
@@ -637,10 +637,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"))
 				.andExpect(jsonPath("$.data.isConnected").value(isConnected))
@@ -672,10 +672,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
@@ -701,10 +701,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(MEMBER_NOT_FOUND.getCode()))
@@ -730,10 +730,10 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(PASSWORD_MISMATCH.getCode()))
@@ -764,7 +764,7 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL).header("Authorization", preToken))
+					post(REQUEST_URL).header("Authorization", preToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"))
 				.andExpect(header().string("Authorization", authToken.getAccessToken()))
@@ -781,7 +781,7 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL))
+					post(REQUEST_URL))
 				.andExpect(status().isBadRequest())
 				.andExpect(header().doesNotExist("Authorization"))
 				.andExpect(header().doesNotExist("rereshToken"));
@@ -798,7 +798,7 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL).header("Authorization", "token"))
+					post(REQUEST_URL).header("Authorization", "token"))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(TOKEN_INVALID.getCode()))
@@ -818,7 +818,7 @@ class AuthControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				post(REQUEST_URL).header("Authorization", "token"))
+					post(REQUEST_URL).header("Authorization", "token"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(MEMBER_NOT_FOUND.getCode()))
@@ -840,7 +840,7 @@ class AuthControllerTest extends ControllerTestSupport {
 			.gender(Gender.MALE).build();
 	}
 
-	private Map<String, String> createSignUpRequestWithMap(String birth, String gender){
+	private Map<String, String> createSignUpRequestWithMap(String birth, String gender) {
 
 		Map<String, String> request = new HashMap<>();
 		request.put("name", "이름");

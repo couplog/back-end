@@ -79,7 +79,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			int authCode = 123123;
 			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
 
-			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(RandomCodeGenerator.class)) {
+			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(
+				RandomCodeGenerator.class)) {
 
 				// Stub
 				given(RandomCodeGenerator.generateCode(6))
@@ -185,7 +186,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 		void authenticateAuthCode() {
 
 			//Given
-			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(savedPhoneNumber, savedAuthCode);
+			PhoneAuthCodeServiceRequest request = createPhoneAuthCodeServiceRequest(
+				savedPhoneNumber, savedAuthCode);
 
 			//When
 			authService.authenticateAuthCode(request);
@@ -262,7 +264,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			assertThatNoException()
-				.isThrownBy(() -> authService.throwIfPhoneNotAuthenticated(authenticatedPhoneNumber));
+				.isThrownBy(
+					() -> authService.throwIfPhoneNotAuthenticated(authenticatedPhoneNumber));
 		}
 
 		@DisplayName("요청한 전화번호의 인증 기록이 없다면 예외를 발생시킨다.")
@@ -273,7 +276,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			String neverAuthenticatedPhone = "01012341234";
 
 			// When & Then
-			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(neverAuthenticatedPhone))
+			assertThatThrownBy(
+				() -> authService.throwIfPhoneNotAuthenticated(neverAuthenticatedPhone))
 				.isInstanceOf(PhoneNotAuthenticatedException.class)
 				.hasMessage(NOT_AUTHENTICATED_PHONE);
 		}
@@ -292,7 +296,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 			opsForList.rightPush(authKey, Boolean.FALSE.toString());
 
 			// When & Then
-			assertThatThrownBy(() -> authService.throwIfPhoneNotAuthenticated(notAuthenticatedPhoneNumber))
+			assertThatThrownBy(
+				() -> authService.throwIfPhoneNotAuthenticated(notAuthenticatedPhoneNumber))
 				.isInstanceOf(PhoneNotAuthenticatedException.class)
 				.hasMessage(NOT_AUTHENTICATED_PHONE);
 		}

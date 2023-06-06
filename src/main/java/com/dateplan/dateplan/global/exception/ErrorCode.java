@@ -89,7 +89,7 @@ public enum ErrorCode {
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";
 		public static final String TOKEN_INVALID = "유효하지 않은 토큰입니다.";
 		public static final String PASSWORD_MISMATCH = "비밀번호가 올바르지 않습니다.";
-		public static final String TOKEN_NOT_FOUND = "access을 찾을 수 없습니다.";
+		public static final String TOKEN_NOT_FOUND = "access token을 찾을 수 없습니다.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

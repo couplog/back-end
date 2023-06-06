@@ -6,8 +6,10 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.SELF_CONNECTION_NOT_ALLOWED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,12 +21,16 @@ import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
 import com.dateplan.dateplan.global.exception.ErrorCode;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
+import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +46,33 @@ public class MemberControllerTest extends ControllerTestSupport {
 	class GetConnectionCode {
 
 		private static final String REQUEST_URL = "/api/members/connect";
+
+		@BeforeEach
+		void setUp() {
+			willReturn(Optional.of("token"))
+				.given(jwtProvider)
+				.resolveToken(any(HttpServletRequest.class));
+			willReturn(true)
+				.given(jwtProvider)
+				.isValid(anyString());
+		}
+
+		@DisplayName("인증되지 않은 유저는 실패한다")
+		@Test
+		void failWithNotAuthenticated() throws Exception {
+			willReturn(Optional.empty())
+				.given(jwtProvider)
+				.resolveToken(any(HttpServletRequest.class));
+
+			mockMvc.perform(
+					get(REQUEST_URL))
+				.andExpect(status().isUnauthorized())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.message").value(DetailMessage.TOKEN_NOT_FOUND),
+					jsonPath("$.code").value(ErrorCode.TOKEN_NOT_FOUND.getCode())
+				);
+		}
 
 		@DisplayName("생성한 코드 또는 24시간 내에 생성된 코드를 반환한다")
 		@Test
@@ -70,6 +103,33 @@ public class MemberControllerTest extends ControllerTestSupport {
 	class ConnectCouple {
 
 		private static final String REQUEST_URL = "/api/members/connect";
+
+		@BeforeEach
+		void setUp() {
+			willReturn(Optional.of("token"))
+				.given(jwtProvider)
+				.resolveToken(any(HttpServletRequest.class));
+			willReturn(true)
+				.given(jwtProvider)
+				.isValid(anyString());
+		}
+
+		@DisplayName("인증되지 않은 유저는 실패한다")
+		@Test
+		void failWithNotAuthenticated() throws Exception {
+			willReturn(Optional.empty())
+				.given(jwtProvider)
+				.resolveToken(any(HttpServletRequest.class));
+
+			mockMvc.perform(
+					get(REQUEST_URL))
+				.andExpect(status().isUnauthorized())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.message").value(DetailMessage.TOKEN_NOT_FOUND),
+					jsonPath("$.code").value(ErrorCode.TOKEN_NOT_FOUND.getCode())
+				);
+		}
 
 		@DisplayName("상대의 올바른 연결 코드를 입력하면 커플 생성에 성공한다.")
 		@Test

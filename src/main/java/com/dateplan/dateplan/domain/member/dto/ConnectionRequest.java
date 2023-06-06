@@ -9,14 +9,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
 @Getter
+@Builder
 public class ConnectionRequest {
 
-	@NotNull
+	@NotNull(message = INVALID_CONNECTION_CODE_PATTERN)
 	@Pattern(regexp = CONNECTION_CODE_PATTERN, message = INVALID_CONNECTION_CODE_PATTERN)
 	private String connectionCode;
 

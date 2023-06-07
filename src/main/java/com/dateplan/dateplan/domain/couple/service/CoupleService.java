@@ -2,6 +2,7 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
+import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
@@ -32,6 +33,15 @@ public class CoupleService {
 	private final CoupleRepository coupleRepository;
 	private final CoupleReadService coupleReadService;
 
+	public FirstDateServiceResponse getFirstDate() {
+		final Member member = MemberThreadLocal.get();
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		return FirstDateServiceResponse.builder()
+			.firstDate(couple.getFirstDate())
+			.build();
+	}
 
 	public ConnectionServiceResponse getConnectionCode() {
 		final Member member = MemberThreadLocal.get();

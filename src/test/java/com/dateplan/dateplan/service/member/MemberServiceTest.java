@@ -4,6 +4,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALR
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.NOT_AUTHENTICATED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_DELETE_OBJECT_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -11,6 +12,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -366,6 +368,79 @@ public class MemberServiceTest extends ServiceTestSupport {
 			then(s3Client)
 				.should(never())
 				.getObjectUrl(any(S3ImageType.class), anyString());
+		}
+	}
+
+	@DisplayName("회원 프로필 이미지 삭제 요청시")
+	@Nested
+	class DeleteProfileImage {
+
+		private Member savedMember;
+
+		@BeforeEach
+		void setUp() {
+			savedMember = createMember();
+			memberRepository.save(savedMember);
+			MemberThreadLocal.set(savedMember);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("S3 로 정상적인 요청 및 응답이 온다면 회원의 profileImage 가 기본 이미지로 변경된다.")
+		@Test
+		void withAvailableS3() {
+
+			// Stub
+			willDoNothing()
+				.given(s3Client)
+				.deleteObject(any(S3ImageType.class), anyString());
+
+			// When
+			memberService.deleteProfileImage();
+
+			// Then
+			then(s3Client)
+				.should(times(1))
+				.deleteObject(any(S3ImageType.class), anyString());
+
+			Member findMember = memberRepository.findById(savedMember.getId()).get();
+
+			assertThat(findMember.getProfileImageUrl())
+				.isEqualTo(Member.DEFAULT_PROFILE_IMAGE);
+		}
+
+		@DisplayName("S3 로 요청 및 응답 과정에 문제가 있다면 예외가 발생하고 회원의 profileImage 가 변경되지 않는다.")
+		@Test
+		void withUnAvailableS3() {
+
+			// Given
+			String savedImageURL = savedMember.getProfileImageUrl();
+
+			// Stub
+			SdkClientException sdkClientException = new SdkClientException("message");
+			S3Exception expectedException = new S3Exception(S3_DELETE_OBJECT_FAIL, sdkClientException);
+			willThrow(expectedException)
+				.given(s3Client)
+				.deleteObject(any(S3ImageType.class), anyString());
+
+			// When
+			assertThatThrownBy(() -> memberService.deleteProfileImage())
+				.isInstanceOf(S3Exception.class)
+				.hasMessage(S3_DELETE_OBJECT_FAIL)
+				.hasCauseInstanceOf(SdkClientException.class);
+
+			Member findMember = memberRepository.findById(savedMember.getId()).get();
+
+			assertThat(findMember.getProfileImageUrl())
+				.isEqualTo(savedImageURL);
+
+			then(s3Client)
+				.should(times(1))
+				.deleteObject(any(S3ImageType.class), anyString());
 		}
 	}
 

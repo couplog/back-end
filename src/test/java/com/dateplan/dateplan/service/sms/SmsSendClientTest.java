@@ -66,7 +66,8 @@ class SmsSendClientTest {
 		// When & Then
 		assertThatThrownBy(() -> smsSendClient.sendSmsForPhoneAuthentication(toNumber, code))
 			.isInstanceOf(SmsSendFailException.class)
-			.hasMessage(String.format(DetailMessage.SMS_SEND_FAIL, SmsType.PHONE_AUTHENTICATION.getName()));
+			.hasMessage(
+				String.format(DetailMessage.SMS_SEND_FAIL, SmsType.PHONE_AUTHENTICATION.getName()));
 	}
 
 	private SingleMessageSentResponse createMessageResponse(String statusCode) {

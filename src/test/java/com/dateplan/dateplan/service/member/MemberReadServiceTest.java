@@ -98,7 +98,8 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			String notExistsPhoneNumber = "01012341234";
 
 			// When & Then
-			assertThatThrownBy(() -> memberReadService.findMemberByPhoneOrElseThrow(notExistsPhoneNumber))
+			assertThatThrownBy(
+				() -> memberReadService.findMemberByPhoneOrElseThrow(notExistsPhoneNumber))
 				.isInstanceOf(MemberNotFoundException.class)
 				.hasMessage(DetailMessage.MEMBER_NOT_FOUND);
 		}
@@ -111,7 +112,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		private final String existsNickname = "nickname";
 
 		@BeforeEach
-		void setUp(){
+		void setUp() {
 			Member member = createMember("01011112222", existsNickname);
 			memberRepository.save(member);
 		}

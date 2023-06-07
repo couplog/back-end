@@ -11,20 +11,24 @@ import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import java.net.URL;
 import java.util.Date;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
-@RequiredArgsConstructor
 @Service
 public class S3Client {
 
-	@Value("${cloud.aws.s3.bucket}")
-	private String bucket;
+	private final String bucket;
 
 	private final AmazonS3 amazonS3;
+
+	@Autowired
+	public S3Client(@Value("${cloud.aws.s3.bucket}") String bucket, AmazonS3 amazonS3) {
+		this.bucket = bucket;
+		this.amazonS3 = amazonS3;
+	}
 
 	private static final int PRESIGNED_URL_EXPIRE_DURATION = 1000 * 60 * 5;
 

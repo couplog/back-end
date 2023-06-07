@@ -31,6 +31,8 @@ import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +48,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		given(authInterceptor.preHandle(any(), any(), any()))
+		given(authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Object.class)))
 			.willReturn(true);
 	}
 

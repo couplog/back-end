@@ -7,6 +7,7 @@ import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
+import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -35,6 +36,9 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected JwtProvider jwtProvider;
+
+	@MockBean
+	protected AuthInterceptor authInterceptor;
 
 	@MockBean
 	protected CoupleService coupleService;

@@ -62,7 +62,7 @@ public class AuthInterceptorTest {
 		this.authInterceptor = new AuthInterceptor(jwtProvider);
 	}
 
-	@DisplayName("인터셉터에 요청이 들어왔을 때")
+	@DisplayName("preHandle 호출 시")
 	@Nested
 	class InterceptorRequested {
 

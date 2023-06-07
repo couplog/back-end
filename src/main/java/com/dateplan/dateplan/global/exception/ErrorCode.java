@@ -34,6 +34,7 @@ public enum ErrorCode {
 	SELF_CONNECTION_NOT_ALLOWED(BAD_REQUEST, "C018"),
 	S3_IMAGE_NOT_FOUND(CONFLICT, "C019"),
 	TOKEN_NOT_FOUND(UNAUTHORIZED, "C020"),
+	COUPLE_NOT_CONNECTED(BAD_REQUEST, "C021"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -84,6 +85,9 @@ public enum ErrorCode {
 		public static final String ALREADY_CONNECTED = "이미 상대방이 연결되어 있습니다.";
 		public static final String SELF_CONNECTION_NOT_ALLOWED = "자기 자신과 연결할 수 없습니다.";
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
+
+		// 커플 관련
+		public static final String COUPLE_NOT_CONNECTED = "현재 커플이 연결되어 있지 않습니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";

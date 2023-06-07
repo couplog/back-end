@@ -307,7 +307,6 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.name("name")
-			.profileImageUrl("url")
 			.birth(LocalDate.now().minusDays(1L))
 			.gender(Gender.MALE)
 			.nickname("nickname")

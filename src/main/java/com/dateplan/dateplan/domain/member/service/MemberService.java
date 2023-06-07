@@ -61,4 +61,14 @@ public class MemberService {
 
 		memberRepository.save(member);
 	}
+
+	public void deleteProfileImage() {
+
+		Member member = MemberThreadLocal.get();
+
+		s3Client.deleteObject(S3ImageType.MEMBER_PROFILE, member.getId().toString());
+		member.updateProfileImageUrl(Member.DEFAULT_PROFILE_IMAGE);
+
+		memberRepository.save(member);
+	}
 }

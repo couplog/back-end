@@ -41,7 +41,6 @@ public class S3Client {
 		try {
 			return amazonS3.generatePresignedUrl(request);
 		} catch (SdkClientException e) {
-
 			throw new S3Exception(DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL, e);
 		}
 	}
@@ -53,9 +52,18 @@ public class S3Client {
 		}
 	}
 
-	public URL getObjectUrl(S3ImageType type, String fileName){
+	public URL getObjectUrl(S3ImageType type, String fileName) {
 
 		return amazonS3.getUrl(bucket, type.getFullPath(fileName));
+	}
+
+	public void deleteObject(S3ImageType type, String fileName) {
+
+		try {
+			amazonS3.deleteObject(bucket, type.getFullPath(fileName));
+		} catch (SdkClientException e) {
+			throw new S3Exception(DetailMessage.S3_DELETE_OBJECT_FAIL, e);
+		}
 	}
 
 	private GeneratePresignedUrlRequest getGeneratePresignedUrlRequest(String fullPath) {

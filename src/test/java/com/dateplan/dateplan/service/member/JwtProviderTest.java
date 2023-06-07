@@ -240,7 +240,6 @@ public class JwtProviderTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)
-			.profileImageUrl("url")
 			.build();
 	}
 }

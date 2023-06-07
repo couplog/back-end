@@ -382,7 +382,6 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.password("password")
 			.gender(Gender.MALE)
 			.birth(LocalDate.of(1999, 10, 10))
-			.profileImageUrl("imageURL")
 			.build();
 	}
 

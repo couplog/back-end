@@ -1,7 +1,9 @@
 package com.dateplan.dateplan.interceptor.auth;
 
 
-import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.*;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.TOKEN_EXPIRED;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.TOKEN_INVALID;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.TOKEN_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,7 +11,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.JwtProvider;
@@ -31,7 +35,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.servlet.ModelAndView;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthInterceptorTest {
@@ -47,6 +53,9 @@ public class AuthInterceptorTest {
 
 	@Mock
 	private Object handler;
+
+	@Mock
+	private ModelAndView mav;
 
 	public AuthInterceptorTest() {
 		this.jwtProvider = mock(JwtProvider.class);
@@ -138,6 +147,54 @@ public class AuthInterceptorTest {
 				.isInstanceOf(TokenInvalidException.class)
 				.hasMessage(TOKEN_INVALID);
 			assertThat(MemberThreadLocal.get()).isNull();
+		}
+	}
+
+	@DisplayName("postHandle 호출 시")
+	@Nested
+	class InvokePostHandle {
+
+		@DisplayName("Member 객체가 존재한다면 삭제한다.")
+		@Test
+		void removeMember() throws Exception {
+
+			try (MockedStatic<MemberThreadLocal> generator = mockStatic(MemberThreadLocal.class)) {
+
+				// Stub
+				given(MemberThreadLocal.get())
+					.willReturn(createMember());
+
+				// When
+				authInterceptor.postHandle(request, response, handler, mav);
+
+				// Verify
+				generator.verify(MemberThreadLocal::remove, times(1));
+			}
+
+			// Then
+			assertThat(MemberThreadLocal.get()).isNull();
+		}
+
+		@DisplayName("Member 객체가 존재하지 않는다면 바로 리턴한다")
+		@Test
+		void returnWithoutRemove() throws Exception {
+
+			try (MockedStatic<MemberThreadLocal> generator = mockStatic(MemberThreadLocal.class)) {
+
+				// Stub
+				given(MemberThreadLocal.get())
+					.willReturn(null);
+
+				// When
+				authInterceptor.postHandle(request, response, handler, mav);
+
+				// Verify
+				generator.verify(MemberThreadLocal::remove, never());
+			}
+
+			// Then
+			assertThat(MemberThreadLocal.get()).isNull();
+
 		}
 	}
 

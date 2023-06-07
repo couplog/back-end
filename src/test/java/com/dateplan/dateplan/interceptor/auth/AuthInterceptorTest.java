@@ -7,25 +7,51 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import com.dateplan.dateplan.global.exception.auth.TokenNotFoundException;
-import com.dateplan.dateplan.interceptor.InterceptorTestSupport;
+import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-public class AuthInterceptorTest extends InterceptorTestSupport {
+@ExtendWith(MockitoExtension.class)
+public class AuthInterceptorTest {
+
+	private final AuthInterceptor authInterceptor;
+	private final JwtProvider jwtProvider;
+
+	@Mock
+	private HttpServletRequest request;
+
+	@Mock
+	private HttpServletResponse response;
+
+	@Mock
+	private Object handler;
+
+	public AuthInterceptorTest() {
+		this.jwtProvider = mock(JwtProvider.class);
+		this.authInterceptor = new AuthInterceptor(jwtProvider);
+	}
 
 	@DisplayName("인터셉터에 요청이 들어왔을 때")
 	@Nested
@@ -75,10 +101,8 @@ public class AuthInterceptorTest extends InterceptorTestSupport {
 				.hasMessage(TOKEN_NOT_FOUND);
 			assertThat(MemberThreadLocal.get()).isNull();
 
-//			then(jwtProvider.isValid(anyString()))
-//				.shouldHaveNoInteractions();
-//			then(jwtProvider.findMemberByToken(anyString()))
-//				.shouldHaveNoInteractions();
+			then(jwtProvider).should(never()).isValid(anyString());
+			then(jwtProvider).should(never()).findMemberByToken(anyString());
 		}
 
 		@DisplayName("토큰이 만료되면 예외를 반환한다")

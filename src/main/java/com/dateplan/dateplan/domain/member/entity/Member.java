@@ -24,6 +24,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "member")
 public class Member {
 
+	public static final String DEFAULT_PROFILE_IMAGE = "https://date-plan.s3.ap-northeast-2.amazonaws.com/members/profile/%E1%84%8E%E1%85%AE%E1%86%AB%E1%84%89%E1%85%B5%E1%86%A8%E1%84%8A%E1%85%B3.jpeg";
+
 	@Id
 	@Column(name = "member_id", columnDefinition = "BIGINT", updatable = false, unique = true)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,9 +50,9 @@ public class Member {
 	@Column(name = "gender", columnDefinition = "VARCHAR(10)")
 	private Gender gender;
 
-	//@NotNull
+	@NotNull
 	@Column(name = "profile_image_url", columnDefinition = "VARCHAR(200)")
-	private String profileImageUrl;
+	private String profileImageUrl = DEFAULT_PROFILE_IMAGE;
 
 	@Convert(converter = PasswordConverter.class)
 	@NotNull
@@ -64,7 +66,6 @@ public class Member {
 		String nickname,
 		LocalDate birth,
 		Gender gender,
-		String profileImageUrl,
 		String password
 	) {
 		this.name = name;
@@ -72,7 +73,7 @@ public class Member {
 		this.nickname = nickname;
 		this.birth = birth;
 		this.gender = gender;
-		this.profileImageUrl = profileImageUrl;
+		this.profileImageUrl = DEFAULT_PROFILE_IMAGE;
 		this.password = password;
 	}
 

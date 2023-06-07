@@ -95,5 +95,6 @@ public enum ErrorCode {
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";
 		public static final String SMS_SEND_FAIL = "%s 문자를 전송하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요.";
 		public static final String S3_CREATE_PRESIGNED_URL_FAIL = "Presigned URL 을 생성하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요.";
+		public static final String S3_DELETE_OBJECT_FAIL = "S3 내의 객체를 삭제하던 중 문제가 발생하였습니다. 잠시 후에 다시 시도해 주세요";
 	}
 }

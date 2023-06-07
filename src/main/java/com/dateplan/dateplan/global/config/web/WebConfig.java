@@ -1,6 +1,5 @@
 package com.dateplan.dateplan.global.config.web;
 
-import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -11,12 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-	private final JwtProvider jwtProvider;
+	private final AuthInterceptor authInterceptor;
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry
-			.addInterceptor(new AuthInterceptor(jwtProvider))
+			.addInterceptor(authInterceptor)
 			.addPathPatterns("/**")
 			.excludePathPatterns("/api/auth/**");
 	}

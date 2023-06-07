@@ -38,7 +38,7 @@ public class MemberService {
 		authService.deleteAuthenticationInfoInRedis(phone);
 	}
 
-	public PresignedURLResponse getPresingedURL(S3ImageType imageType) {
+	public PresignedURLResponse getPresignedURL(S3ImageType imageType) {
 
 		Member member = MemberThreadLocal.get();
 

@@ -3,27 +3,41 @@ package com.dateplan.dateplan.service.member;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_NICKNAME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.NOT_AUTHENTICATED_PHONE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
+import com.amazonaws.SdkClientException;
+import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.dto.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.s3.S3ImageType;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
+import com.dateplan.dateplan.global.exception.S3Exception;
+import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDate;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,7 +96,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 			assertThat(savedMember).isNotNull();
 			assertThat(savedMember.getId()).isNotNull();
 			assertThat(savedMember).extracting(
-				"name",
+					"name",
 					"phone",
 					"nickname",
 					"birth",
@@ -208,6 +222,168 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.should(never())
 				.save(any(Member.class));
 		}
+	}
+
+	@DisplayName("Presigned URL 요청시")
+	@Nested
+	class getPresignedURL {
+
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			memberRepository.save(member);
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("s3 client 로부터 예외가 발생하지 않고, url 을 잘 받아 온다면 URL 정보를 리턴한다.")
+		@Test
+		void withNoExceptionThrowsS3Client() throws MalformedURLException {
+
+			// Given
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+
+			// Stub
+			URL expectedURL = new URL("https://something.com");
+			given(s3Client.getPreSignedUrl(any(S3ImageType.class), anyString()))
+				.willReturn(expectedURL);
+
+			// When
+			PresignedURLResponse response = memberService.getPresignedURL(imageType);
+
+			// Then
+			assertThat(response.getPresignedURL()).isEqualTo(expectedURL.toString());
+			then(s3Client)
+				.should(times(1))
+				.getPreSignedUrl(any(S3ImageType.class), anyString());
+		}
+
+		@DisplayName("s3 client 로부터 예외가 발생한다면, 해당 예외를 그대로 던진다.")
+		@Test
+		void withExceptionThrowsS3Client() {
+
+			// Given
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+
+			// Stub
+			SdkClientException sdkClientException = new SdkClientException("message");
+			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
+				sdkClientException);
+			given(s3Client.getPreSignedUrl(any(S3ImageType.class), anyString()))
+				.willThrow(expectedException);
+
+			// When & Then
+			assertThatThrownBy(() -> memberService.getPresignedURL(imageType))
+				.isInstanceOf(S3Exception.class)
+				.hasMessage(S3_CREATE_PRESIGNED_URL_FAIL)
+				.hasCauseInstanceOf(SdkClientException.class);
+
+			then(s3Client)
+				.should(times(1))
+				.getPreSignedUrl(any(S3ImageType.class), anyString());
+		}
+	}
+
+	@DisplayName("이미지 저장 요청시")
+	@Nested
+	class CheckAndSaveImage {
+
+		private Member savedMember;
+
+		@BeforeEach
+		void setUp() {
+			savedMember = createMember();
+			memberRepository.save(savedMember);
+			MemberThreadLocal.set(savedMember);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("이미지가 s3 에 존재한다면 회원의 profileImage 가 변경된다.")
+		@Test
+		void withExistsImageInS3() throws MalformedURLException {
+
+			// Given
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+
+			// Stub
+			URL expectedURL = new URL("https://something.com");
+			doNothing()
+				.when(s3Client)
+				.throwIfImageNotFound(any(S3ImageType.class), anyString());
+			given(s3Client.getObjectUrl(any(S3ImageType.class), anyString()))
+				.willReturn(expectedURL);
+
+			// When
+			memberService.checkAndSaveImage(imageType);
+
+			// Then
+			then(s3Client)
+				.should(times(1))
+				.throwIfImageNotFound(any(S3ImageType.class), anyString());
+			then(s3Client)
+				.should(times(1))
+				.getObjectUrl(any(S3ImageType.class), anyString());
+
+			Member findMember = memberRepository.findById(savedMember.getId()).get();
+
+			assertThat(findMember.getProfileImageUrl())
+				.isEqualTo(expectedURL.toString());
+		}
+
+		@DisplayName("이미지가 s3 에 존재하지 않는다면 예외를 발생시키고, 회원의 profileImage 가 변경되지 않는다.")
+		@Test
+		void withNotExistsImageInS3() {
+
+			// Given
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+			String savedImageURL = savedMember.getProfileImageUrl();
+
+			// Stub
+			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
+			willThrow(expectedException)
+				.given(s3Client)
+				.throwIfImageNotFound(any(S3ImageType.class), anyString());
+
+			// When & Then
+			assertThatThrownBy(() -> memberService.checkAndSaveImage(imageType))
+				.isInstanceOf(S3ImageNotFoundException.class)
+				.hasMessage(S3_IMAGE_NOT_FOUND);
+
+			Member findMember = memberRepository.findById(savedMember.getId()).get();
+
+			assertThat(findMember.getProfileImageUrl())
+				.isEqualTo(savedImageURL);
+
+			then(s3Client)
+				.should(times(1))
+				.throwIfImageNotFound(any(S3ImageType.class), anyString());
+			then(s3Client)
+				.should(never())
+				.getObjectUrl(any(S3ImageType.class), anyString());
+		}
+	}
+
+	private Member createMember() {
+
+		return Member.builder()
+			.name("홍길동")
+			.nickname("nickname")
+			.phone("01012341234")
+			.password("password")
+			.gender(Gender.MALE)
+			.birth(LocalDate.of(1999, 10, 10))
+			.profileImageUrl("imageURL")
+			.build();
 	}
 
 	private SignUpServiceRequest createSignUpServiceRequest(String phone, String nickname) {

@@ -254,7 +254,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willReturn(expectedURL);
 
 			// When
-			PresignedURLResponse response = memberService.getPresignedURL(imageType);
+			PresignedURLResponse response = memberService.getPresignedURLForProfileImage();
 
 			// Then
 			assertThat(response.getPresignedURL()).isEqualTo(expectedURL.toString());
@@ -278,7 +278,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willThrow(expectedException);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.getPresignedURL(imageType))
+			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage())
 				.isInstanceOf(S3Exception.class)
 				.hasMessage(S3_CREATE_PRESIGNED_URL_FAIL)
 				.hasCauseInstanceOf(SdkClientException.class);
@@ -289,9 +289,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 		}
 	}
 
-	@DisplayName("이미지 저장 요청시")
+	@DisplayName("회원 프로필 이미지 저장 요청시")
 	@Nested
-	class CheckAndSaveImage {
+	class CheckAndSaveProfileImage {
 
 		private Member savedMember;
 
@@ -312,9 +312,6 @@ public class MemberServiceTest extends ServiceTestSupport {
 		@Test
 		void withExistsImageInS3() throws MalformedURLException {
 
-			// Given
-			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
-
 			// Stub
 			URL expectedURL = new URL("https://something.com");
 			doNothing()
@@ -324,7 +321,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willReturn(expectedURL);
 
 			// When
-			memberService.checkAndSaveImage(imageType);
+			memberService.checkAndSaveProfileImage();
 
 			// Then
 			then(s3Client)
@@ -345,7 +342,6 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withNotExistsImageInS3() {
 
 			// Given
-			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
 			String savedImageURL = savedMember.getProfileImageUrl();
 
 			// Stub
@@ -355,7 +351,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.throwIfImageNotFound(any(S3ImageType.class), anyString());
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.checkAndSaveImage(imageType))
+			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage())
 				.isInstanceOf(S3ImageNotFoundException.class)
 				.hasMessage(S3_IMAGE_NOT_FOUND);
 

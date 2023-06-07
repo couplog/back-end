@@ -235,7 +235,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			PresignedURLResponse expectedResponse = createPresignedURLResponse(expectedURLStr);
 
 			// Stub
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willReturn(expectedResponse);
 
 			// When & Then
@@ -252,7 +252,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			SdkClientException sdkClientException = new SdkClientException("message");
 			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
 				sdkClientException);
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willThrow(expectedException);
 
 			// When & Then
@@ -279,7 +279,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))
@@ -294,7 +294,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))

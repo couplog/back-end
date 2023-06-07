@@ -38,24 +38,24 @@ public class MemberService {
 		authService.deleteAuthenticationInfoInRedis(phone);
 	}
 
-	public PresignedURLResponse getPresignedURL(S3ImageType imageType) {
+	public PresignedURLResponse getPresignedURLForProfileImage() {
 
 		Member member = MemberThreadLocal.get();
 
-		URL preSignedUrl = s3Client.getPreSignedUrl(imageType, member.getId().toString());
+		URL preSignedUrl = s3Client.getPreSignedUrl(S3ImageType.MEMBER_PROFILE, member.getId().toString());
 
 		return PresignedURLResponse.builder()
 			.presignedURL(preSignedUrl.toString())
 			.build();
 	}
 
-	public void checkAndSaveImage(S3ImageType imageType) {
+	public void checkAndSaveProfileImage() {
 
 		Member member = MemberThreadLocal.get();
 		String memberIdStr = member.getId().toString();
 
-		s3Client.throwIfImageNotFound(imageType, memberIdStr);
-		URL url = s3Client.getObjectUrl(imageType, memberIdStr);
+		s3Client.throwIfImageNotFound(S3ImageType.MEMBER_PROFILE, memberIdStr);
+		URL url = s3Client.getObjectUrl(S3ImageType.MEMBER_PROFILE, memberIdStr);
 
 		member.updateProfileImageUrl(url.toString());
 

@@ -29,8 +29,7 @@ public class MemberController {
 	@GetMapping("/profile/image/presigned-url")
 	public ApiResponse<PresignedURLResponse> getPresignedURL() {
 
-		PresignedURLResponse presingedURL = memberService.getPresignedURL(
-			S3ImageType.MEMBER_PROFILE);
+		PresignedURLResponse presingedURL = memberService.getPresignedURLForProfileImage();
 
 		return ApiResponse.ofSuccess(presingedURL);
 	}
@@ -38,7 +37,7 @@ public class MemberController {
 	@PutMapping("/profile/image")
 	public ApiResponse<Void> modifyProfileImage() {
 
-		memberService.checkAndSaveImage(S3ImageType.MEMBER_PROFILE);
+		memberService.checkAndSaveProfileImage();
 
 		return ApiResponse.ofSuccess();
 	}

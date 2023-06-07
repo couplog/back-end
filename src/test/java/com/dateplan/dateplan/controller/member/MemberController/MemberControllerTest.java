@@ -4,6 +4,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALR
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE_PATTERN;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_DELETE_OBJECT_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.SELF_CONNECTION_NOT_ALLOWED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
@@ -11,6 +12,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -23,7 +25,6 @@ import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
-import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
@@ -48,7 +49,9 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		given(authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Object.class)))
+		given(
+			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
+				any(Object.class)))
 			.willReturn(true);
 	}
 
@@ -235,7 +238,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			PresignedURLResponse expectedResponse = createPresignedURLResponse(expectedURLStr);
 
 			// Stub
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willReturn(expectedResponse);
 
 			// When & Then
@@ -252,7 +255,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			SdkClientException sdkClientException = new SdkClientException("message");
 			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
 				sdkClientException);
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willThrow(expectedException);
 
 			// When & Then
@@ -279,7 +282,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))
@@ -294,7 +297,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))
@@ -303,6 +306,49 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.S3_IMAGE_NOT_FOUND.getCode()),
 					jsonPath("$.message").value(S3_IMAGE_NOT_FOUND)
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 프로필 이미지 삭제 요청시")
+	class DeleteProfileImage {
+
+		private static final String REQUEST_URL = "/api/members/profile/image";
+
+		@DisplayName("S3 요청, 응답에 문제가 없다면 요청에 성공한다.")
+		@Test
+		void withAvailableS3() throws Exception {
+
+			// Stub
+			willDoNothing()
+				.given(memberService)
+				.deleteProfileImage();
+
+			// When & Then
+			mockMvc.perform(delete(REQUEST_URL))
+				.andExpect(status().isOk());
+		}
+
+		@DisplayName("S3 요청, 응답에 문제가 있다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withUnAvailableS3() throws Exception {
+
+			// Stub
+			SdkClientException sdkClientException = new SdkClientException("message");
+			S3Exception expectedException = new S3Exception(S3_DELETE_OBJECT_FAIL,
+				sdkClientException);
+			willThrow(expectedException)
+				.given(memberService)
+				.deleteProfileImage();
+
+			// When & Then
+			mockMvc.perform(delete(REQUEST_URL))
+				.andExpect(status().isServiceUnavailable())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.S3_ERROR.getCode()),
+					jsonPath("$.message").value(S3_DELETE_OBJECT_FAIL)
 				);
 		}
 	}

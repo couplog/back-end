@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 
 import com.amazonaws.SdkClientException;
@@ -146,6 +148,50 @@ class S3ClientTest {
 
 			// Then
 			assertThat(objectURL).isEqualTo(expectedURL);
+		}
+	}
+
+	@Nested
+	@DisplayName("이미지 타입과 이름으로 객체 삭제를 요청하면")
+	class DeleteObject {
+
+		@DisplayName("S3 로 정상적인 요청 및 응답이 온다면 예외를 발생시키지 않는다.")
+		@Test
+		void withAvailableS3() {
+
+			// Given
+			String fileName = "fileName";
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+
+			// Stub
+			willDoNothing()
+				.given(amazonS3)
+				.deleteObject(anyString(), anyString());
+
+			// When & Then
+			assertThatNoException()
+				.isThrownBy(() -> s3Client.deleteObject(imageType, fileName));
+		}
+
+		@DisplayName("S3 로 요청 및 응답 과정에 문제가 있다면 예외를 발생시킨다.")
+		@Test
+		void withUnAvailableS3() {
+
+			// Given
+			String fileName = "fileName";
+			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+
+			// Stub
+			SdkClientException sdkClientException = new SdkClientException("message");
+			willThrow(sdkClientException)
+				.given(amazonS3)
+				.deleteObject(anyString(), anyString());
+
+			// When & Then
+			assertThatThrownBy(() -> s3Client.deleteObject(imageType, fileName))
+				.isInstanceOf(S3Exception.class)
+				.hasMessage(DetailMessage.S3_DELETE_OBJECT_FAIL)
+				.hasCauseInstanceOf(SdkClientException.class);
 		}
 	}
 }

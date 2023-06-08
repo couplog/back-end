@@ -29,8 +29,11 @@ import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
+import com.dateplan.dateplan.global.exception.NoPermissionException;
 import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
@@ -230,11 +233,13 @@ public class MemberServiceTest extends ServiceTestSupport {
 	@Nested
 	class getPresignedURL {
 
+		private Member loginMember;
+
 		@BeforeEach
 		void setUp() {
-			Member member = createMember();
-			memberRepository.save(member);
-			MemberThreadLocal.set(member);
+			loginMember = createMember();
+			memberRepository.save(loginMember);
+			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
@@ -248,7 +253,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withNoExceptionThrowsS3Client() throws MalformedURLException {
 
 			// Given
-			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+			Long targetMemberId = loginMember.getId();
 
 			// Stub
 			URL expectedURL = new URL("https://something.com");
@@ -256,7 +261,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willReturn(expectedURL);
 
 			// When
-			PresignedURLResponse response = memberService.getPresignedURLForProfileImage();
+			PresignedURLResponse response = memberService.getPresignedURLForProfileImage(
+				targetMemberId);
 
 			// Then
 			assertThat(response.getPresignedURL()).isEqualTo(expectedURL.toString());
@@ -270,7 +276,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withExceptionThrowsS3Client() {
 
 			// Given
-			S3ImageType imageType = S3ImageType.MEMBER_PROFILE;
+			Long targetMemberId = loginMember.getId();
 
 			// Stub
 			SdkClientException sdkClientException = new SdkClientException("message");
@@ -280,7 +286,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willThrow(expectedException);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage())
+			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage(targetMemberId))
 				.isInstanceOf(S3Exception.class)
 				.hasMessage(S3_CREATE_PRESIGNED_URL_FAIL)
 				.hasCauseInstanceOf(SdkClientException.class);
@@ -289,19 +295,37 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.should(times(1))
 				.getPreSignedUrl(any(S3ImageType.class), anyString());
 		}
+
+		@DisplayName("현재 로그인한 회원과 Presigned URL 조회 대상 회원이 다르다면 예외를 발생시킨다.")
+		@Test
+		void withNoPermission() {
+
+			// Given
+			Long targetMemberId = loginMember.getId() + 1L;
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+
+			// When & Then
+			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage(targetMemberId))
+				.isInstanceOf(NoPermissionException.class)
+				.hasMessage(expectedException.getMessage());
+
+			then(s3Client)
+				.shouldHaveNoInteractions();
+		}
 	}
 
-	@DisplayName("회원 프로필 이미지 저장 요청시")
+	@DisplayName("회원 프로필 이미지 수정 요청시")
 	@Nested
 	class CheckAndSaveProfileImage {
 
-		private Member savedMember;
+		private Member loginMember;
 
 		@BeforeEach
 		void setUp() {
-			savedMember = createMember();
-			memberRepository.save(savedMember);
-			MemberThreadLocal.set(savedMember);
+			loginMember = createMember();
+			memberRepository.save(loginMember);
+			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
@@ -314,6 +338,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 		@Test
 		void withExistsImageInS3() throws MalformedURLException {
 
+			// Given
+			Long targetMemberId = loginMember.getId();
+
 			// Stub
 			URL expectedURL = new URL("https://something.com");
 			doNothing()
@@ -323,7 +350,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willReturn(expectedURL);
 
 			// When
-			memberService.checkAndSaveProfileImage();
+			memberService.checkAndSaveProfileImage(targetMemberId);
 
 			// Then
 			then(s3Client)
@@ -333,9 +360,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.should(times(1))
 				.getObjectUrl(any(S3ImageType.class), anyString());
 
-			Member findMember = memberRepository.findById(savedMember.getId()).get();
+			Member targetMember = memberRepository.findById(targetMemberId).get();
 
-			assertThat(findMember.getProfileImageUrl())
+			assertThat(targetMember.getProfileImageUrl())
 				.isEqualTo(expectedURL.toString());
 		}
 
@@ -344,7 +371,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withNotExistsImageInS3() {
 
 			// Given
-			String savedImageURL = savedMember.getProfileImageUrl();
+			Long targetMemberId = loginMember.getId();
+			String savedImageURL = loginMember.getProfileImageUrl();
 
 			// Stub
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
@@ -353,13 +381,13 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.throwIfImageNotFound(any(S3ImageType.class), anyString());
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage())
+			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage(targetMemberId))
 				.isInstanceOf(S3ImageNotFoundException.class)
 				.hasMessage(S3_IMAGE_NOT_FOUND);
 
-			Member findMember = memberRepository.findById(savedMember.getId()).get();
+			Member targetMember = memberRepository.findById(targetMemberId).get();
 
-			assertThat(findMember.getProfileImageUrl())
+			assertThat(targetMember.getProfileImageUrl())
 				.isEqualTo(savedImageURL);
 
 			then(s3Client)
@@ -369,19 +397,46 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.should(never())
 				.getObjectUrl(any(S3ImageType.class), anyString());
 		}
+
+		@DisplayName("현재 로그인한 회원과 프로필 이미지 수정 대상 회원이 다르다면 예외를 발생시키고, target 회원의 profileImage 가 변경되지 않는다..")
+		@Test
+		void withNoPermission() {
+
+			// Given
+			Member targetMember = createMember("01000000000", "targetMemberProfileImageURL");
+			memberRepository.save(targetMember);
+
+			Long targetMemberId = targetMember.getId();
+			String savedImageURL = targetMember.getProfileImageUrl();
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.UPDATE);
+
+			// When & Then
+			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage(targetMemberId))
+				.isInstanceOf(NoPermissionException.class)
+				.hasMessage(expectedException.getMessage());
+
+			targetMember = memberRepository.findById(targetMemberId).get();
+
+			assertThat(targetMember.getProfileImageUrl())
+				.isEqualTo(savedImageURL);
+
+			then(s3Client)
+				.shouldHaveNoInteractions();
+		}
 	}
 
 	@DisplayName("회원 프로필 이미지 삭제 요청시")
 	@Nested
 	class DeleteProfileImage {
 
-		private Member savedMember;
+		private Member loginMember;
 
 		@BeforeEach
 		void setUp() {
-			savedMember = createMember();
-			memberRepository.save(savedMember);
-			MemberThreadLocal.set(savedMember);
+			loginMember = createMember();
+			memberRepository.save(loginMember);
+			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
@@ -394,20 +449,23 @@ public class MemberServiceTest extends ServiceTestSupport {
 		@Test
 		void withAvailableS3() {
 
+			// Given
+			Long targetMemberId = loginMember.getId();
+
 			// Stub
 			willDoNothing()
 				.given(s3Client)
 				.deleteObject(any(S3ImageType.class), anyString());
 
 			// When
-			memberService.deleteProfileImage();
+			memberService.deleteProfileImage(targetMemberId);
 
 			// Then
 			then(s3Client)
 				.should(times(1))
 				.deleteObject(any(S3ImageType.class), anyString());
 
-			Member findMember = memberRepository.findById(savedMember.getId()).get();
+			Member findMember = memberRepository.findById(targetMemberId).get();
 
 			assertThat(findMember.getProfileImageUrl())
 				.isEqualTo(Member.DEFAULT_PROFILE_IMAGE);
@@ -418,22 +476,24 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withUnAvailableS3() {
 
 			// Given
-			String savedImageURL = savedMember.getProfileImageUrl();
+			Long targetMemberId = loginMember.getId();
+			String savedImageURL = loginMember.getProfileImageUrl();
 
 			// Stub
 			SdkClientException sdkClientException = new SdkClientException("message");
-			S3Exception expectedException = new S3Exception(S3_DELETE_OBJECT_FAIL, sdkClientException);
+			S3Exception expectedException = new S3Exception(S3_DELETE_OBJECT_FAIL,
+				sdkClientException);
 			willThrow(expectedException)
 				.given(s3Client)
 				.deleteObject(any(S3ImageType.class), anyString());
 
 			// When
-			assertThatThrownBy(() -> memberService.deleteProfileImage())
+			assertThatThrownBy(() -> memberService.deleteProfileImage(targetMemberId))
 				.isInstanceOf(S3Exception.class)
 				.hasMessage(S3_DELETE_OBJECT_FAIL)
 				.hasCauseInstanceOf(SdkClientException.class);
 
-			Member findMember = memberRepository.findById(savedMember.getId()).get();
+			Member findMember = memberRepository.findById(targetMemberId).get();
 
 			assertThat(findMember.getProfileImageUrl())
 				.isEqualTo(savedImageURL);
@@ -441,6 +501,33 @@ public class MemberServiceTest extends ServiceTestSupport {
 			then(s3Client)
 				.should(times(1))
 				.deleteObject(any(S3ImageType.class), anyString());
+		}
+
+		@DisplayName("현재 로그인한 회원과 프로필 이미지 삭제 대상 회원이 다르다면 예외를 발생시키고, target 회원의 profileImage 가 변경되지 않는다.")
+		@Test
+		void withNoPermission() {
+
+			// Given
+			Member targetMember = createMember("01000000000", "targetMemberProfileImageURL");
+			memberRepository.save(targetMember);
+
+			Long targetMemberId = targetMember.getId();
+			String savedImageURL = targetMember.getProfileImageUrl();
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+
+			// When & Then
+			assertThatThrownBy(() -> memberService.deleteProfileImage(targetMemberId))
+				.isInstanceOf(NoPermissionException.class)
+				.hasMessage(expectedException.getMessage());
+
+			targetMember = memberRepository.findById(targetMemberId).get();
+
+			assertThat(targetMember.getProfileImageUrl())
+				.isEqualTo(savedImageURL);
+
+			then(s3Client)
+				.shouldHaveNoInteractions();
 		}
 	}
 
@@ -454,6 +541,22 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.gender(Gender.MALE)
 			.birth(LocalDate.of(1999, 10, 10))
 			.build();
+	}
+
+	private Member createMember(String phone, String profileImageURL) {
+
+		Member member = Member.builder()
+			.name("홍길동")
+			.nickname("nickname")
+			.phone(phone)
+			.password("password")
+			.gender(Gender.MALE)
+			.birth(LocalDate.of(1999, 10, 10))
+			.build();
+
+		member.updateProfileImageUrl(profileImageURL);
+
+		return member;
 	}
 
 	private SignUpServiceRequest createSignUpServiceRequest(String phone, String nickname) {

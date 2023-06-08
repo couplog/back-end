@@ -20,7 +20,7 @@ import static org.mockito.Mockito.times;
 
 import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
-import com.dateplan.dateplan.domain.member.dto.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;

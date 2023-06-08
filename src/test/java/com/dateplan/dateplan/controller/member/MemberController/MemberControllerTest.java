@@ -4,13 +4,16 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALR
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE_PATTERN;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_DELETE_OBJECT_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.SELF_CONNECTION_NOT_ALLOWED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -23,10 +26,10 @@ import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
-import com.dateplan.dateplan.domain.s3.S3ImageType;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
-import com.dateplan.dateplan.global.exception.S3Exception;
-import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
+import com.dateplan.dateplan.global.exception.NoPermissionException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
@@ -48,7 +51,9 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		given(authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class), any(Object.class)))
+		given(
+			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
+				any(Object.class)))
 			.willReturn(true);
 	}
 
@@ -56,7 +61,30 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 연결 코드 조회 시")
 	class GetConnectionCode {
 
-		private static final String REQUEST_URL = "/api/members/connect";
+		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
+
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
+		@Test
+		void failWithoutPermission() throws Exception {
+
+			// Given
+			NoPermissionException exception =
+				new NoPermissionException(Resource.MEMBER, Operation.READ);
+
+			//Stub
+			given(coupleService.getConnectionCode(anyLong()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL, "1"))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
 
 		@DisplayName("생성한 코드 또는 24시간 내에 생성된 코드를 반환한다")
 		@Test
@@ -67,12 +95,12 @@ public class MemberControllerTest extends ControllerTestSupport {
 			ConnectionServiceResponse response = createConnectionServiceResponse(connectionCode);
 
 			// Stub
-			given(coupleService.getConnectionCode())
+			given(coupleService.getConnectionCode(anyLong()))
 				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(
-					get(REQUEST_URL))
+					get(REQUEST_URL, "1"))
 				.andExpect(status().isOk())
 				.andExpectAll(
 					jsonPath("$.success").value("true"),
@@ -86,7 +114,30 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 연결 시")
 	class ConnectCouple {
 
-		private static final String REQUEST_URL = "/api/members/connect";
+		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
+
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
+		@Test
+		void failWithoutPermission() throws Exception {
+
+			// Given
+			NoPermissionException exception =
+				new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+
+			//Stub
+			given(coupleService.getConnectionCode(anyLong()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL, "1"))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
 
 		@DisplayName("상대의 올바른 연결 코드를 입력하면 커플 생성에 성공한다.")
 		@Test
@@ -99,11 +150,11 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(coupleService)
-				.connectCouple(any(ConnectionServiceRequest.class));
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
-					post(REQUEST_URL)
+					post(REQUEST_URL, "1")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -123,11 +174,11 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(coupleService)
-				.connectCouple(any(ConnectionServiceRequest.class));
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
-					post(REQUEST_URL)
+					post(REQUEST_URL, "1")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -150,10 +201,10 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new InvalidConnectionCodeException())
 				.given(coupleService)
-				.connectCouple(any(ConnectionServiceRequest.class));
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			mockMvc.perform(
-					post(REQUEST_URL)
+					post(REQUEST_URL, "1")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -176,11 +227,11 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new AlreadyConnectedException())
 				.given(coupleService)
-				.connectCouple(any(ConnectionServiceRequest.class));
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
-					post(REQUEST_URL)
+					post(REQUEST_URL, "1")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -203,10 +254,10 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new SelfConnectionNotAllowedException())
 				.given(coupleService)
-				.connectCouple(any(ConnectionServiceRequest.class));
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			mockMvc.perform(
-					post(REQUEST_URL)
+					post(REQUEST_URL, "1")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -235,7 +286,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			PresignedURLResponse expectedResponse = createPresignedURLResponse(expectedURLStr);
 
 			// Stub
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willReturn(expectedResponse);
 
 			// When & Then
@@ -252,7 +303,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			SdkClientException sdkClientException = new SdkClientException("message");
 			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
 				sdkClientException);
-			given(memberService.getPresignedURL(any(S3ImageType.class)))
+			given(memberService.getPresignedURLForProfileImage())
 				.willThrow(expectedException);
 
 			// When & Then
@@ -279,7 +330,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))
@@ -294,7 +345,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveImage(any(S3ImageType.class));
+				.checkAndSaveProfileImage();
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL))
@@ -303,6 +354,49 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.S3_IMAGE_NOT_FOUND.getCode()),
 					jsonPath("$.message").value(S3_IMAGE_NOT_FOUND)
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 프로필 이미지 삭제 요청시")
+	class DeleteProfileImage {
+
+		private static final String REQUEST_URL = "/api/members/profile/image";
+
+		@DisplayName("S3 요청, 응답에 문제가 없다면 요청에 성공한다.")
+		@Test
+		void withAvailableS3() throws Exception {
+
+			// Stub
+			willDoNothing()
+				.given(memberService)
+				.deleteProfileImage();
+
+			// When & Then
+			mockMvc.perform(delete(REQUEST_URL))
+				.andExpect(status().isOk());
+		}
+
+		@DisplayName("S3 요청, 응답에 문제가 있다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withUnAvailableS3() throws Exception {
+
+			// Stub
+			SdkClientException sdkClientException = new SdkClientException("message");
+			S3Exception expectedException = new S3Exception(S3_DELETE_OBJECT_FAIL,
+				sdkClientException);
+			willThrow(expectedException)
+				.given(memberService)
+				.deleteProfileImage(anyLong());
+
+			// When & Then
+			mockMvc.perform(delete(REQUEST_URL))
+				.andExpect(status().isServiceUnavailable())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.S3_ERROR.getCode()),
+					jsonPath("$.message").value(S3_DELETE_OBJECT_FAIL)
 				);
 		}
 	}

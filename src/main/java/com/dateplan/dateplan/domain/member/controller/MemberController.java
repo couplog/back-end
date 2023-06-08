@@ -1,10 +1,14 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.MemberInfoResponse;
+import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -23,8 +27,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/members")
 public class MemberController {
 
-	private final CoupleService coupleService;
 	private final MemberService memberService;
+	private final MemberReadService memberReadService;
+	private final CoupleService coupleService;
+	private final CoupleReadService coupleReadService;
+
+	@GetMapping("/me")
+	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo(){
+
+		MemberInfoServiceResponse serviceResponse = memberReadService.getCurrentLoginMemberInfo();
+		boolean isConnected = coupleReadService.isCurrentLoginMemberConnected();
+
+		MemberInfoResponse response = serviceResponse.toResponse(isConnected);
+
+		return ApiResponse.ofSuccess(response);
+	}
 
 	@GetMapping("/{member_id}/profile/image/presigned-url")
 	public ApiResponse<PresignedURLResponse> getPresignedURL(@PathVariable("member_id") Long memberId) {

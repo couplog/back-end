@@ -57,7 +57,7 @@ public class CoupleService {
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
 		if (!isSameCouple(coupleId, couple.getId())) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+			throw new NoPermissionException(Resource.COUPLE, Operation.UPDATE);
 		}
 
 		couple.updateFirstDate(request.getFirstDate());

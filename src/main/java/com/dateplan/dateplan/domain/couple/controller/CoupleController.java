@@ -7,6 +7,7 @@ import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,20 +15,21 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/couple")
+@RequestMapping("/api/couples")
 public class CoupleController {
 
 	private final CoupleService coupleService;
 
-	@GetMapping("/first-date")
-	public ApiResponse<FirstDateResponse> getFirstDate() {
-		FirstDateResponse response = coupleService.getFirstDate().toFirstDateResponse();
+	@GetMapping("/{couple_id}/first-date")
+	public ApiResponse<FirstDateResponse> getFirstDate(@PathVariable("couple_id") Long coupleId) {
+		FirstDateResponse response = coupleService.getFirstDate(coupleId).toFirstDateResponse();
 		return ApiResponse.ofSuccess(response);
 	}
 
-	@PutMapping("/first-date")
-	public ApiResponse<Void> updateFirstDate(@Valid @RequestBody FirstDateRequest request) {
-		coupleService.updateFirstDate(request.toFirstDateServiceRequest());
+	@PutMapping("/{couple_id}/first-date")
+	public ApiResponse<Void> updateFirstDate(@PathVariable("couple_id") Long coupleId,
+		@Valid @RequestBody FirstDateRequest request) {
+		coupleService.updateFirstDate(coupleId, request.toFirstDateServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 }

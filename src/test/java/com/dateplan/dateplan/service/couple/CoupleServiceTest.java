@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -22,6 +23,10 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.NoPermissionException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
@@ -78,6 +83,29 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			MemberThreadLocal.remove();
 		}
 
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
+		@Test
+		void failWithoutPermission() {
+
+			// Given
+			Long id = member.getId() + 1;
+
+			// When & Then
+			assertThatThrownBy(() -> coupleService.getConnectionCode(id))
+				.isInstanceOf(NoPermissionException.class)
+				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(), Operation.READ.getName()));
+
+			// Verify
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(
+				RandomCodeGenerator.class)) {
+
+				generator.verify(() -> RandomCodeGenerator.generateConnectionCode(anyInt()),
+					never());
+			}
+		}
+
 		@DisplayName("24시간 내에 생성된 코드가 없다면 새로 생성한 코드를 반환하고, redis에 저장된다")
 		@Test
 		void returnNewConnectionCode() {
@@ -93,7 +121,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				given(RandomCodeGenerator.generateConnectionCode(6)).willReturn(connectionCode);
 
 				// When
-				response = coupleService.getConnectionCode();
+				response = coupleService.getConnectionCode(member.getId());
 
 				// Verify
 				generator.verify(() -> RandomCodeGenerator.generateConnectionCode(anyInt()),
@@ -131,7 +159,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 					.thenAnswer(invocation -> null);
 
 				// When
-				savedConnectionCode = coupleService.getConnectionCode();
+				savedConnectionCode = coupleService.getConnectionCode(member.getId());
 
 				// Verify
 				generator.verify(
@@ -165,7 +193,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 					.willReturn(newConnectionCode);
 
 				// When
-				response = coupleService.getConnectionCode();
+				response = coupleService.getConnectionCode(member.getId());
 
 				// Verify
 				generator.verify(
@@ -199,6 +227,29 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			MemberThreadLocal.remove();
 		}
 
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
+		@Test
+		void failWithoutPermission() {
+
+			// Given
+			Long id = member.getId() + 1;
+
+			// When & Then
+			assertThatThrownBy(() -> coupleService.getConnectionCode(id))
+				.isInstanceOf(NoPermissionException.class)
+				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(), Operation.READ.getName()));
+
+			// Verify
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+			try (MockedStatic<RandomCodeGenerator> generator = mockStatic(
+				RandomCodeGenerator.class)) {
+
+				generator.verify(() -> RandomCodeGenerator.generateConnectionCode(anyInt()),
+					never());
+			}
+		}
+
 		@DisplayName("올바른 요청 코드를 입력하면 상대방과 연결된다")
 		@Test
 		void connectCoupleWithValidRequest() {
@@ -219,7 +270,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				Optional.ofNullable(createCouple(member, oppositeMember)));
 
 			// When
-			coupleService.connectCouple(request);
+			coupleService.connectCouple(member.getId(), request);
 
 			// Then
 			Couple couple = coupleRepository.findById(1L).orElse(null);
@@ -242,7 +293,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				.willReturn(oppositeMember);
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.connectCouple(request))
+			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
 				.isInstanceOf(InvalidConnectionCodeException.class)
 				.hasMessage(INVALID_CONNECTION_CODE);
 		}
@@ -263,7 +314,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				.willReturn(oppositeMember);
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.connectCouple(request))
+			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
 				.isInstanceOf(AlreadyConnectedException.class)
 				.hasMessage(ALREADY_CONNECTED);
 		}
@@ -286,7 +337,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				.willReturn(oppositeMember);
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.connectCouple(request))
+			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
 				.isInstanceOf(SelfConnectionNotAllowedException.class)
 				.hasMessage(SELF_CONNECTION_NOT_ALLOWED);
 		}

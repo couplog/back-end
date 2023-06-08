@@ -2,6 +2,7 @@ package com.dateplan.dateplan.global.exception;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -34,6 +35,7 @@ public enum ErrorCode {
 	SELF_CONNECTION_NOT_ALLOWED(BAD_REQUEST, "C018"),
 	S3_IMAGE_NOT_FOUND(CONFLICT, "C019"),
 	TOKEN_NOT_FOUND(UNAUTHORIZED, "C020"),
+	NO_PERMISSION(FORBIDDEN, "C021"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -90,6 +92,7 @@ public enum ErrorCode {
 		public static final String TOKEN_INVALID = "유효하지 않은 토큰입니다.";
 		public static final String PASSWORD_MISMATCH = "비밀번호가 올바르지 않습니다.";
 		public static final String TOKEN_NOT_FOUND = "access token을 찾을 수 없습니다.";
+		public static final String NO_PERMISSION = "해당 %s 에 대한 %s 권한이 없습니다.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

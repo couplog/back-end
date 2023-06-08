@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.dto;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Gender;

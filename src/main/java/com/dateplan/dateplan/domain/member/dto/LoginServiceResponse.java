@@ -1,6 +1,5 @@
-package com.dateplan.dateplan.domain.member.dto.login;
+package com.dateplan.dateplan.domain.member.dto;
 
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
 import lombok.Builder;
 import lombok.Getter;
 

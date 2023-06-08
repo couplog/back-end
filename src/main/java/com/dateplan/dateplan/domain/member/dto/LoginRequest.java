@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.member.dto.login;
+package com.dateplan.dateplan.domain.member.dto;
 
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import jakarta.validation.constraints.NotEmpty;

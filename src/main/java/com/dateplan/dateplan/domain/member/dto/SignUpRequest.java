@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.dto;
 
 import static com.dateplan.dateplan.global.constant.InputPattern.*;
 import static com.dateplan.dateplan.global.constant.InputPattern.PHONE_PATTERN;

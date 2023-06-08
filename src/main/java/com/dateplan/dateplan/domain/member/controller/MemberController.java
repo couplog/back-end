@@ -50,15 +50,17 @@ public class MemberController {
 		return ApiResponse.ofSuccess();
 	}
 
-	@GetMapping("/connect")
-	public ApiResponse<ConnectionResponse> getConnectionCode() {
-		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode();
+	@GetMapping("/{member_id}/connect")
+	public ApiResponse<ConnectionResponse> getConnectionCode(
+		@PathVariable("member_id") Long memberId) {
+		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode(memberId);
 		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
 	}
 
-	@PostMapping("/connect")
-	public ApiResponse<Void> connectCouple(@Valid @RequestBody ConnectionRequest request) {
-		coupleService.connectCouple(request.toConnectionServiceRequest());
+	@PostMapping("/{member_id}/connect")
+	public ApiResponse<Void> connectCouple(@PathVariable("member_id") Long memberId,
+		@Valid @RequestBody ConnectionRequest request) {
+		coupleService.connectCouple(memberId, request.toConnectionServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 }

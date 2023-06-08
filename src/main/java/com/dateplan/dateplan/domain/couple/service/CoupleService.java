@@ -37,20 +37,29 @@ public class CoupleService {
 	private final CoupleRepository coupleRepository;
 	private final CoupleReadService coupleReadService;
 
-	public FirstDateServiceResponse getFirstDate() {
+	public FirstDateServiceResponse getFirstDate(Long coupleId) {
 		final Member member = MemberThreadLocal.get();
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (!isSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+		}
 
 		return FirstDateServiceResponse.builder()
 			.firstDate(couple.getFirstDate())
 			.build();
 	}
 
-	public void updateFirstDate(FirstDateServiceRequest request) {
+	public void updateFirstDate(Long coupleId, FirstDateServiceRequest request) {
 		final Member member = MemberThreadLocal.get();
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (!isSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+		}
+
 		couple.updateFirstDate(request.getFirstDate());
 	}
 
@@ -132,5 +141,9 @@ public class CoupleService {
 	private boolean isSameMember(Long memberId, Long loginMemberId) {
 
 		return Objects.equals(memberId, loginMemberId);
+	}
+
+	private boolean isSameCouple(Long coupleId, Long connectedCoupleId) {
+		return Objects.equals(coupleId, connectedCoupleId);
 	}
 }

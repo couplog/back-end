@@ -7,7 +7,11 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.s3.S3Client;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.NoPermissionException;
 import java.net.URL;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,37 +42,56 @@ public class MemberService {
 		authService.deleteAuthenticationInfoInRedis(phone);
 	}
 
-	public PresignedURLResponse getPresignedURLForProfileImage() {
+	public PresignedURLResponse getPresignedURLForProfileImage(Long memberId) {
 
-		Member member = MemberThreadLocal.get();
+		Member loginMember = MemberThreadLocal.get();
 
-		URL preSignedUrl = s3Client.getPreSignedUrl(S3ImageType.MEMBER_PROFILE, member.getId().toString());
+		if (!isSameMember(memberId, loginMember.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
+		}
+
+		URL preSignedUrl = s3Client.getPreSignedUrl(S3ImageType.MEMBER_PROFILE,
+			loginMember.getId().toString());
 
 		return PresignedURLResponse.builder()
 			.presignedURL(preSignedUrl.toString())
 			.build();
 	}
 
-	public void checkAndSaveProfileImage() {
+	public void checkAndSaveProfileImage(Long memberId) {
 
-		Member member = MemberThreadLocal.get();
-		String memberIdStr = member.getId().toString();
+		Member loginMember = MemberThreadLocal.get();
+
+		if (!isSameMember(memberId, loginMember.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+		}
+
+		String memberIdStr = loginMember.getId().toString();
 
 		s3Client.throwIfImageNotFound(S3ImageType.MEMBER_PROFILE, memberIdStr);
 		URL url = s3Client.getObjectUrl(S3ImageType.MEMBER_PROFILE, memberIdStr);
 
-		member.updateProfileImageUrl(url.toString());
+		loginMember.updateProfileImageUrl(url.toString());
 
-		memberRepository.save(member);
+		memberRepository.save(loginMember);
 	}
 
-	public void deleteProfileImage() {
+	public void deleteProfileImage(Long memberId) {
 
-		Member member = MemberThreadLocal.get();
+		Member loginMember = MemberThreadLocal.get();
 
-		s3Client.deleteObject(S3ImageType.MEMBER_PROFILE, member.getId().toString());
-		member.updateProfileImageUrl(Member.DEFAULT_PROFILE_IMAGE);
+		if (!isSameMember(memberId, loginMember.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
 
-		memberRepository.save(member);
+		s3Client.deleteObject(S3ImageType.MEMBER_PROFILE, loginMember.getId().toString());
+		loginMember.updateProfileImageUrl(Member.DEFAULT_PROFILE_IMAGE);
+
+		memberRepository.save(loginMember);
+	}
+
+	private boolean isSameMember(Long memberId, Long loginMemberId){
+
+		return Objects.equals(memberId, loginMemberId);
 	}
 }

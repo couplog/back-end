@@ -83,7 +83,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			MemberThreadLocal.remove();
 		}
 
-		@DisplayName("권한이 없는 요청을 하면 실패한다")
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
 		@Test
 		void failWithoutPermission() {
 
@@ -227,7 +227,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			MemberThreadLocal.remove();
 		}
 
-		@DisplayName("권한이 없는 요청을 하면 실패한다")
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
 		@Test
 		void failWithoutPermission() {
 

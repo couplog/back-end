@@ -63,7 +63,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
 
-		@DisplayName("권한이 없는 요청을 하면 실패한다")
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
 		@Test
 		void failWithoutPermission() throws Exception {
 
@@ -116,7 +116,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
 
-		@DisplayName("권한이 없는 요청을 하면 실패한다")
+		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
 		@Test
 		void failWithoutPermission() throws Exception {
 

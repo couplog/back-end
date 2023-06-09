@@ -89,7 +89,7 @@ public enum ErrorCode {
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
 
 		// 커플 관련
-		public static final String COUPLE_NOT_CONNECTED = "현재 커플이 연결되어 있지 않습니다.";
+		public static final String COUPLE_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";

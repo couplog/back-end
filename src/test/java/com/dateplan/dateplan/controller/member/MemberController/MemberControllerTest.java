@@ -30,6 +30,8 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.S3Exception;
+import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
@@ -275,7 +277,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("프로필 이미지 업로드를 위한 Presigned URL 요청시")
 	class GetPresignedURL {
 
-		private static final String REQUEST_URL = "/api/members/profile/image/presigned-url";
+		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image/presigned-url";
 
 		@DisplayName("S3 요청, 응답에 문제가 없다면 Presigned URL 을 응답한다.")
 		@Test
@@ -286,11 +288,11 @@ public class MemberControllerTest extends ControllerTestSupport {
 			PresignedURLResponse expectedResponse = createPresignedURLResponse(expectedURLStr);
 
 			// Stub
-			given(memberService.getPresignedURLForProfileImage())
+			given(memberService.getPresignedURLForProfileImage(anyLong()))
 				.willReturn(expectedResponse);
 
 			// When & Then
-			mockMvc.perform(get(REQUEST_URL))
+			mockMvc.perform(get(REQUEST_URL, 1L))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.data.presignedURL").value(expectedURLStr));
 		}
@@ -303,16 +305,36 @@ public class MemberControllerTest extends ControllerTestSupport {
 			SdkClientException sdkClientException = new SdkClientException("message");
 			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
 				sdkClientException);
-			given(memberService.getPresignedURLForProfileImage())
+			given(memberService.getPresignedURLForProfileImage(anyLong()))
 				.willThrow(expectedException);
 
 			// When & Then
-			mockMvc.perform(get(REQUEST_URL))
+			mockMvc.perform(get(REQUEST_URL, 1L))
 				.andExpect(status().isServiceUnavailable())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.S3_ERROR.getCode()),
 					jsonPath("$.message").value(S3_CREATE_PRESIGNED_URL_FAIL)
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원과 Presigned URL 조회 대상 회원이 다르다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNoPermission() throws Exception {
+
+			// Stub
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+			given(memberService.getPresignedURLForProfileImage(anyLong()))
+				.willThrow(expectedException);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(expectedException.getMessage())
 				);
 		}
 	}
@@ -321,7 +343,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("S3 내에 있는 프로필 사진 URL 을 DB 에 저장하려고 할 때")
 	class CheckAndSaveImage {
 
-		private static final String REQUEST_URL = "/api/members/profile/image";
+		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
 
 		@DisplayName("S3 내에 해당 유저의 프로필 이미지가 존재한다면, 요청에 성공한다.")
 		@Test
@@ -330,10 +352,10 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.checkAndSaveProfileImage();
+				.checkAndSaveProfileImage(anyLong());
 
 			// When & Then
-			mockMvc.perform(put(REQUEST_URL))
+			mockMvc.perform(put(REQUEST_URL, 1L))
 				.andExpect(status().isOk());
 		}
 
@@ -345,15 +367,36 @@ public class MemberControllerTest extends ControllerTestSupport {
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveProfileImage();
+				.checkAndSaveProfileImage(anyLong());
 
 			// When & Then
-			mockMvc.perform(put(REQUEST_URL))
+			mockMvc.perform(put(REQUEST_URL, 1L))
 				.andExpect(status().isConflict())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.S3_IMAGE_NOT_FOUND.getCode()),
 					jsonPath("$.message").value(S3_IMAGE_NOT_FOUND)
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원과 프로필 이미지 수정 대상 회원이 다르다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNoPermission() throws Exception {
+
+			// Stub
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.UPDATE);
+			willThrow(expectedException)
+				.given(memberService)
+				.checkAndSaveProfileImage(anyLong());
+
+			// When & Then
+			mockMvc.perform(put(REQUEST_URL, 1L))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(expectedException.getMessage())
 				);
 		}
 	}
@@ -362,7 +405,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 프로필 이미지 삭제 요청시")
 	class DeleteProfileImage {
 
-		private static final String REQUEST_URL = "/api/members/profile/image";
+		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
 
 		@DisplayName("S3 요청, 응답에 문제가 없다면 요청에 성공한다.")
 		@Test
@@ -371,10 +414,10 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.deleteProfileImage();
+				.deleteProfileImage(anyLong());
 
 			// When & Then
-			mockMvc.perform(delete(REQUEST_URL))
+			mockMvc.perform(delete(REQUEST_URL, 1L))
 				.andExpect(status().isOk());
 		}
 
@@ -391,12 +434,33 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.deleteProfileImage(anyLong());
 
 			// When & Then
-			mockMvc.perform(delete(REQUEST_URL))
+			mockMvc.perform(delete(REQUEST_URL, 1L))
 				.andExpect(status().isServiceUnavailable())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.S3_ERROR.getCode()),
 					jsonPath("$.message").value(S3_DELETE_OBJECT_FAIL)
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원과 프로필 이미지 삭제 대상 회원이 다르다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNoPermission() throws Exception {
+
+			// Stub
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			willThrow(expectedException)
+				.given(memberService)
+				.deleteProfileImage(anyLong());
+
+			// When & Then
+			mockMvc.perform(delete(REQUEST_URL, 1L))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(expectedException.getMessage())
 				);
 		}
 	}

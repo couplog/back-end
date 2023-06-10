@@ -25,7 +25,9 @@ import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
+import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
@@ -465,6 +467,39 @@ public class MemberControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("현재 로그인 회원의 정보 조회 요청시")
+	class GetCurrentLoginMemberInfo {
+
+		private static final String REQUEST_URL = "/api/members/me";
+
+		@DisplayName("현재 로그인 회원의 정보를 응답한다.")
+		@Test
+		void withLoginMember() throws Exception {
+
+			// Stub
+			MemberInfoServiceResponse serviceResponse = createMemberInfoServiceResponse();
+			boolean isConnected = true;
+			given(memberReadService.getCurrentLoginMemberInfo())
+				.willReturn(serviceResponse);
+			given(coupleReadService.isCurrentLoginMemberConnected())
+				.willReturn(isConnected);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpectAll(
+					jsonPath("$.data.memberId").value(serviceResponse.getMemberId()),
+					jsonPath("$.data.name").value(serviceResponse.getName()),
+					jsonPath("$.data.nickname").value(serviceResponse.getNickname()),
+					jsonPath("$.data.phone").value(serviceResponse.getPhone()),
+					jsonPath("$.data.birth").value(serviceResponse.getBirth().toString()),
+					jsonPath("$.data.gender").value(serviceResponse.getGender().name()),
+					jsonPath("$.data.profileImageURL").value(serviceResponse.getProfileImageURL()));
+		}
+	}
+
 	private ConnectionServiceResponse createConnectionServiceResponse(String connectionCode) {
 		return ConnectionServiceResponse.builder()
 			.connectionCode(connectionCode)
@@ -485,4 +520,16 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.build();
 	}
 
+	private MemberInfoServiceResponse createMemberInfoServiceResponse() {
+
+		return MemberInfoServiceResponse.builder()
+			.memberId(1L)
+			.name("횽길동")
+			.nickname("nickname")
+			.phone("01012341234")
+			.birth(LocalDate.of(2020, 10, 10))
+			.gender(Gender.MALE)
+			.profileImageURL("imageURL")
+			.build();
+	}
 }

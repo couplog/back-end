@@ -3,12 +3,12 @@ package com.dateplan.dateplan.domain.member.controller;
 import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.LoginResponse;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
-import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
-import com.dateplan.dateplan.domain.member.dto.SignUpRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginResponse;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;

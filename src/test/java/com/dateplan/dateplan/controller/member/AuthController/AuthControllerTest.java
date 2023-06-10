@@ -20,15 +20,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeRequest;
-import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.PhoneRequest;
-import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.SignUpRequest;
-import com.dateplan.dateplan.domain.member.dto.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;

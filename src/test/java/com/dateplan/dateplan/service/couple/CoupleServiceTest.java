@@ -238,9 +238,10 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// Given
 			Long id = member.getId() + 1;
+			ConnectionServiceRequest request = createConnectionServiceRequest("ABC123");
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.getConnectionCode(id))
+			assertThatThrownBy(() -> coupleService.connectCouple(id, request))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
 					Operation.UPDATE.getName()));
@@ -361,6 +362,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void tearDown() {
 			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
 		}
 
 		@BeforeEach
@@ -430,6 +432,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void tearDown() {
 			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
 		}
 
 		@BeforeEach
@@ -466,9 +469,10 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			Member nowConnectedMember = createMember("01011111111");
 			MemberThreadLocal.set(nowConnectedMember);
 			memberRepository.save(nowConnectedMember);
+			FirstDateServiceRequest request = createFirstDateServiceRequest();
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.getFirstDate(couple.getId()))
+			assertThatThrownBy(() -> coupleService.updateFirstDate(couple.getId(), request))
 				.isInstanceOf(CoupleNotConnectedException.class)
 				.hasMessage(DetailMessage.COUPLE_NOT_CONNECTED);
 		}
@@ -478,12 +482,13 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void failWithDifferentCoupleId() {
 			// Given
 			Long coupleId = couple.getId() + 1;
+			FirstDateServiceRequest request = createFirstDateServiceRequest();
 
 			// When & Then
 			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
 				Operation.UPDATE);
 
-			assertThatThrownBy(() -> coupleService.getFirstDate(coupleId))
+			assertThatThrownBy(() -> coupleService.updateFirstDate(coupleId, request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}

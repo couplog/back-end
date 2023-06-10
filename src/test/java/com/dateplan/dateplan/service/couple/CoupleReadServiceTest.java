@@ -9,6 +9,7 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
@@ -93,6 +94,70 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 	}
 
 	@Nested
+	@DisplayName("현재 로그인한 회원의 연결 여부를 조회할 때")
+	class IsCurrentLoginMemberConnected {
+
+		Member connectedMember1;
+		Member connectedMember2;
+		Member notConnectedMember;
+
+		@BeforeEach
+		void setUp() {
+			connectedMember1 = createMember("01011111111");
+			connectedMember2 = createMember("01022222222");
+			notConnectedMember = createMember("01033333333");
+			memberRepository.saveAll(
+				List.of(connectedMember1, connectedMember2, notConnectedMember));
+
+			Couple couple = createCouple(connectedMember1, connectedMember2);
+			coupleRepository.save(couple);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("현재 로그인한 회원이 연결된 회원이라면 true 를 리턴한다.")
+		@Test
+		void withConnectedLoginMember() {
+
+			// Given
+			List<Member> coupleMembers = List.of(connectedMember1, connectedMember2);
+
+			for (Member connectedMember : coupleMembers) {
+
+				// Given
+				MemberThreadLocal.set(connectedMember);
+
+				// When
+				boolean isConnected = coupleReadService.isCurrentLoginMemberConnected();
+
+				// Then
+				assertThat(isConnected)
+					.isTrue();
+			}
+		}
+
+		@DisplayName("현재 로그인한 회원이 연결된 회원이 아니라면 false 를 리턴한다.")
+		@Test
+		void withNotConnectedLoginMember() {
+
+			// Given
+			MemberThreadLocal.set(notConnectedMember);
+
+			// When
+			boolean isConnected = coupleReadService.isCurrentLoginMemberConnected();
+
+			// Then
+			assertThat(isConnected)
+				.isFalse();
+		}
+	}
+
+	@Nested
 	@DisplayName("멤버로 연결되어 있는 커플을 찾을 때")
 	class FindCoupleByMember {
 
@@ -150,6 +215,15 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)
+			.build();
+	}
+
+	private Couple createCouple(Member member1, Member member2) {
+
+		return Couple.builder()
+			.member1(member1)
+			.member2(member2)
+			.firstDate(LocalDate.of(2010, 10, 10))
 			.build();
 	}
 

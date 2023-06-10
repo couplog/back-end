@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
@@ -28,11 +30,6 @@ class MemberReadServiceTest extends ServiceTestSupport {
 	@Autowired
 	private MemberRepository memberRepository;
 
-	@AfterEach
-	void tearDown() {
-		memberRepository.deleteAllInBatch();
-	}
-
 	@DisplayName("전화번호가 주어졌을 때")
 	@Nested
 	class ThrowIfPhoneExists {
@@ -43,6 +40,11 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		void setUp() {
 			Member member = createMember(existsPhoneNumber, "nickname");
 			memberRepository.save(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
 		}
 
 		@DisplayName("해당 전화번호가 이미 가입되어 있다면 예외를 발생시킨다.")
@@ -78,6 +80,11 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		void setUp() {
 			Member member = createMember(existsPhoneNumber, "nickname");
 			memberRepository.save(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
 		}
 
 		@DisplayName("해당 번호로 가입된 회원이 있다면 회원 엔티티를 반환한다.")
@@ -117,6 +124,11 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			memberRepository.save(member);
 		}
 
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
+		}
+
 		@DisplayName("해당 닉네임이 이미 가입되어 있다면 예외를 발생시킨다.")
 		@Test
 		void throwIfNicknameExists() {
@@ -140,10 +152,57 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@DisplayName("현재 로그인한 회원 정보를 조회하면")
+	@Nested
+	class GetCurrentLoginMemberInfo {
+
+		private Member loginMember;
+
+		@BeforeEach
+		void setUp() {
+			loginMember = createMember();
+			memberRepository.save(loginMember);
+			MemberThreadLocal.set(loginMember);
+		}
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("현재 로그인한 회원 정보를 조회한다.")
+		@Test
+		void withLoginMember() {
+
+			// Given
+			MemberInfoServiceResponse expectedServiceResponse = MemberInfoServiceResponse.of(
+				loginMember);
+
+			// When
+			MemberInfoServiceResponse serviceResponse = memberReadService.getCurrentLoginMemberInfo();
+
+			// Then
+			assertThat(serviceResponse)
+				.usingRecursiveComparison()
+				.isEqualTo(expectedServiceResponse);
+		}
+	}
+
+	private Member createMember() {
+
+		return Member.builder()
+			.name("홍길동")
+			.nickname("nickname")
+			.phone("01012345678")
+			.password("password")
+			.gender(Gender.MALE)
+			.build();
+	}
+
 	private Member createMember(String phone, String nickname) {
 
 		return Member.builder()
-			.name("name")
+			.name("홍길동")
 			.nickname(nickname)
 			.phone(phone)
 			.password("password")

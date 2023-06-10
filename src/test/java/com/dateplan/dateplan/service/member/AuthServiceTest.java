@@ -17,10 +17,10 @@ import static org.mockito.Mockito.times;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.PhoneAuthCodeServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;

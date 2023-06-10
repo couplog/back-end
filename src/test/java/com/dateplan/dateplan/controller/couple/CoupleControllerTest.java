@@ -19,7 +19,7 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.NoPermissionException;
-import com.dateplan.dateplan.global.exception.couple.CoupleNotConnectedException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
@@ -85,7 +85,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 
 			// Stub
 			given(coupleService.getFirstDate(anyLong()))
-				.willThrow(new CoupleNotConnectedException());
+				.willThrow(new MemberNotConnectedException());
 
 			// When & Then
 			mockMvc.perform(
@@ -93,8 +93,8 @@ public class CoupleControllerTest extends ControllerTestSupport {
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(ErrorCode.COUPLE_NOT_CONNECTED.getCode()),
-					jsonPath("$.message").value(DetailMessage.COUPLE_NOT_CONNECTED));
+					jsonPath("$.code").value(ErrorCode.MEMBER_NOT_CONNECTED.getCode()),
+					jsonPath("$.message").value(DetailMessage.Member_NOT_CONNECTED));
 		}
 
 		@DisplayName("현재 자신이 연결되어 있는 커플의 id와 path variable의 couple-id가 다르면 실패한다")
@@ -174,7 +174,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			FirstDateRequest request = createFirstDateRequest();
 
 			// Stub
-			willThrow(new CoupleNotConnectedException())
+			willThrow(new MemberNotConnectedException())
 				.given(coupleService)
 				.updateFirstDate(anyLong(), any(FirstDateServiceRequest.class));
 
@@ -187,8 +187,8 @@ public class CoupleControllerTest extends ControllerTestSupport {
 				.andExpect(status().isBadRequest())
 				.andExpectAll(
 					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(ErrorCode.COUPLE_NOT_CONNECTED.getCode()),
-					jsonPath("$.message").value(DetailMessage.COUPLE_NOT_CONNECTED));
+					jsonPath("$.code").value(ErrorCode.MEMBER_NOT_CONNECTED.getCode()),
+					jsonPath("$.message").value(DetailMessage.Member_NOT_CONNECTED));
 		}
 
 		@DisplayName("현재보다 이후의 시간을 처음 만난 날로 수정하려하면 실패한다")

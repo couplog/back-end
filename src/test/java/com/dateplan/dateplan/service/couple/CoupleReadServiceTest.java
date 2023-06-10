@@ -11,7 +11,7 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.couple.CoupleNotConnectedException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.util.List;
@@ -137,8 +137,8 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 			assertThatThrownBy(
 				() -> coupleReadService.findCoupleByMemberOrElseThrow(notConnectedMember))
-				.isInstanceOf(CoupleNotConnectedException.class)
-				.hasMessage(DetailMessage.COUPLE_NOT_CONNECTED);
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}
 	}
 

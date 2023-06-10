@@ -29,7 +29,7 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.NoPermissionException;
-import com.dateplan.dateplan.global.exception.couple.CoupleNotConnectedException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
@@ -400,8 +400,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			assertThatThrownBy(() -> coupleService.getFirstDate(couple.getId()))
-				.isInstanceOf(CoupleNotConnectedException.class)
-				.hasMessage(DetailMessage.COUPLE_NOT_CONNECTED);
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}
 
 		@DisplayName("현재 자신이 연결된 coupleId와 파라미터의 coupleId가 다르면 실패한다.")
@@ -473,8 +473,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			assertThatThrownBy(() -> coupleService.updateFirstDate(couple.getId(), request))
-				.isInstanceOf(CoupleNotConnectedException.class)
-				.hasMessage(DetailMessage.COUPLE_NOT_CONNECTED);
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}
 
 		@DisplayName("현재 자신이 연결된 coupleId와 파라미터의 coupleId가 다르면 실패한다.")

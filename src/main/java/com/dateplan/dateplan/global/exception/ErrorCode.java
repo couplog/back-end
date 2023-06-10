@@ -36,7 +36,7 @@ public enum ErrorCode {
 	S3_IMAGE_NOT_FOUND(CONFLICT, "C019"),
 	TOKEN_NOT_FOUND(UNAUTHORIZED, "C020"),
 	NO_PERMISSION(FORBIDDEN, "C021"),
-	COUPLE_NOT_CONNECTED(BAD_REQUEST, "C022"),
+	MEMBER_NOT_CONNECTED(BAD_REQUEST, "C022"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -89,7 +89,7 @@ public enum ErrorCode {
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
 
 		// 커플 관련
-		public static final String COUPLE_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";
+		public static final String Member_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";

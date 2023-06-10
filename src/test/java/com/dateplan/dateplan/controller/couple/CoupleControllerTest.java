@@ -212,6 +212,33 @@ public class CoupleControllerTest extends ControllerTestSupport {
 					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
 					jsonPath("$.message").value(DetailMessage.INVALID_FIRST_DATE_RANGE));
 		}
+
+		@DisplayName("현재 자신이 연결되어 있는 커플의 id와 path variable의 couple-id가 다르면 실패한다")
+		@Test
+		void failWithNotMatchedCoupleId() throws Exception {
+
+			// Given
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.UPDATE);
+			FirstDateRequest request = createFirstDateRequest();
+
+			// Stub
+			willThrow(exception)
+				.given(coupleService)
+				.updateFirstDate(anyLong(), any(FirstDateServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1L)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage()));
+		}
 	}
 
 	private FirstDateServiceResponse createFirstDateResponse() {

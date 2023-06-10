@@ -1,7 +1,9 @@
 package com.dateplan.dateplan.domain.member.service;
 
+import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
@@ -37,5 +39,12 @@ public class MemberReadService {
 	public Member findMemberByIdOrElseThrow(Long id) {
 		return memberRepository.findById(id)
 			.orElseThrow(MemberNotFoundException::new);
+	}
+
+	public MemberInfoServiceResponse getCurrentLoginMemberInfo(){
+
+		Member loginMember = MemberThreadLocal.get();
+
+		return MemberInfoServiceResponse.of(loginMember);
 	}
 }

@@ -2,6 +2,7 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
@@ -111,6 +112,26 @@ public class CoupleService {
 			.firstDate(request.getFirstDate())
 			.build();
 		coupleRepository.save(couple);
+	}
+
+	public CoupleInfoServiceResponse getCoupleInfo() {
+		final Member member = MemberThreadLocal.get();
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+		Long opponentId = getOpponentId(couple, member);
+
+		return CoupleInfoServiceResponse.builder()
+			.coupleId(couple.getId())
+			.opponentId(opponentId)
+			.firstDate(couple.getFirstDate())
+			.build();
+	}
+
+	private Long getOpponentId(Couple couple, Member member) {
+		if (Objects.equals(couple.getMember1().getId(), member.getId())) {
+			return couple.getMember2().getId();
+		}
+		return couple.getMember1().getId();
 	}
 
 	private void throwIfAlreadyConnected(Member oppositeMember) {

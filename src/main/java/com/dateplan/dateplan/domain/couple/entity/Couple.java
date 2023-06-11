@@ -11,6 +11,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,5 +49,12 @@ public class Couple {
 
 	public void updateFirstDate(LocalDate firstDate) {
 		this.firstDate = firstDate;
+	}
+
+	public Long getPartnerId(Member member) {
+		if (Objects.equals(this.getMember1().getId(), member.getId())) {
+			return this.getMember2().getId();
+		}
+		return this.getMember1().getId();
 	}
 }

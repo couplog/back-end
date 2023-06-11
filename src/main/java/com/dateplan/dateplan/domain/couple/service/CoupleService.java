@@ -38,6 +38,7 @@ public class CoupleService {
 	private final CoupleRepository coupleRepository;
 	private final CoupleReadService coupleReadService;
 
+	@Transactional(readOnly = true)
 	public FirstDateServiceResponse getFirstDate(Long coupleId) {
 		final Member member = MemberThreadLocal.get();
 
@@ -114,6 +115,7 @@ public class CoupleService {
 		coupleRepository.save(couple);
 	}
 
+	@Transactional(readOnly = true)
 	public CoupleInfoServiceResponse getCoupleInfo() {
 		final Member member = MemberThreadLocal.get();
 

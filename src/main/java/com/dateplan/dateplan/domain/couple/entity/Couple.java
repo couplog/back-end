@@ -45,4 +45,8 @@ public class Couple {
 		this.member1 = member1;
 		this.member2 = member2;
 	}
+
+	public void updateFirstDate(LocalDate firstDate) {
+		this.firstDate = firstDate;
+	}
 }

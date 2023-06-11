@@ -2,7 +2,8 @@ package com.dateplan.dateplan.global.constant;
 
 public enum Resource {
 
-	MEMBER("회원");
+	MEMBER("회원"),
+	COUPLE("커플");
 
 	private final String name;
 

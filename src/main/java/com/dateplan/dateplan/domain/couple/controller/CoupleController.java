@@ -22,6 +22,7 @@ public class CoupleController {
 
 	private final CoupleService coupleService;
 
+	@Deprecated
 	@GetMapping("/{couple_id}/first-date")
 	public ApiResponse<FirstDateResponse> getFirstDate(@PathVariable("couple_id") Long coupleId) {
 		FirstDateResponse response = coupleService.getFirstDate(coupleId).toFirstDateResponse();

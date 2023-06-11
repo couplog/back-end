@@ -13,6 +13,8 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
+import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
@@ -27,12 +29,14 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,7 +97,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			// When & Then
 			assertThatThrownBy(() -> coupleService.getConnectionCode(id))
 				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(), Operation.READ.getName()));
+				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
+					Operation.READ.getName()));
 
 			// Verify
 			then(redisTemplate)
@@ -233,11 +238,13 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// Given
 			Long id = member.getId() + 1;
+			ConnectionServiceRequest request = createConnectionServiceRequest("ABC123");
 
 			// When & Then
-			assertThatThrownBy(() -> coupleService.getConnectionCode(id))
+			assertThatThrownBy(() -> coupleService.connectCouple(id, request))
 				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(), Operation.READ.getName()));
+				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
+					Operation.UPDATE.getName()));
 
 			// Verify
 			then(redisTemplate)
@@ -341,8 +348,156 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				.isInstanceOf(SelfConnectionNotAllowedException.class)
 				.hasMessage(SELF_CONNECTION_NOT_ALLOWED);
 		}
+	}
 
+	@Nested
+	@DisplayName("커플 처음 만난 날 조회 시")
+	class GetFirstDate {
 
+		Member member1;
+		Member member2;
+		Couple couple;
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
+		}
+
+		@BeforeEach
+		void setUp() {
+			member1 = createMember("01012345678");
+			member2 = createMember("01012345679");
+			memberRepository.saveAll(List.of(member1, member2));
+			couple = coupleRepository.save(createCouple(member1, member2));
+			MemberThreadLocal.set(member1);
+		}
+
+		@DisplayName("올바른 커플 아이디를 입력하면 성공한다.")
+		@Test
+		void successWithValidCoupleId() {
+
+			// Given
+			Long coupleId = couple.getId();
+
+			// When
+			FirstDateServiceResponse firstDate = coupleService.getFirstDate(coupleId);
+
+			// Then
+			assertThat(firstDate.getFirstDate())
+				.isEqualTo(couple.getFirstDate());
+		}
+
+		@DisplayName("연결되지 않은 멤버가 요청하면 실패한다")
+		@Test
+		void failWithNotConnectedMember() {
+
+			// Given
+			Member nowConnectedMember = createMember("01011111111");
+			MemberThreadLocal.set(nowConnectedMember);
+			memberRepository.save(nowConnectedMember);
+
+			// When & Then
+			assertThatThrownBy(() -> coupleService.getFirstDate(couple.getId()))
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
+		}
+
+		@DisplayName("현재 자신이 연결된 coupleId와 파라미터의 coupleId가 다르면 실패한다.")
+		@Test
+		void failWithDifferentCoupleId() {
+			// Given
+			Long coupleId = couple.getId() + 1;
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+
+			assertThatThrownBy(() -> coupleService.getFirstDate(coupleId))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("커플 처음 만난 날 수정 시")
+	class UpdateFirstDate {
+
+		Member member1;
+		Member member2;
+		Couple couple;
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
+		}
+
+		@BeforeEach
+		void setUp() {
+			member1 = createMember("01012345678");
+			member2 = createMember("01012345679");
+			memberRepository.saveAll(List.of(member1, member2));
+			couple = coupleRepository.save(createCouple(member1, member2));
+			MemberThreadLocal.set(member1);
+		}
+
+		@DisplayName("올바른 커플 아이디를 입력하면 성공한다.")
+		@Test
+		void successWithValidCoupleId() {
+
+			// Given
+			Long coupleId = couple.getId();
+			FirstDateServiceRequest request = createFirstDateServiceRequest();
+
+			// When
+			coupleService.updateFirstDate(coupleId, request);
+
+			// Then
+			Couple updatedCouple = coupleRepository.findById(coupleId).get();
+			assertThat(updatedCouple.getFirstDate())
+				.isEqualTo(request.getFirstDate());
+		}
+
+		@DisplayName("연결되지 않은 멤버가 요청하면 실패한다")
+		@Test
+		void failWithNotConnectedMember() {
+
+			// Given
+			Member nowConnectedMember = createMember("01011111111");
+			MemberThreadLocal.set(nowConnectedMember);
+			memberRepository.save(nowConnectedMember);
+			FirstDateServiceRequest request = createFirstDateServiceRequest();
+
+			// When & Then
+			assertThatThrownBy(() -> coupleService.updateFirstDate(couple.getId(), request))
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
+		}
+
+		@DisplayName("현재 자신이 연결된 coupleId와 파라미터의 coupleId가 다르면 실패한다.")
+		@Test
+		void failWithDifferentCoupleId() {
+			// Given
+			Long coupleId = couple.getId() + 1;
+			FirstDateServiceRequest request = createFirstDateServiceRequest();
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.UPDATE);
+
+			assertThatThrownBy(() -> coupleService.updateFirstDate(coupleId, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
+	private FirstDateServiceRequest createFirstDateServiceRequest() {
+		return FirstDateServiceRequest.builder()
+			.firstDate(LocalDate.of(2020, 10, 10))
+			.build();
 	}
 
 	private Couple createCouple(Member member, Member oppositeMember) {
@@ -353,7 +508,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	public Member createMember(String phone) {
+	private Member createMember(String phone) {
 		return Member.builder()
 			.phone(phone)
 			.password("password")
@@ -364,11 +519,11 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	public String getConnectionKey(Long id) {
+	private String getConnectionKey(Long id) {
 		return "[CONNECTION]" + id;
 	}
 
-	public ConnectionServiceRequest createConnectionServiceRequest(String connectionCode) {
+	private ConnectionServiceRequest createConnectionServiceRequest(String connectionCode) {
 		return ConnectionServiceRequest.builder()
 			.connectionCode(connectionCode)
 			.firstDate(LocalDate.now().minusDays(1L))

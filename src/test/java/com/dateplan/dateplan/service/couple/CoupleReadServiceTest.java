@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.service.couple;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
@@ -10,6 +11,8 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.util.List;
@@ -103,7 +106,8 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			connectedMember1 = createMember("01011111111");
 			connectedMember2 = createMember("01022222222");
 			notConnectedMember = createMember("01033333333");
-			memberRepository.saveAll(List.of(connectedMember1, connectedMember2, notConnectedMember));
+			memberRepository.saveAll(
+				List.of(connectedMember1, connectedMember2, notConnectedMember));
 
 			Couple couple = createCouple(connectedMember1, connectedMember2);
 			coupleRepository.save(couple);
@@ -150,6 +154,56 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			// Then
 			assertThat(isConnected)
 				.isFalse();
+		}
+	}
+
+	@Nested
+	@DisplayName("멤버로 연결되어 있는 커플을 찾을 때")
+	class FindCoupleByMember {
+
+		Member connectedMember1;
+		Member connectedMember2;
+		Member notConnectedMember;
+
+		@BeforeEach
+		void setUp() {
+			connectedMember1 = createMember("01012345678");
+			connectedMember2 = createMember("01012345679");
+			notConnectedMember = createMember("01012345670");
+			memberRepository.saveAll(
+				List.of(connectedMember1, connectedMember2, notConnectedMember));
+			Couple couple = Couple.builder()
+				.member1(connectedMember1)
+				.member2(connectedMember2)
+				.firstDate(LocalDate.of(2010, 10, 10))
+				.build();
+			coupleRepository.save(couple);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("커플이 연결되어 있는 멤버를 입력하면 올바른 커플을 반환한다")
+		@Test
+		void returnCoupleWithConnectedMember() {
+
+			Couple couple1 = coupleReadService.findCoupleByMemberOrElseThrow(connectedMember1);
+			Couple couple2 = coupleReadService.findCoupleByMemberOrElseThrow(connectedMember2);
+
+			assertThat(couple1.getId()).isEqualTo(couple2.getId());
+		}
+
+		@DisplayName("커플이 연결되어 있지 않은 멤버를 입력하면 실패한다")
+		@Test
+		void failWithNotConnectedMember() {
+
+			assertThatThrownBy(
+				() -> coupleReadService.findCoupleByMemberOrElseThrow(notConnectedMember))
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}
 	}
 

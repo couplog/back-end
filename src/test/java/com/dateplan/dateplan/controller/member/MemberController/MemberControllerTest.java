@@ -31,7 +31,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;

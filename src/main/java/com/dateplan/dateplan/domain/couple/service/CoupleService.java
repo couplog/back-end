@@ -13,7 +13,7 @@ import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;

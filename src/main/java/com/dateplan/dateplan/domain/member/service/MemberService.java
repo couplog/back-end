@@ -9,7 +9,7 @@ import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.net.URL;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;

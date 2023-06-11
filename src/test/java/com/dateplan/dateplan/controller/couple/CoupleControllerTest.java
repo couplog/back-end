@@ -18,7 +18,7 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

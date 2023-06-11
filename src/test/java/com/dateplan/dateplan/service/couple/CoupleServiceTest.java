@@ -28,7 +28,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;

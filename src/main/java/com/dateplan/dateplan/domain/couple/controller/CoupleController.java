@@ -1,7 +1,10 @@
 package com.dateplan.dateplan.domain.couple.controller;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoResponse;
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateResponse;
+import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -19,7 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CoupleController {
 
 	private final CoupleService coupleService;
+	private final CoupleReadService coupleReadService;
 
+	@Deprecated
 	@GetMapping("/{couple_id}/first-date")
 	public ApiResponse<FirstDateResponse> getFirstDate(@PathVariable("couple_id") Long coupleId) {
 		FirstDateResponse response = coupleService.getFirstDate(coupleId).toFirstDateResponse();
@@ -31,5 +36,11 @@ public class CoupleController {
 		@Valid @RequestBody FirstDateRequest request) {
 		coupleService.updateFirstDate(coupleId, request.toFirstDateServiceRequest());
 		return ApiResponse.ofSuccess();
+	}
+
+	@GetMapping("/me")
+	public ApiResponse<CoupleInfoResponse> getCoupleInfo() {
+		CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo();
+		return ApiResponse.ofSuccess(response.toCoupleInfoResponse());
 	}
 }

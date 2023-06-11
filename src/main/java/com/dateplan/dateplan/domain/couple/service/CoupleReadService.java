@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.domain.couple.service;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -30,5 +31,18 @@ public class CoupleReadService {
 		Member loginMember = MemberThreadLocal.get();
 
 		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
+	}
+
+	public CoupleInfoServiceResponse getCoupleInfo() {
+		final Member member = MemberThreadLocal.get();
+
+		Couple couple = findCoupleByMemberOrElseThrow(member);
+		Long partnerId = couple.getPartnerId(member);
+
+		return CoupleInfoServiceResponse.builder()
+			.coupleId(couple.getId())
+			.partnerId(partnerId)
+			.firstDate(couple.getFirstDate())
+			.build();
 	}
 }

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;

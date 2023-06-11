@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.couple.controller;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoResponse;
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateResponse;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
@@ -31,5 +33,11 @@ public class CoupleController {
 		@Valid @RequestBody FirstDateRequest request) {
 		coupleService.updateFirstDate(coupleId, request.toFirstDateServiceRequest());
 		return ApiResponse.ofSuccess();
+	}
+
+	@GetMapping("/me")
+	public ApiResponse<CoupleInfoResponse> getCoupleInfo() {
+		CoupleInfoServiceResponse response = coupleService.getCoupleInfo();
+		return ApiResponse.ofSuccess(response.toCoupleInfoResponse());
 	}
 }

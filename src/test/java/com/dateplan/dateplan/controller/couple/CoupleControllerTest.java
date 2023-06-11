@@ -256,7 +256,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			CoupleInfoServiceResponse response = createCoupleInfoServiceResponse();
 
 			// Stub
-			given(coupleService.getCoupleInfo())
+			given(coupleReadService.getCoupleInfo())
 				.willReturn(response);
 
 			// When & Then
@@ -276,7 +276,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 		void failWithNotConnected() throws Exception {
 
 			// Stub
-			given(coupleService.getCoupleInfo())
+			given(coupleReadService.getCoupleInfo())
 				.willThrow(new MemberNotConnectedException());
 
 			// When & Then

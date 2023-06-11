@@ -115,27 +115,6 @@ public class CoupleService {
 		coupleRepository.save(couple);
 	}
 
-	@Transactional(readOnly = true)
-	public CoupleInfoServiceResponse getCoupleInfo() {
-		final Member member = MemberThreadLocal.get();
-
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
-		Long partnerId = getPartnerId(couple, member);
-
-		return CoupleInfoServiceResponse.builder()
-			.coupleId(couple.getId())
-			.partnerId(partnerId)
-			.firstDate(couple.getFirstDate())
-			.build();
-	}
-
-	private Long getPartnerId(Couple couple, Member member) {
-		if (Objects.equals(couple.getMember1().getId(), member.getId())) {
-			return couple.getMember2().getId();
-		}
-		return couple.getMember1().getId();
-	}
-
 	private void throwIfAlreadyConnected(Member oppositeMember) {
 		if (coupleReadService.isMemberConnected(oppositeMember)) {
 			throw new AlreadyConnectedException();

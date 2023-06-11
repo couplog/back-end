@@ -17,8 +17,8 @@ import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -60,7 +60,8 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest loginRequest) {
+	public ResponseEntity<ApiResponse<LoginResponse>> login(
+		@RequestBody @Valid LoginRequest loginRequest) {
 		LoginServiceResponse response = authService.login(loginRequest.toServiceRequest());
 		HttpHeaders responseHeaders = setHeaderTokens(response.getAuthToken());
 		return ResponseEntity.ok()

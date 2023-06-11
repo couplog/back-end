@@ -13,6 +13,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
@@ -21,11 +22,14 @@ import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.auth.PhoneAuthLimitOverException;
 import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.auth.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.auth.PhoneNotAuthenticatedException;
@@ -69,13 +73,14 @@ public class AuthServiceTest extends ServiceTestSupport {
 			redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
 		}
 
-		@DisplayName("유효한 전화번호를 입력하면 인증 코드가 발송되고, redis 에 저장된다.")
+		@DisplayName("유효한 전화번호를 입력하면 인증 코드가 발송되고, 인증 상태와 인증 횟수가 redis 에 저장된다.")
 		@Test
 		void sendCodeWithValidPhoneNumber() {
 
 			// Given
 			String phoneNumber = "01011112222";
-			String authKey = "[AUTH]01011112222";
+			String authKey = "[AUTH]" + phoneNumber;
+			String requestCountKey = "[AUTH_COUNT]" + phoneNumber;
 			int authCode = 123123;
 			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
 
@@ -91,18 +96,25 @@ public class AuthServiceTest extends ServiceTestSupport {
 					.sendSmsForPhoneAuthentication(anyString(), anyInt());
 
 				// When
-				authService.sendSms(request);
+				SendSmsServiceResponse response = authService.sendSms(request);
+				assertThat(response.getCurrentCount()).isOne();
 			}
 
 			// Then
 			ListOperations<String, String> opsForList = redisTemplate.opsForList();
 			String savedCode = opsForList.index(authKey, 0);
 			String savedStatus = opsForList.index(authKey, 1);
+			String savedRequestCount = redisTemplate.opsForValue().get(requestCountKey);
 
-			assertThat(savedCode).isNotNull();
-			assertThat(savedStatus).isNotNull();
-			assertThat(savedCode).isEqualTo(String.valueOf(authCode));
-			assertThat(savedStatus).isEqualTo(Boolean.FALSE.toString());
+			assertThat(savedCode)
+				.isNotNull()
+				.isEqualTo(String.valueOf(authCode));
+			assertThat(savedStatus)
+				.isNotNull()
+				.isEqualTo(Boolean.FALSE.toString());
+			assertThat(savedRequestCount)
+				.isNotNull()
+				.isEqualTo(String.valueOf(1));
 
 			then(smsSendClient)
 				.should(times(1))
@@ -125,6 +137,8 @@ public class AuthServiceTest extends ServiceTestSupport {
 				.isInstanceOf(AlReadyRegisteredPhoneException.class)
 				.hasMessage(ALREADY_REGISTERED_PHONE);
 
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
 			then(smsSendClient)
 				.shouldHaveNoInteractions();
 
@@ -153,6 +167,37 @@ public class AuthServiceTest extends ServiceTestSupport {
 				.hasMessage(smsSendFailException.getMessage());
 
 			then(redisTemplate)
+				.should(never())
+				.opsForList();
+			then(redisTemplate)
+				.should(times(1))
+				.opsForValue();
+		}
+
+		@DisplayName("요청 횟수를 초과하면 예외를 발생시킨다.")
+		@Test
+		void sendCodeWithOverRequestLimitCount() {
+
+			// Given
+			String phoneNumber = "01011112222";
+			String requestCountKey = "[AUTH_COUNT]" + phoneNumber;
+			PhoneServiceRequest request = createPhoneServiceRequest(phoneNumber);
+
+			ValueOperations<String, String> opsForValue = redisTemplate.opsForValue();
+			opsForValue.set(requestCountKey, "5");
+
+			// When & Then
+			assertThatThrownBy(() -> authService.sendSms(request))
+				.isInstanceOf(PhoneAuthLimitOverException.class)
+				.hasMessage(DetailMessage.PHONE_AUTH_LIMIT_OVER);
+
+			then(redisTemplate)
+				.should(never())
+					.opsForList();
+			then(redisTemplate)
+				.should(times(2))
+				.opsForValue();
+			then(smsSendClient)
 				.shouldHaveNoInteractions();
 		}
 	}

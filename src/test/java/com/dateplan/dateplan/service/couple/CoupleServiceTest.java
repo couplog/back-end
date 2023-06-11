@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
@@ -491,6 +492,58 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			assertThatThrownBy(() -> coupleService.updateFirstDate(coupleId, request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("현재 연결되어 있는 커플 정보를 조회하려 할 때")
+	class getCoupleInfo {
+
+		Member member1;
+		Member member2;
+		Couple couple;
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
+		}
+
+		@BeforeEach
+		void setUp() {
+			member1 = createMember("01012345678");
+			member2 = createMember("01012345679");
+			memberRepository.saveAll(List.of(member1, member2));
+			couple = coupleRepository.save(createCouple(member1, member2));
+			MemberThreadLocal.set(member1);
+		}
+
+		@DisplayName("요청한 회원이 커플에 연결되어 있다면 성공한다")
+		@Test
+		void successWithConnected() {
+
+			// When
+			CoupleInfoServiceResponse response = coupleService.getCoupleInfo();
+
+			// Then
+			assertThat(response.getCoupleId()).isEqualTo(couple.getId());
+			assertThat(response.getFirstDate()).isEqualTo(couple.getFirstDate());
+			assertThat(response.getPartnerId()).isEqualTo(member2.getId());
+		}
+
+		@DisplayName("요청한 회원이 커플에 연결되어 있지 않다면 실패한다")
+		@Test
+		void failWithNotConnected() {
+
+			// Given
+			Member notConnectedMember = memberRepository.save(createMember("01011112222"));
+			MemberThreadLocal.set(notConnectedMember);
+
+			// When & Then
+			assertThatThrownBy(() ->coupleService.getCoupleInfo())
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}
 	}
 

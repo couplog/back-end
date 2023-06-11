@@ -120,16 +120,16 @@ public class CoupleService {
 		final Member member = MemberThreadLocal.get();
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
-		Long opponentId = getOpponentId(couple, member);
+		Long partnerId = getPartnerId(couple, member);
 
 		return CoupleInfoServiceResponse.builder()
 			.coupleId(couple.getId())
-			.opponentId(opponentId)
+			.partnerId(partnerId)
 			.firstDate(couple.getFirstDate())
 			.build();
 	}
 
-	private Long getOpponentId(Couple couple, Member member) {
+	private Long getPartnerId(Couple couple, Member member) {
 		if (Objects.equals(couple.getMember1().getId(), member.getId())) {
 			return couple.getMember2().getId();
 		}

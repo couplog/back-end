@@ -9,13 +9,13 @@ import lombok.Getter;
 public class CoupleInfoServiceResponse {
 
 	private Long coupleId;
-	private Long opponentId;
+	private Long partnerId;
 	private LocalDate firstDate;
 
 	public CoupleInfoResponse toCoupleInfoResponse() {
 		return CoupleInfoResponse.builder()
 			.coupleId(coupleId)
-			.opponentId(opponentId)
+			.partnerId(partnerId)
 			.firstDate(firstDate)
 			.build();
 	}

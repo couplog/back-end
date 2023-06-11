@@ -9,6 +9,6 @@ import lombok.Getter;
 public class CoupleInfoResponse {
 
 	private Long coupleId;
-	private Long opponentId;
+	private Long partnerId;
 	private LocalDate firstDate;
 }

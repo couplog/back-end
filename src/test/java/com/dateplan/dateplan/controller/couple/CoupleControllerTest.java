@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
+import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
@@ -241,6 +242,55 @@ public class CoupleControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("현재 연결되어 있는 커플 정보를 조회하려 할 때")
+	class GetCoupleInfo {
+
+		private static final String REQUEST_URL = "/api/couples/me";
+
+		@DisplayName("현재 커플에 연결되어 있다면, 성공한다")
+		@Test
+		void successWithConnected() throws Exception {
+
+			// Given
+			CoupleInfoServiceResponse response = createCoupleInfoServiceResponse();
+
+			// Stub
+			given(coupleService.getCoupleInfo())
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(
+				get(REQUEST_URL))
+				.andExpect(status().isOk())
+				.andExpectAll(
+					jsonPath("$.success").value("true"),
+					jsonPath("$.data.coupleId").value(response.getCoupleId()),
+					jsonPath("$.data.partnerId").value(response.getPartnerId()),
+					jsonPath("$.data.firstDate").value(response.getFirstDate().toString())
+				);
+		}
+
+		@DisplayName("현재 커플에 연결되어 있지 않다면 실패한다")
+		@Test
+		void failWithNotConnected() throws Exception {
+
+			// Stub
+			given(coupleService.getCoupleInfo())
+				.willThrow(new MemberNotConnectedException());
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL))
+				.andExpect(status().isBadRequest())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.MEMBER_NOT_CONNECTED.getCode()),
+					jsonPath("$.message").value(DetailMessage.Member_NOT_CONNECTED)
+				);
+		}
+	}
+
 	private FirstDateServiceResponse createFirstDateResponse() {
 		return FirstDateServiceResponse.builder()
 			.firstDate(LocalDate.of(2010, 10, 10))
@@ -249,6 +299,14 @@ public class CoupleControllerTest extends ControllerTestSupport {
 
 	private FirstDateRequest createFirstDateRequest() {
 		return FirstDateRequest.builder()
+			.firstDate(LocalDate.of(2010, 10, 10))
+			.build();
+	}
+
+	private CoupleInfoServiceResponse createCoupleInfoServiceResponse() {
+		return CoupleInfoServiceResponse.builder()
+			.coupleId(1L)
+			.partnerId(1L)
 			.firstDate(LocalDate.of(2010, 10, 10))
 			.build();
 	}

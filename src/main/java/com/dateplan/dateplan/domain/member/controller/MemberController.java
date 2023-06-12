@@ -1,7 +1,5 @@
 package com.dateplan.dateplan.domain.member.controller;
 
-import static com.dateplan.dateplan.global.constant.Operation.READ;
-
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
@@ -52,10 +50,10 @@ public class MemberController {
 	public ApiResponse<ProfileImageURLResponse> getProfileImageURL(
 		@PathVariable("member_id") Long memberId) {
 
-		coupleReadService.checkAuthorityToTargetMember(MemberThreadLocal.get(), memberId, READ);
+		Long partnerId = coupleReadService.getPartnerId(MemberThreadLocal.get());
 
 		ProfileImageURLServiceResponse serviceResponse = memberReadService.getProfileImageURL(
-			memberId);
+			memberId, partnerId);
 
 		return ApiResponse.ofSuccess(serviceResponse.toResponse());
 	}

@@ -2,7 +2,6 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
@@ -101,22 +100,22 @@ public class CoupleService {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 		}
 		String connectionCode = request.getConnectionCode();
-		Long oppositeMemberId = getIdOrThrowIfConnectionCodeInvalid(connectionCode);
+		Long partnerId = getIdOrThrowIfConnectionCodeInvalid(connectionCode);
 
-		Member oppositeMember = memberReadService.findMemberByIdOrElseThrow(oppositeMemberId);
-		throwIfAlreadyConnected(oppositeMember);
-		throwIfSelfConnection(oppositeMemberId, loginMember.getId());
+		Member partner = memberReadService.findMemberByIdOrElseThrow(partnerId);
+		throwIfAlreadyConnected(partner);
+		throwIfSelfConnection(partnerId, loginMember.getId());
 
 		Couple couple = Couple.builder()
 			.member1(loginMember)
-			.member2(oppositeMember)
+			.member2(partner)
 			.firstDate(request.getFirstDate())
 			.build();
 		coupleRepository.save(couple);
 	}
 
-	private void throwIfAlreadyConnected(Member oppositeMember) {
-		if (coupleReadService.isMemberConnected(oppositeMember)) {
+	private void throwIfAlreadyConnected(Member partner) {
+		if (coupleReadService.isMemberConnected(partner)) {
 			throw new AlreadyConnectedException();
 		}
 	}

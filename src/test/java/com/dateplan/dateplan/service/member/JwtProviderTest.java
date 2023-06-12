@@ -8,6 +8,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.MEM
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.TOKEN_EXPIRED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.TOKEN_INVALID;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
@@ -149,8 +150,10 @@ public class JwtProviderTest extends ServiceTestSupport {
 			assertThat(accessToken).isNotEmpty();
 			assertThat(refreshToken).isNotNull();
 			assertThat(refreshToken).isNotEmpty();
-			assertThat(jwtProvider.isValid(accessToken)).isTrue();
-			assertThat(jwtProvider.isValid(refreshToken)).isTrue();
+			assertThatCode(
+				() -> jwtProvider.checkValidation(accessToken)).doesNotThrowAnyException();
+			assertThatCode(
+				() -> jwtProvider.checkValidation(refreshToken)).doesNotThrowAnyException();
 		}
 
 		@DisplayName("올바른 리프레시 토큰이 주어지면 엑세스 토큰을 반환한다")
@@ -198,7 +201,7 @@ public class JwtProviderTest extends ServiceTestSupport {
 				SUBJECT_ACCESS_TOKEN.getContent());
 
 			// then
-			assertThat(jwtProvider.isValid(token)).isTrue();
+			assertThatCode(() -> jwtProvider.checkValidation(token)).doesNotThrowAnyException();
 		}
 
 		@DisplayName("만료된 토큰이 주어지면 예외를 반환한다")

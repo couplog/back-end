@@ -40,7 +40,7 @@ public class Member {
 	private String phone;
 
 	@NotNull
-	@Column(name = "nickname", columnDefinition = "VARCHAR(30)")
+	@Column(name = "nickname", unique = true, columnDefinition = "VARCHAR(30)")
 	private String nickname;
 
 	@Column(name = "birth", columnDefinition = "DATE", updatable = false)

@@ -53,8 +53,8 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			Member member1 = createMember(phone1);
-			Member member2 = createMember(phone2);
+			Member member1 = createMember(phone1, "nickname1");
+			Member member2 = createMember(phone2, "nickname2");
 			memberRepository.save(member1);
 			memberRepository.save(member2);
 		}
@@ -104,9 +104,9 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			connectedMember1 = createMember("01011111111");
-			connectedMember2 = createMember("01022222222");
-			notConnectedMember = createMember("01033333333");
+			connectedMember1 = createMember("01011111111", "nickname1");
+			connectedMember2 = createMember("01022222222", "nickname2");
+			notConnectedMember = createMember("01033333333", "nickname3");
 			memberRepository.saveAll(
 				List.of(connectedMember1, connectedMember2, notConnectedMember));
 
@@ -168,9 +168,9 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			connectedMember1 = createMember("01012345678");
-			connectedMember2 = createMember("01012345679");
-			notConnectedMember = createMember("01012345670");
+			connectedMember1 = createMember("01012345678", "nickname1");
+			connectedMember2 = createMember("01012345679", "nickname2");
+			notConnectedMember = createMember("01012345670", "nickname3");
 			memberRepository.saveAll(
 				List.of(connectedMember1, connectedMember2, notConnectedMember));
 			Couple couple = Couple.builder()
@@ -225,8 +225,8 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member1 = createMember("01012345678");
-			member2 = createMember("01012345679");
+			member1 = createMember("01012345678", "nickname1");
+			member2 = createMember("01012345679", "nickname2");
 			memberRepository.saveAll(List.of(member1, member2));
 			couple = coupleRepository.save(createCouple(member1, member2));
 			MemberThreadLocal.set(member1);
@@ -250,7 +250,8 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 		void failWithNotConnected() {
 
 			// Given
-			Member notConnectedMember = memberRepository.save(createMember("01011112222"));
+			Member notConnectedMember = memberRepository.save(
+				createMember("01011112222", "nickname3"));
 			MemberThreadLocal.set(notConnectedMember);
 
 			// When & Then
@@ -260,11 +261,60 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
-	private Member createMember(String phone) {
+	@Nested
+	@DisplayName("주어진 회원과 연결된 회원의 id를 조회할 때")
+	class getPartnerId {
+
+		Member connectedMember1;
+		Member connectedMember2;
+		Member notConnectedMember;
+
+		@BeforeEach
+		void setUp() {
+			connectedMember1 = createMember("01012345678", "nickname1");
+			connectedMember2 = createMember("01012345679", "nickname2");
+			notConnectedMember = createMember("01012345555", "nickname3");
+			memberRepository.saveAll(
+				List.of(connectedMember1, connectedMember2, notConnectedMember));
+			Couple couple = createCouple(connectedMember1, connectedMember2);
+			coupleRepository.save(couple);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("회원이 다른 회원과 연결되어 있다면 상대방 id 를 응답한다.")
+		@Test
+		void withConnectedMember() {
+
+			// When
+			Long partnerId1 = coupleReadService.getPartnerId(connectedMember1);
+			Long partnerId2 = coupleReadService.getPartnerId(connectedMember2);
+
+			// Then
+			assertThat(partnerId1).isEqualTo(connectedMember2.getId());
+			assertThat(partnerId2).isEqualTo(connectedMember1.getId());
+		}
+
+		@DisplayName("회원이 다른 회원과 연결되어 있지 않다면 실패한다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// When & Then
+			assertThatThrownBy(() -> coupleReadService.getPartnerId(notConnectedMember))
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
+		}
+	}
+
+	private Member createMember(String phone, String nickname) {
 
 		return Member.builder()
 			.name("name")
-			.nickname("nickname")
+			.nickname(nickname)
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)

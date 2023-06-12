@@ -118,7 +118,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 		void sendCodeWithExistsPhoneNumber() {
 
 			// Given
-			Member member = createMember("01012341234", "password");
+			Member member = createMember("01012341234", "password", "nickname");
 			memberRepository.save(member);
 
 			String phoneNumber = member.getPhone();
@@ -359,7 +359,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember(phone, password));
+			member = memberRepository.save(createMember(phone, password, "nickname1"));
 		}
 
 		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 레디스에 리프레시 토큰이 저장된다")
@@ -385,7 +385,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// Given
 			String phone2 = "01012345679";
 
-			Member member2 = memberRepository.save(createMember(phone2, password));
+			Member member2 = memberRepository.save(createMember(phone2, password, "nickname2"));
 
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
@@ -414,7 +414,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// Given
 			String phone2 = "01012345679";
 
-			memberRepository.save(createMember(phone2, password));
+			memberRepository.save(createMember(phone2, password, "nickname2"));
 
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
@@ -503,11 +503,11 @@ public class AuthServiceTest extends ServiceTestSupport {
 		return new PhoneAuthCodeServiceRequest(phone, code);
 	}
 
-	private Member createMember(String phone, String password) {
+	private Member createMember(String phone, String password, String nickname) {
 
 		return Member.builder()
 			.name("name")
-			.nickname("nickname")
+			.nickname(nickname)
 			.phone(phone)
 			.password(password)
 			.gender(Gender.FEMALE)

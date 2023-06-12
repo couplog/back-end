@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.domain.member.dto;
 
-import static com.dateplan.dateplan.global.constant.Auth.*;
+import static com.dateplan.dateplan.global.constant.Auth.BEARER;
+
 import lombok.Builder;
 import lombok.Getter;
 

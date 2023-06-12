@@ -8,16 +8,18 @@ import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
-import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
-import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
+import com.dateplan.dateplan.global.exception.auth.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
+import com.dateplan.dateplan.global.exception.auth.PhoneAuthLimitOverException;
+import com.dateplan.dateplan.global.exception.auth.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +36,7 @@ public class AuthService {
 
 	private static final String REFRESH_KEY_PREFIX = "[REFRESH]";
 	private static final String AUTH_KEY_PREFIX = "[AUTH]";
+	private static final String AUTH_REQUEST_COUNT_KEY_PREFIX = "[AUTH_COUNT]";
 
 	private final MemberReadService memberReadService;
 	private final SmsSendClient smsSendClient;
@@ -42,15 +45,30 @@ public class AuthService {
 	private final JwtProvider jwtProvider;
 	private final CoupleReadService coupleReadService;
 
-	public void sendSms(PhoneServiceRequest request) {
+	public SendSmsServiceResponse sendSms(PhoneServiceRequest request) {
 
-		int code = RandomCodeGenerator.generateCode(6);
 		String phone = request.getPhone();
 
 		memberReadService.throwIfPhoneExists(phone);
+
+		int requestCount = getRequestCountPhoneAuthenticationIn24Hours(phone);
+		throwIfRequestCountOver(requestCount);
+
+		int code = RandomCodeGenerator.generateCode(6);
 		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
 
 		saveAuthCodeInRedis(phone, code);
+		int afterIncreaseCount = saveOrIncreaseRequestCount(phone);
+
+		return SendSmsServiceResponse.builder()
+			.currentCount(afterIncreaseCount)
+			.build();
+	}
+
+	private void throwIfRequestCountOver(int requestCount) {
+		if (requestCount >= 5) {
+			throw new PhoneAuthLimitOverException();
+		}
 	}
 
 	public void authenticateAuthCode(PhoneAuthCodeServiceRequest request) {
@@ -85,6 +103,26 @@ public class AuthService {
 		redisTemplate.delete(key);
 	}
 
+	public LoginServiceResponse login(LoginServiceRequest request) {
+		Member member = memberReadService.findMemberByPhoneOrElseThrow(request.getPhone());
+
+		if (mismatchPassword(request, member)) {
+			throw new PasswordMismatchException();
+		}
+
+		AuthToken authToken = createAuthToken(member);
+		saveRefreshTokenInRedis(member, authToken.getRefreshTokenWithoutPrefix());
+		boolean isConnected = coupleReadService.isMemberConnected(member);
+		return LoginServiceResponse.builder()
+			.authToken(authToken)
+			.isConnected(isConnected)
+			.build();
+	}
+
+	public AuthToken refreshAccessToken(String refreshToken) {
+		return jwtProvider.generateTokenByRefreshToken(refreshToken);
+	}
+
 	private void saveAuthCodeInRedis(String phone, int code) {
 
 		ListOperations<String, String> opsForList = redisTemplate.opsForList();
@@ -110,20 +148,12 @@ public class AuthService {
 		return AUTH_KEY_PREFIX + phone;
 	}
 
-	public LoginServiceResponse login(LoginServiceRequest request) {
-		Member member = memberReadService.findMemberByPhoneOrElseThrow(request.getPhone());
+	private String getRefreshKey(Long id) {
+		return REFRESH_KEY_PREFIX + id;
+	}
 
-		if (mismatchPassword(request, member)) {
-			throw new PasswordMismatchException();
-		}
-
-		AuthToken authToken = createAuthToken(member);
-		saveRefreshTokenInRedis(member, authToken.getRefreshTokenWithoutPrefix());
-		boolean isConnected = coupleReadService.isMemberConnected(member);
-		return LoginServiceResponse.builder()
-			.authToken(authToken)
-			.isConnected(isConnected)
-			.build();
+	private String getAuthRequestCountKey(String phone) {
+		return AUTH_REQUEST_COUNT_KEY_PREFIX + phone;
 	}
 
 	private AuthToken createAuthToken(Member member) {
@@ -148,16 +178,32 @@ public class AuthService {
 		stringValueOperations.set(key, refreshToken);
 	}
 
-	private String getRefreshKey(Long id) {
-		return REFRESH_KEY_PREFIX + id;
+	private int getRequestCountPhoneAuthenticationIn24Hours(String phone) {
+
+		ValueOperations<String, String> opsForValue = redisTemplate.opsForValue();
+		String key = getAuthRequestCountKey(phone);
+
+		String count = opsForValue.get(key);
+
+		return count == null ? 0 : Integer.parseInt(count);
+	}
+
+	private int saveOrIncreaseRequestCount(String phone) {
+
+		ValueOperations<String, String> opsForValue = redisTemplate.opsForValue();
+		String key = getAuthRequestCountKey(phone);
+
+		// TODO: 24시간으로 변경
+		opsForValue.setIfAbsent(key, "0", 1, TimeUnit.MINUTES);
+		opsForValue.increment(key, 1);
+
+		String resultCount = opsForValue.get(key);
+
+		return Integer.parseInt(resultCount == null ? "0" : resultCount);
 	}
 
 	private boolean mismatchPassword(LoginServiceRequest request, Member member) {
 
 		return !passwordEncryptor.checkPassword(request.getPassword(), member.getPassword());
-	}
-
-	public AuthToken refreshAccessToken(String refreshToken) {
-		return jwtProvider.generateTokenByRefreshToken(refreshToken);
 	}
 }

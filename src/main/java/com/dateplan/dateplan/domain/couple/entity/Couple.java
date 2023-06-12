@@ -33,12 +33,12 @@ public class Couple {
 	@Column(name = "first_date", columnDefinition = "DATE")
 	private LocalDate firstDate;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "member_id_1")
+	@OneToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "member_id_1", nullable = false)
 	private Member member1;
 
-	@OneToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "member_id_2")
+	@OneToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "member_id_2", nullable = false)
 	private Member member2;
 
 	@Builder

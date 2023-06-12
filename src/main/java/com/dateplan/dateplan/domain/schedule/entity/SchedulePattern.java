@@ -44,8 +44,8 @@ public class SchedulePattern {
 	@Enumerated(EnumType.STRING)
 	private RepeatRule repeatRule;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "member_id")
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "member_id", nullable = false)
 	private Member member;
 
 	@Builder

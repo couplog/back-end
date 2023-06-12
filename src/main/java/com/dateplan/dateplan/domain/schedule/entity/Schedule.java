@@ -43,8 +43,8 @@ public class Schedule {
 	@Column(name = "location", columnDefinition = "VARCHAR(20)")
 	private String location;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "schedule_pattern_id")
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "schedule_pattern_id", nullable = false)
 	private SchedulePattern schedulePattern;
 
 	@Builder

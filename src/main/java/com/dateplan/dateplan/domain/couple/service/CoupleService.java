@@ -2,7 +2,6 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;

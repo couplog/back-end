@@ -25,8 +25,6 @@ import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import com.dateplan.dateplan.global.exception.auth.TokenNotFoundException;
 import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;

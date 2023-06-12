@@ -37,14 +37,21 @@ public class CoupleReadService {
 		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
 	}
 
-	public void checkAuthorityToTargetMember(Member member, Long targetMemberId, Operation operation) {
+	public void checkAuthorityToTargetMember(Member member, Long targetMemberId,
+		Operation operation) {
 
 		Couple couple = findCoupleByMemberOrElseThrow(member);
 		Long partnerId = couple.getPartnerId(member);
 
-		if (!Objects.equals(member.getId(), targetMemberId) && !Objects.equals(partnerId,
-			targetMemberId)) {
-			throw new NoPermissionException(Resource.MEMBER, operation);
+		if (operation == Operation.READ) {
+			if (!Objects.equals(member.getId(), targetMemberId) && !Objects.equals(partnerId,
+				targetMemberId)) {
+				throw new NoPermissionException(Resource.MEMBER, operation);
+			}
+		} else {
+			if (!Objects.equals(member.getId(), targetMemberId)) {
+				throw new NoPermissionException(Resource.MEMBER, operation);
+			}
 		}
 	}
 

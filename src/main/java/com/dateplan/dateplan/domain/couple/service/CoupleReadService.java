@@ -5,11 +5,7 @@ import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,22 +33,10 @@ public class CoupleReadService {
 		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
 	}
 
-	public void checkAuthorityToTargetMember(Member member, Long targetMemberId,
-		Operation operation) {
+	public Long getPartnerId(Member member){
 
-		Couple couple = findCoupleByMemberOrElseThrow(member);
-		Long partnerId = couple.getPartnerId(member);
-
-		if (operation == Operation.READ) {
-			if (!Objects.equals(member.getId(), targetMemberId) && !Objects.equals(partnerId,
-				targetMemberId)) {
-				throw new NoPermissionException(Resource.MEMBER, operation);
-			}
-		} else {
-			if (!Objects.equals(member.getId(), targetMemberId)) {
-				throw new NoPermissionException(Resource.MEMBER, operation);
-			}
-		}
+		return findCoupleByMemberOrElseThrow(member)
+			.getPartnerId(member);
 	}
 
 	public CoupleInfoServiceResponse getCoupleInfo() {

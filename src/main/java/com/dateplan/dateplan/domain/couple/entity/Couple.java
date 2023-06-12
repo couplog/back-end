@@ -3,6 +3,7 @@ package com.dateplan.dateplan.domain.couple.entity;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,11 +33,11 @@ public class Couple {
 	@Column(name = "first_date", columnDefinition = "DATE")
 	private LocalDate firstDate;
 
-	@OneToOne
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "member_id_1")
 	private Member member1;
 
-	@OneToOne
+	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "member_id_2")
 	private Member member2;
 

@@ -10,6 +10,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -83,8 +85,9 @@ public class AuthInterceptorTest {
 			// Stub
 			given(jwtProvider.resolveToken(any(HttpServletRequest.class)))
 				.willReturn(Optional.of(token));
-			given(jwtProvider.isValid(anyString()))
-				.willReturn(true);
+			willDoNothing()
+				.given(jwtProvider)
+				.checkValidation(anyString());
 			given(jwtProvider.findMemberByToken(anyString()))
 				.willReturn(member);
 
@@ -110,7 +113,7 @@ public class AuthInterceptorTest {
 				.hasMessage(TOKEN_NOT_FOUND);
 			assertThat(MemberThreadLocal.get()).isNull();
 
-			then(jwtProvider).should(never()).isValid(anyString());
+			then(jwtProvider).should(never()).checkValidation(anyString());
 			then(jwtProvider).should(never()).findMemberByToken(anyString());
 		}
 
@@ -121,8 +124,9 @@ public class AuthInterceptorTest {
 			// Stub
 			given(jwtProvider.resolveToken(any(HttpServletRequest.class)))
 				.willReturn(Optional.of(token));
-			given(jwtProvider.isValid(anyString()))
-				.willThrow(ExpiredJwtException.class);
+			willThrow(new TokenExpiredException())
+				.given(jwtProvider)
+				.checkValidation(anyString());
 
 			// When & Then
 			assertThatThrownBy(() -> authInterceptor.preHandle(request, response, handler))
@@ -139,8 +143,9 @@ public class AuthInterceptorTest {
 			// Stub
 			given(jwtProvider.resolveToken(any(HttpServletRequest.class)))
 				.willReturn(Optional.of(token));
-			given(jwtProvider.isValid(anyString()))
-				.willThrow(MalformedJwtException.class);
+			willThrow(new TokenInvalidException())
+				.given(jwtProvider)
+				.checkValidation(anyString());
 
 			// When & Then
 			assertThatThrownBy(() -> authInterceptor.preHandle(request, response, handler))

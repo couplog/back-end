@@ -5,9 +5,13 @@ import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
+import com.dateplan.dateplan.global.exception.NoPermissionException;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,12 +46,24 @@ public class MemberReadService {
 			.orElseThrow(MemberNotFoundException::new);
 	}
 
-	public ProfileImageURLServiceResponse getProfileImageURL(Long memberId) {
+	public ProfileImageURLServiceResponse getProfileImageURL(Long targetMemberId,
+		Long loginMemberPartnerId) {
 
-		Member findMember = findMemberByIdOrElseThrow(memberId);
+		Member loginMember = MemberThreadLocal.get();
+
+		String profileImageURL;
+
+		if (Objects.equals(targetMemberId, loginMember.getId())) {
+			profileImageURL = loginMember.getProfileImageUrl();
+		} else if (Objects.equals(targetMemberId, loginMemberPartnerId)) {
+			Member partner = findMemberByIdOrElseThrow(loginMemberPartnerId);
+			profileImageURL = partner.getProfileImageUrl();
+		} else {
+			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
+		}
 
 		return ProfileImageURLServiceResponse.builder()
-			.profileImageURL(findMember.getProfileImageUrl())
+			.profileImageURL(profileImageURL)
 			.build();
 	}
 

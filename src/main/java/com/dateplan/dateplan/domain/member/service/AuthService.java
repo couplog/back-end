@@ -52,9 +52,7 @@ public class AuthService {
 		memberReadService.throwIfPhoneExists(phone);
 
 		int requestCount = getRequestCountPhoneAuthenticationIn24Hours(phone);
-		if (requestCount >= 5) {
-			throw new PhoneAuthLimitOverException();
-		}
+		throwIfRequestCountOver(requestCount);
 
 		int code = RandomCodeGenerator.generateCode(6);
 		smsSendClient.sendSmsForPhoneAuthentication(phone, code);
@@ -65,6 +63,12 @@ public class AuthService {
 		return SendSmsServiceResponse.builder()
 			.currentCount(afterIncreaseCount)
 			.build();
+	}
+
+	private void throwIfRequestCountOver(int requestCount) {
+		if (requestCount >= 5) {
+			throw new PhoneAuthLimitOverException();
+		}
 	}
 
 	public void authenticateAuthCode(PhoneAuthCodeServiceRequest request) {

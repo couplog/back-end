@@ -260,6 +260,54 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("주어진 회원과 연결된 회원의 id를 조회할 때")
+	class getPartnerId {
+
+		Member connectedMember1;
+		Member connectedMember2;
+		Member notConnectedMember;
+
+		@BeforeEach
+		void setUp() {
+			connectedMember1 = createMember("01012345678");
+			connectedMember2 = createMember("01012345679");
+			notConnectedMember = createMember("01012345555");
+			memberRepository.saveAll(List.of(connectedMember1, connectedMember2, notConnectedMember));
+			Couple couple = createCouple(connectedMember1, connectedMember2);
+			coupleRepository.save(couple);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("회원이 다른 회원과 연결되어 있다면 상대방 id 를 응답한다.")
+		@Test
+		void withConnectedMember() {
+
+			// When
+			Long partnerId1 = coupleReadService.getPartnerId(connectedMember1);
+			Long partnerId2 = coupleReadService.getPartnerId(connectedMember2);
+
+			// Then
+			assertThat(partnerId1).isEqualTo(connectedMember2.getId());
+			assertThat(partnerId2).isEqualTo(connectedMember1.getId());
+		}
+
+		@DisplayName("회원이 다른 회원과 연결되어 있지 않다면 실패한다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// When & Then
+			assertThatThrownBy(() -> coupleReadService.getPartnerId(notConnectedMember))
+				.isInstanceOf(MemberNotConnectedException.class)
+				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
+		}
+	}
+
 	private Member createMember(String phone) {
 
 		return Member.builder()

@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.service.member;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.MEMBER_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.NOT_AUTHENTICATED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.PASSWORD_MISMATCH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +29,7 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.PhoneAuthLimitOverException;
 import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredPhoneException;
@@ -43,6 +45,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -126,7 +130,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 		void sendCodeWithExistsPhoneNumber() {
 
 			// Given
-			Member member = createMember("01012341234", "password");
+			Member member = createMember("01012341234", "password", "nickname");
 			memberRepository.save(member);
 
 			String phoneNumber = member.getPhone();
@@ -400,7 +404,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember(phone, password));
+			member = memberRepository.save(createMember(phone, password, "nickname1"));
 		}
 
 		@DisplayName("올바른 번호와 비밀번호를 입력하면 로그인에 성공하고, 레디스에 리프레시 토큰이 저장된다")
@@ -426,7 +430,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// Given
 			String phone2 = "01012345679";
 
-			Member member2 = memberRepository.save(createMember(phone2, password));
+			Member member2 = memberRepository.save(createMember(phone2, password, "nickname2"));
 
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
@@ -455,7 +459,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// Given
 			String phone2 = "01012345679";
 
-			memberRepository.save(createMember(phone2, password));
+			memberRepository.save(createMember(phone2, password, "nickname2"));
 
 			LoginServiceRequest member1Request = createLoginServiceRequest(phone, password);
 			LoginServiceRequest member2Request = createLoginServiceRequest(phone2, password);
@@ -484,6 +488,46 @@ public class AuthServiceTest extends ServiceTestSupport {
 			then(redisTemplate)
 				.shouldHaveNoInteractions();
 		}
+
+		@DisplayName("전화번호를 입력하지 않으면 실패한다")
+		@NullAndEmptySource
+		@ParameterizedTest
+		void failWithPhoneIsNull(String phone) {
+			// Given
+			LoginServiceRequest request = LoginServiceRequest.builder()
+				.phone(phone)
+				.password(password)
+				.build();
+
+			// When & Then
+			assertThatThrownBy(() -> authService.login(request))
+				.isInstanceOf(MemberNotFoundException.class)
+				.isNotInstanceOf(NullPointerException.class)
+				.hasMessage(MEMBER_NOT_FOUND);
+
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+		}
+
+		@DisplayName("비밀번호를 입력하지 않으면 실패한다")
+		@NullAndEmptySource
+		@ParameterizedTest
+		void failWithPasswordIsNull(String password) {
+			// Given
+			LoginServiceRequest request = LoginServiceRequest.builder()
+				.phone(phone)
+				.password(password)
+				.build();
+
+			// When & Then
+			assertThatThrownBy(() -> authService.login(request))
+				.isInstanceOf(PasswordMismatchException.class)
+				.isNotInstanceOf(NullPointerException.class)
+				.hasMessage(PASSWORD_MISMATCH);
+
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+		}
 	}
 
 	private LoginServiceRequest createLoginServiceRequest(String phone, String password) {
@@ -504,11 +548,11 @@ public class AuthServiceTest extends ServiceTestSupport {
 		return new PhoneAuthCodeServiceRequest(phone, code);
 	}
 
-	private Member createMember(String phone, String password) {
+	private Member createMember(String phone, String password, String nickname) {
 
 		return Member.builder()
 			.name("name")
-			.nickname("nickname")
+			.nickname(nickname)
 			.phone(phone)
 			.password(password)
 			.gender(Gender.FEMALE)

@@ -27,6 +27,9 @@ import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -34,6 +37,7 @@ import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
 import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedException;
@@ -500,6 +504,78 @@ public class MemberControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("특정 회원의 프로필 이미지 조회 요청시")
+	class GetProfileImageURL {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
+
+		@DisplayName("로그인한 회원 자신 혹은 연결된 회원의 프로필 이미지 조회 요청이면 성공한다.")
+		@Test
+		void withLoginMemberIdOrPartnerMemberId() throws Exception {
+
+			// Stub
+			Member loginMember = createMember();
+			MemberThreadLocal.set(loginMember);
+			Long partnerId = 2L;
+			ProfileImageURLServiceResponse serviceResponse = createProfileImageURLServiceResponse();
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willReturn(partnerId);
+			given(memberReadService.getProfileImageURL(anyLong(), anyLong()))
+				.willReturn(serviceResponse);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(jsonPath("$.data.profileImageURL").value(serviceResponse.getProfileImageURL()));
+		}
+
+		@DisplayName("다른 회원과 연결되지 않은 회원의 요청이면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNotConnectedMember() throws Exception {
+
+			// Stub
+			Member loginMember = createMember();
+			MemberThreadLocal.set(loginMember);
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willThrow(expectedException);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+
+		@DisplayName("로그인한 회원 및 연결된 회원에 대한 요청이 아니면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNotLoginMemberIdAndPartnerMemberId() throws Exception {
+
+			// Stub
+			Member loginMember = createMember();
+			MemberThreadLocal.set(loginMember);
+
+			Long partnerId = 2L;
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willReturn(partnerId);
+
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+			given(memberReadService.getProfileImageURL(anyLong(), anyLong()))
+				.willThrow(expectedException);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+	}
+
 	private ConnectionServiceResponse createConnectionServiceResponse(String connectionCode) {
 		return ConnectionServiceResponse.builder()
 			.connectionCode(connectionCode)
@@ -530,6 +606,24 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.birth(LocalDate.of(2020, 10, 10))
 			.gender(Gender.MALE)
 			.profileImageURL("imageURL")
+			.build();
+	}
+
+	private ProfileImageURLServiceResponse createProfileImageURLServiceResponse(){
+
+		return ProfileImageURLServiceResponse.builder()
+			.profileImageURL("profileImageURL")
+			.build();
+	}
+
+	private Member createMember() {
+
+		return Member.builder()
+			.name("홍길동")
+			.nickname("nickname")
+			.phone("01012341234")
+			.password("password")
+			.gender(Gender.FEMALE)
 			.build();
 	}
 }

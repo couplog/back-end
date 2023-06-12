@@ -4,12 +4,7 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Auth;
-import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
-import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import com.dateplan.dateplan.global.exception.auth.TokenNotFoundException;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
@@ -26,23 +21,16 @@ public class AuthInterceptor implements HandlerInterceptor {
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
-		Object handler) throws Exception {
+		Object handler) {
 		Optional<String> tokenByHeader = jwtProvider.resolveToken(request);
 		if (tokenByHeader.isEmpty()) {
 			throw new TokenNotFoundException();
 		}
-		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");
 
-		try {
-			if (jwtProvider.isValid(token)) {
-				Member member = jwtProvider.findMemberByToken(token);
-				MemberThreadLocal.set(member);
-			}
-		} catch (ExpiredJwtException e) {
-			throw new TokenExpiredException();
-		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {
-			throw new TokenInvalidException();
-		}
+		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");
+		jwtProvider.checkValidation(token);
+		Member member = jwtProvider.findMemberByToken(token);
+		MemberThreadLocal.set(member);
 
 		return true;
 	}

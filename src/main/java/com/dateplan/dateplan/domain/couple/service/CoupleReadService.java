@@ -4,8 +4,8 @@ import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +31,12 @@ public class CoupleReadService {
 		Member loginMember = MemberThreadLocal.get();
 
 		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
+	}
+
+	public Long getPartnerId(Member member){
+
+		return findCoupleByMemberOrElseThrow(member)
+			.getPartnerId(member);
 	}
 
 	public CoupleInfoServiceResponse getCoupleInfo() {

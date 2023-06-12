@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.service.member;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_REGISTERED_PHONE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.MEMBER_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.NOT_AUTHENTICATED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.PASSWORD_MISMATCH;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
+import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
 import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
@@ -39,6 +41,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -434,6 +438,46 @@ public class AuthServiceTest extends ServiceTestSupport {
 			// When & Then
 			assertThatThrownBy(() -> authService.login(loginServiceRequest))
 				.isInstanceOf(PasswordMismatchException.class)
+				.hasMessage(PASSWORD_MISMATCH);
+
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+		}
+
+		@DisplayName("전화번호를 입력하지 않으면 실패한다")
+		@NullAndEmptySource
+		@ParameterizedTest
+		void failWithPhoneIsNull(String phone) {
+			// Given
+			LoginServiceRequest request = LoginServiceRequest.builder()
+				.phone(phone)
+				.password(password)
+				.build();
+
+			// When & Then
+			assertThatThrownBy(() -> authService.login(request))
+				.isInstanceOf(MemberNotFoundException.class)
+				.isNotInstanceOf(NullPointerException.class)
+				.hasMessage(MEMBER_NOT_FOUND);
+
+			then(redisTemplate)
+				.shouldHaveNoInteractions();
+		}
+
+		@DisplayName("비밀번호를 입력하지 않으면 실패한다")
+		@NullAndEmptySource
+		@ParameterizedTest
+		void failWithPasswordIsNull(String password) {
+			// Given
+			LoginServiceRequest request = LoginServiceRequest.builder()
+				.phone(phone)
+				.password(password)
+				.build();
+
+			// When & Then
+			assertThatThrownBy(() -> authService.login(request))
+				.isInstanceOf(PasswordMismatchException.class)
+				.isNotInstanceOf(NullPointerException.class)
 				.hasMessage(PASSWORD_MISMATCH);
 
 			then(redisTemplate)

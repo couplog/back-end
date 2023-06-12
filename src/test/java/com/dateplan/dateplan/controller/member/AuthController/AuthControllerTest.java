@@ -10,6 +10,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.PASSWORD_MISMATCH
 import static com.dateplan.dateplan.global.exception.ErrorCode.SMS_SEND_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_INVALID;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
@@ -691,6 +692,60 @@ class AuthControllerTest extends ControllerTestSupport {
 			willThrow(new PasswordMismatchException())
 				.given(authService)
 				.login(any(LoginServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(PASSWORD_MISMATCH.getCode()))
+				.andExpect(jsonPath("$.message").value(DetailMessage.PASSWORD_MISMATCH))
+				.andExpect(header().doesNotExist("Authorization"))
+				.andExpect(header().doesNotExist("refreshToken"));
+		}
+
+		@DisplayName("전화번호를 입력하지 않으면 실패한다")
+		@Test
+		void failWithPhoneIsNull() throws Exception {
+
+			// Given
+			LoginRequest request = LoginRequest.builder()
+				.password("password")
+				.build();
+
+			// Stub
+			given(authService.login(any(LoginServiceRequest.class)))
+				.willThrow(new MemberNotFoundException());
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(MEMBER_NOT_FOUND.getCode()))
+				.andExpect(jsonPath("$.message").value(DetailMessage.MEMBER_NOT_FOUND))
+				.andExpect(header().doesNotExist("Authorization"))
+				.andExpect(header().doesNotExist("refreshToken"));
+		}
+
+		@DisplayName("비밀번호를 입력하지 않으면 실패한다")
+		@Test
+		void failWithPasswordIsNull() throws Exception {
+
+			// Given
+			LoginRequest request = LoginRequest.builder()
+				.phone("01011112222")
+				.build();
+
+			// Stub
+			given(authService.login(any(LoginServiceRequest.class)))
+				.willThrow(new PasswordMismatchException());
 
 			// When & Then
 			mockMvc.perform(

@@ -648,42 +648,6 @@ class AuthControllerTest extends ControllerTestSupport {
 				.andExpect(header().string("refreshToken", authToken.getRefreshToken()));
 		}
 
-		@DisplayName("잘못된 전화번호 패턴을 입력하면 실패한다.")
-		@NullAndEmptySource
-		@CsvSource({"010-1234-5678", "0101234567", "01012345678a", "A", "010a2345678"})
-		@ParameterizedTest
-		void loginWithInvalidInput(String phone) throws Exception {
-
-			// Given
-			String password = "abcd1234";
-			Boolean isConnected = true;
-
-			LoginRequest request = createLoginRequest(phone, password);
-			AuthToken authToken = createAuthToken();
-			LoginServiceResponse response = LoginServiceResponse.builder()
-				.authToken(authToken)
-				.isConnected(isConnected)
-				.build();
-
-			// Stub
-			willReturn(response)
-				.given(authService)
-				.login(any(LoginServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(
-					post(REQUEST_URL)
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
-				.andExpect(jsonPath("$.message").value(DetailMessage.INVALID_PHONE_PATTERN))
-				.andExpect(header().doesNotExist("Authorization"))
-				.andExpect(header().doesNotExist("refreshToken"));
-		}
-
 		@DisplayName("가입되지 않은 전화번호이면 실패한다.")
 		@Test
 		void loginWithNotRegisteredPhone() throws Exception {

@@ -124,12 +124,11 @@ public class JwtProvider {
 		return claims;
 	}
 
-	public boolean isValid(String token) {
+	public void checkValidation(String token) {
 		try {
 			Jwts.parser()
 				.setSigningKey(generateKey())
 				.parseClaimsJws(token);
-			return true;
 		} catch (ExpiredJwtException e) {
 			throw new TokenExpiredException();
 		} catch (MalformedJwtException | SignatureException | IllegalArgumentException e) {

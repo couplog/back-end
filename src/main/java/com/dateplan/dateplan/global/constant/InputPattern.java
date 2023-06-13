@@ -11,4 +11,5 @@ public final class InputPattern {
 	public static final String NICKNAME_PATTERN = "^[A-Za-z0-9가-힣]{2,10}$";
 	public static final String PASSWORD_PATTERN = "^[A-Za-z0-9]{5,20}$";
 	public static final String CONNECTION_CODE_PATTERN = "[A-Z0-9]{6}";
+	public static final String REPEAT_RULE_PATTERN = "[NDWMY]{1}";
 }

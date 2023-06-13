@@ -64,7 +64,7 @@ public enum ErrorCode {
 		public static final String METHOD_ARGUMENT_TYPE_MISMATCH = "요청 파라미터에서 %s 값은 %s 타입이어야 합니다.";
 		public static final String MISSING_REQUEST_PARAMETER = "요청 파라미터에서 %s 값은 필수입니다.";
 		public static final String MEDIA_TYPE_NOT_SUPPORTED = "%s : 지원하지 않는 media type 입니다. 지원 type : %s";
-		public static final String INVALID_DATE_PATTERN = "날짜는 yyyy-MM-dd 형식으로 입력해 주세요.";
+		public static final String INVALID_DATE_PATTERN = "날짜는 yyyy-MM-dd, 시간은 yyyy-MM-ddTHH:mm 형식으로 입력해 주세요.";
 
 		// 회원 관련
 		public static final String ALREADY_REGISTERED_PHONE = "이미 가입된 전화번호입니다.";
@@ -87,6 +87,12 @@ public enum ErrorCode {
 		public static final String ALREADY_CONNECTED = "이미 상대방이 연결되어 있습니다.";
 		public static final String SELF_CONNECTION_NOT_ALLOWED = "자기 자신과 연결할 수 없습니다.";
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
+		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 15자 이하여야 합니다.";
+		public static final String INVALID_SCHEDULE_LOCATION = "일정 위치는 20자 이하여야 합니다.";
+		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 100자 이하여야 합니다.";
+		public static final String INVALID_REPEAT_RULE = "일정 규칙은 'N', 'D', 'W', 'M', 'Y' 중 하나여야 합니다.";
+		public static final String INVALID_REPEAT_END_TIME = "일정 반복 종료 일자는 2050-01-01 이전이어야 합니다.";
+		public static final String INVALID_SCHEDULE_TIME = "일정 시작 시간과 종료 시간은 필수입니다.";
 
 		// 커플 관련
 		public static final String Member_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";

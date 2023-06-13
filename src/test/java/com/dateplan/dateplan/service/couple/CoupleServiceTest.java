@@ -28,7 +28,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.member.AlreadyConnectedException;
 import com.dateplan.dateplan.global.exception.member.InvalidConnectionCodeException;
@@ -75,7 +75,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember("01012345678"));
+			member = memberRepository.save(createMember("01012345678", "nickname"));
 			MemberThreadLocal.set(member);
 		}
 
@@ -219,8 +219,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember("01012345678"));
-			partner = memberRepository.save(createMember("01012345679"));
+			member = memberRepository.save(createMember("01012345678", "nickname1"));
+			partner = memberRepository.save(createMember("01012345679", "nickname2"));
 			MemberThreadLocal.set(member);
 		}
 
@@ -271,8 +271,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			ConnectionServiceRequest request = createConnectionServiceRequest(connectionCode);
 
 			// Stubbing
-			given(memberReadService.findMemberByIdOrElseThrow(anyLong())).willReturn(
-				partner);
+			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
+				.willReturn(partner);
 			given(coupleRepository.findById(anyLong())).willReturn(
 				Optional.ofNullable(createCouple(member, partner)));
 
@@ -367,8 +367,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member1 = createMember("01012345678");
-			member2 = createMember("01012345679");
+			member1 = createMember("01012345678", "nickname1");
+			member2 = createMember("01012345679", "nickname2");
 			memberRepository.saveAll(List.of(member1, member2));
 			couple = coupleRepository.save(createCouple(member1, member2));
 			MemberThreadLocal.set(member1);
@@ -394,7 +394,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void failWithNotConnectedMember() {
 
 			// Given
-			Member nowConnectedMember = createMember("01011111111");
+			Member nowConnectedMember = createMember("01011111111", "nickname");
 			MemberThreadLocal.set(nowConnectedMember);
 			memberRepository.save(nowConnectedMember);
 
@@ -437,8 +437,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member1 = createMember("01012345678");
-			member2 = createMember("01012345679");
+			member1 = createMember("01012345678", "nickname1");
+			member2 = createMember("01012345679", "nickname2");
 			memberRepository.saveAll(List.of(member1, member2));
 			couple = coupleRepository.save(createCouple(member1, member2));
 			MemberThreadLocal.set(member1);
@@ -466,7 +466,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void failWithNotConnectedMember() {
 
 			// Given
-			Member nowConnectedMember = createMember("01011111111");
+			Member nowConnectedMember = createMember("01011111111", "nickname");
 			MemberThreadLocal.set(nowConnectedMember);
 			memberRepository.save(nowConnectedMember);
 			FirstDateServiceRequest request = createFirstDateServiceRequest();
@@ -508,14 +508,14 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	private Member createMember(String phone) {
+	private Member createMember(String phone, String nickname) {
 		return Member.builder()
 			.phone(phone)
 			.password("password")
 			.name("name")
 			.birth(LocalDate.now().minusDays(1L))
 			.gender(Gender.MALE)
-			.nickname("nickname")
+			.nickname(nickname)
 			.build();
 	}
 

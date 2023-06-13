@@ -8,6 +8,8 @@ import com.dateplan.dateplan.domain.member.dto.login.LoginResponse;
 import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SendSmsResponse;
+import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
@@ -15,8 +17,8 @@ import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -33,11 +35,12 @@ public class AuthController {
 	private final MemberService memberService;
 
 	@PostMapping("/phone")
-	public ApiResponse<Void> sendCode(@RequestBody @Valid PhoneRequest request) {
+	public ApiResponse<SendSmsResponse> sendCode(@RequestBody @Valid PhoneRequest request) {
 
-		authService.sendSms(request.toServiceRequest());
+		SendSmsServiceResponse serviceResponse = authService.sendSms(
+			request.toServiceRequest());
 
-		return ApiResponse.ofSuccess();
+		return ApiResponse.ofSuccess(serviceResponse.toResponse());
 	}
 
 	@PostMapping("/phone/code")
@@ -57,7 +60,8 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody @Valid LoginRequest loginRequest) {
+	public ResponseEntity<ApiResponse<LoginResponse>> login(
+		@RequestBody @Valid LoginRequest loginRequest) {
 		LoginServiceResponse response = authService.login(loginRequest.toServiceRequest());
 		HttpHeaders responseHeaders = setHeaderTokens(response.getAuthToken());
 		return ResponseEntity.ok()

@@ -7,6 +7,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_PHONE_AUT
 import static com.dateplan.dateplan.global.exception.ErrorCode.MEMBER_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.NOT_AUTHENTICATED_PHONE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.PASSWORD_MISMATCH;
+import static com.dateplan.dateplan.global.exception.ErrorCode.PHONE_AUTH_LIMIT_OVER;
 import static com.dateplan.dateplan.global.exception.ErrorCode.SMS_SEND_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.TOKEN_INVALID;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,18 +29,20 @@ import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
-import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.InvalidPhoneAuthCodeException;
-import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
+import com.dateplan.dateplan.global.exception.auth.InvalidPhoneAuthCodeException;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.PasswordMismatchException;
+import com.dateplan.dateplan.global.exception.auth.PhoneAuthLimitOverException;
+import com.dateplan.dateplan.global.exception.auth.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
+import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredNicknameException;
+import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.global.exception.sms.SmsSendFailException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -70,9 +73,9 @@ class AuthControllerTest extends ControllerTestSupport {
 			PhoneRequest request = createPhoneRequest(phoneNumber);
 
 			// Stub
-			willDoNothing()
-				.given(authService)
-				.sendSms(any(PhoneServiceRequest.class));
+			SendSmsServiceResponse serviceResponse = createSendSmsServiceResponse();
+			given(authService.sendSms(any(PhoneServiceRequest.class)))
+				.willReturn(serviceResponse);
 
 			// When & Then
 			mockMvc.perform(
@@ -81,7 +84,8 @@ class AuthControllerTest extends ControllerTestSupport {
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value("true"));
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(jsonPath("$.data.currentCount").value(serviceResponse.getCurrentCount()));
 		}
 
 		@DisplayName("잘못된 패턴의 전화번호를 입력하면 요청에 실패한다.")
@@ -94,9 +98,9 @@ class AuthControllerTest extends ControllerTestSupport {
 			PhoneRequest request = createPhoneRequest(phoneNumber);
 
 			// Stub
-			willDoNothing()
-				.given(authService)
-				.sendSms(any(PhoneServiceRequest.class));
+			SendSmsServiceResponse serviceResponse = createSendSmsServiceResponse();
+			given(authService.sendSms(any(PhoneServiceRequest.class)))
+				.willReturn(serviceResponse);
 
 			//When & Then
 			mockMvc.perform(
@@ -165,6 +169,33 @@ class AuthControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(SMS_SEND_FAIL.getCode()),
 					jsonPath("$.message").value(smsSendFailException.getMessage())
+				);
+		}
+
+		@DisplayName("전화번호 인증 요청 횟수가 초과했다면 요청에 실패한다.")
+		@Test
+		void sendCodeWithOverRequestLimitCount() throws Exception {
+
+			// Given
+			String phoneNumber = "01012341234";
+			PhoneRequest request = createPhoneRequest(phoneNumber);
+
+			// Stub
+			willThrow(new PhoneAuthLimitOverException())
+				.given(authService)
+				.sendSms(any(PhoneServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isTooManyRequests())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(PHONE_AUTH_LIMIT_OVER.getCode()),
+					jsonPath("$.message").value(DetailMessage.PHONE_AUTH_LIMIT_OVER)
 				);
 		}
 	}
@@ -888,5 +919,12 @@ class AuthControllerTest extends ControllerTestSupport {
 	private PhoneAuthCodeRequest createPhoneAuthCodeRequest(String phone, String code) {
 
 		return new PhoneAuthCodeRequest(phone, code);
+	}
+
+	private SendSmsServiceResponse createSendSmsServiceResponse() {
+
+		return SendSmsServiceResponse.builder()
+			.currentCount(1)
+			.build();
 	}
 }

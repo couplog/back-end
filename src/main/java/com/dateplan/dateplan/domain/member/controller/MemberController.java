@@ -8,10 +8,13 @@ import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.dto.ProfileImageURLResponse;
+import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +39,7 @@ public class MemberController {
 	private final ScheduleService scheduleService;
 
 	@GetMapping("/me")
-	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo(){
+	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo() {
 
 		MemberInfoServiceResponse serviceResponse = memberReadService.getCurrentLoginMemberInfo();
 		boolean isConnected = coupleReadService.isCurrentLoginMemberConnected();
@@ -46,8 +49,21 @@ public class MemberController {
 		return ApiResponse.ofSuccess(response);
 	}
 
+	@GetMapping("/{member_id}/profile/image")
+	public ApiResponse<ProfileImageURLResponse> getProfileImageURL(
+		@PathVariable("member_id") Long memberId) {
+
+		Long partnerId = coupleReadService.getPartnerId(MemberThreadLocal.get());
+
+		ProfileImageURLServiceResponse serviceResponse = memberReadService.getProfileImageURL(
+			memberId, partnerId);
+
+		return ApiResponse.ofSuccess(serviceResponse.toResponse());
+	}
+
 	@GetMapping("/{member_id}/profile/image/presigned-url")
-	public ApiResponse<PresignedURLResponse> getPresignedURL(@PathVariable("member_id") Long memberId) {
+	public ApiResponse<PresignedURLResponse> getPresignedURL(
+		@PathVariable("member_id") Long memberId) {
 
 		PresignedURLResponse presingedURL = memberService.getPresignedURLForProfileImage(memberId);
 
@@ -73,7 +89,8 @@ public class MemberController {
 	@GetMapping("/{member_id}/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode(
 		@PathVariable("member_id") Long memberId) {
-		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode(memberId);
+		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode(
+			memberId);
 		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
 	}
 

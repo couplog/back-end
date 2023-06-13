@@ -31,12 +31,12 @@ import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.AlReadyRegisteredNicknameException;
-import com.dateplan.dateplan.global.exception.AlReadyRegisteredPhoneException;
-import com.dateplan.dateplan.global.exception.NoPermissionException;
-import com.dateplan.dateplan.global.exception.PhoneNotAuthenticatedException;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.auth.PhoneNotAuthenticatedException;
+import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredNicknameException;
+import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -237,7 +237,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			loginMember = createMember();
+			loginMember = createMember("nickname");
 			memberRepository.save(loginMember);
 			MemberThreadLocal.set(loginMember);
 		}
@@ -323,7 +323,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			loginMember = createMember();
+			loginMember = createMember("nickname1");
 			memberRepository.save(loginMember);
 			MemberThreadLocal.set(loginMember);
 		}
@@ -403,7 +403,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withNoPermission() {
 
 			// Given
-			Member targetMember = createMember("01000000000", "targetMemberProfileImageURL");
+			Member targetMember = createMember("01000000000", "nickname2",
+				"targetMemberProfileImageURL");
 			memberRepository.save(targetMember);
 
 			Long targetMemberId = targetMember.getId();
@@ -434,7 +435,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			loginMember = createMember();
+			loginMember = createMember("nickname1");
 			memberRepository.save(loginMember);
 			MemberThreadLocal.set(loginMember);
 		}
@@ -508,7 +509,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void withNoPermission() {
 
 			// Given
-			Member targetMember = createMember("01000000000", "targetMemberProfileImageURL");
+			Member targetMember = createMember("01000000000", "nickname2",
+				"targetMemberProfileImageURL");
 			memberRepository.save(targetMember);
 
 			Long targetMemberId = targetMember.getId();
@@ -531,11 +533,11 @@ public class MemberServiceTest extends ServiceTestSupport {
 		}
 	}
 
-	private Member createMember() {
+	private Member createMember(String nickname) {
 
 		return Member.builder()
 			.name("홍길동")
-			.nickname("nickname")
+			.nickname(nickname)
 			.phone("01012341234")
 			.password("password")
 			.gender(Gender.MALE)
@@ -543,11 +545,11 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	private Member createMember(String phone, String profileImageURL) {
+	private Member createMember(String phone, String nickname, String profileImageURL) {
 
 		Member member = Member.builder()
 			.name("홍길동")
-			.nickname("nickname")
+			.nickname(nickname)
 			.phone(phone)
 			.password("password")
 			.gender(Gender.MALE)

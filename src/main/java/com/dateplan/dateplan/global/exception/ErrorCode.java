@@ -5,6 +5,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -37,8 +38,9 @@ public enum ErrorCode {
 	TOKEN_NOT_FOUND(UNAUTHORIZED, "C020"),
 	NO_PERMISSION(FORBIDDEN, "C021"),
 	MEMBER_NOT_CONNECTED(BAD_REQUEST, "C022"),
-	INVALID_DATE_TIME_RANGE(BAD_REQUEST, "C023"),
-	INVALID_REPEAT_END_TIME_RANGE(BAD_REQUEST, "C024"),
+	PHONE_AUTH_LIMIT_OVER(TOO_MANY_REQUESTS, "C023"),
+	INVALID_DATE_TIME_RANGE(BAD_REQUEST, "C024"),
+	INVALID_REPEAT_END_TIME_RANGE(BAD_REQUEST, "C025"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -106,6 +108,7 @@ public enum ErrorCode {
 		public static final String PASSWORD_MISMATCH = "비밀번호가 올바르지 않습니다.";
 		public static final String TOKEN_NOT_FOUND = "access token을 찾을 수 없습니다.";
 		public static final String NO_PERMISSION = "해당 %s 에 대한 %s 권한이 없습니다.";
+		public static final String PHONE_AUTH_LIMIT_OVER = "하루 전화번호 인증 횟수(5회)를 초과하였습니다. 24시간 이후에 다시 시도해 주세요.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

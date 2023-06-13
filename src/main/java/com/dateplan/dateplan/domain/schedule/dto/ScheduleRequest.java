@@ -6,10 +6,10 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TIME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 
-import com.dateplan.dateplan.global.constant.InputPattern;
+import com.dateplan.dateplan.global.constant.RepeatRule;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,10 +38,21 @@ public class ScheduleRequest {
 	@Size(max = 100, message = INVALID_SCHEDULE_CONTENT)
 	private String content;
 
-	@Pattern(regexp = InputPattern.REPEAT_RULE_PATTERN, message = INVALID_REPEAT_RULE)
 	@NotNull(message = INVALID_REPEAT_RULE)
-	private String repeatRule;
+	private RepeatRule repeatRule;
 
-	@DateTimeFormat(iso = ISO.DATE_TIME)
-	private LocalDateTime repeatEndTime;
+	@DateTimeFormat(iso = ISO.DATE)
+	private LocalDate repeatEndTime;
+
+	public ScheduleServiceRequest toScheduleServiceRequest() {
+		return ScheduleServiceRequest.builder()
+			.title(title)
+			.startDateTime(startDateTime)
+			.endDateTime(endDateTime)
+			.location(location)
+			.content(content)
+			.repeatRule(repeatRule)
+			.repeatEndTime(repeatEndTime)
+			.build();
+	}
 }

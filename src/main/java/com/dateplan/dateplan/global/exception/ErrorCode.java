@@ -37,6 +37,8 @@ public enum ErrorCode {
 	TOKEN_NOT_FOUND(UNAUTHORIZED, "C020"),
 	NO_PERMISSION(FORBIDDEN, "C021"),
 	MEMBER_NOT_CONNECTED(BAD_REQUEST, "C022"),
+	INVALID_DATE_TIME_RANGE(BAD_REQUEST, "C023"),
+	INVALID_REPEAT_END_TIME_RANGE(BAD_REQUEST, "C024"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -91,8 +93,9 @@ public enum ErrorCode {
 		public static final String INVALID_SCHEDULE_LOCATION = "일정 위치는 20자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 100자 이하여야 합니다.";
 		public static final String INVALID_REPEAT_RULE = "일정 규칙은 'N', 'D', 'W', 'M', 'Y' 중 하나여야 합니다.";
-		public static final String INVALID_REPEAT_END_TIME = "일정 반복 종료 일자는 2050-01-01 이전이어야 합니다.";
 		public static final String INVALID_SCHEDULE_TIME = "일정 시작 시간과 종료 시간은 필수입니다.";
+		public static final String INVALID_DATE_TIME_RANGE = "일정 시작 시간은 일정 종료 시간 이전이어야 합니다.";
+		public static final String INVALID_REPEAT_END_TIME_RANGE = "일정 반복 종료 시간은 2050년 이전이어야 합니다.";
 
 		// 커플 관련
 		public static final String Member_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";

@@ -29,17 +29,33 @@ public class ScheduleServiceRequest {
 
 	private LocalDate repeatEndTime;
 
+	private ScheduleServiceRequest(
+		String title,
+		LocalDateTime startDateTime,
+		LocalDateTime endDateTime,
+		String location,
+		String content,
+		RepeatRule repeatRule,
+		LocalDate repeatEndTime
+	) {
+		this.title = title;
+		this.startDateTime = startDateTime;
+		this.endDateTime = endDateTime;
+		this.location = location;
+		this.content = content;
+		this.repeatRule = repeatRule;
+		this.repeatEndTime = repeatEndTime;
+		setDefaultRepeatEndTime();
+		throwIfInvalidDateTimeRange();
+		throwIfInvalidRepeatEndTime();
+		throwIfInvalidDifferenceDateTime();
+	}
+
 	public void setDefaultRepeatEndTime() {
 		if (repeatEndTime != null) {
 			return;
 		}
 		repeatEndTime = LocalDate.of(2049, 12, 31);
-	}
-
-	public void checkValidation() {
-		throwIfInvalidDateTimeRange();
-		throwIfInvalidRepeatEndTime();
-		throwIfInvalidDifferenceDateTime();
 	}
 
 	private void throwIfInvalidRepeatEndTime() {
@@ -58,7 +74,7 @@ public class ScheduleServiceRequest {
 	}
 
 	private void throwIfInvalidDifferenceDateTime() {
-		if (endDateTime.isAfter(getNextCycle(startDateTime, repeatRule))) {
+		if (endDateTime.isAfter(getNextCycle(startDateTime, repeatRule, 1))) {
 			throw new InvalidDifferenceDateTimeException();
 		}
 	}

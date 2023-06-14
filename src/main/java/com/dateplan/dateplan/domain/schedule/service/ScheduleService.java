@@ -4,16 +4,14 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
-import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.util.ScheduleDateUtil;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -21,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,13 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ScheduleService {
 
-	private final JdbcTemplate jdbcTemplate;
 	private final SchedulePatternRepository schedulePatternRepository;
-	private final ScheduleRepository scheduleRepository;
+	private final ScheduleJDBCRepository scheduleJDBCRepository;
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
-		request.setDefaultRepeatEndTime();
-		request.checkValidation();
 		Member member = MemberThreadLocal.get();
 		if (!isSameMember(memberId, member.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.CREATE);
@@ -48,7 +41,7 @@ public class ScheduleService {
 
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
-		processBatchInsert(schedulePattern, schedules);
+		scheduleJDBCRepository.processBatchInsert(schedulePattern, schedules);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,
@@ -66,46 +59,8 @@ public class ScheduleService {
 		return schedules;
 	}
 
-	private void processBatchInsert(SchedulePattern schedulePattern, List<Schedule> schedules) {
-		String sql = "INSERT INTO schedule "
-			+ "(schedule_id, "
-			+ "start_date_time, "
-			+ "end_date_time, "
-			+ "title, "
-			+ "content, "
-			+ "location, "
-			+ "schedule_pattern_id) "
-			+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-		Long maxId = scheduleRepository.findTopByOrderByIdDesc()
-			.orElse(0L);
-
-		jdbcTemplate.batchUpdate(sql, getBatchSetter(schedulePattern, schedules, maxId));
-	}
-
 	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDate now) {
 		return !now.isAfter(repeatEndTime);
-	}
-
-	private BatchPreparedStatementSetter getBatchSetter(SchedulePattern schedulePattern,
-		List<Schedule> schedules, Long maxId) {
-		return new BatchPreparedStatementSetter() {
-			@Override
-			public void setValues(PreparedStatement ps, int i) throws SQLException {
-				ps.setLong(1, maxId + i + 1);
-				ps.setObject(2, schedules.get(i).getStartDateTime());
-				ps.setObject(3, schedules.get(i).getEndDateTime());
-				ps.setString(4, schedules.get(i).getTitle());
-				ps.setString(5, schedules.get(i).getContent());
-				ps.setString(6, schedules.get(i).getLocation());
-				ps.setLong(7, schedulePattern.getId());
-			}
-
-			@Override
-			public int getBatchSize() {
-				return schedules.size();
-			}
-		};
 	}
 
 	private static SchedulePattern buildSchedulePatternEntity(ScheduleServiceRequest request,

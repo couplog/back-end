@@ -30,7 +30,7 @@ public class AnniversaryService {
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
-		LocalDate birthDay = member.getBirth();
+		LocalDate birthDay = member.getBirthDay();
 
 		AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
 			.couple(couple)

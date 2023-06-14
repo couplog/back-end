@@ -498,7 +498,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.data.name").value(serviceResponse.getName()),
 					jsonPath("$.data.nickname").value(serviceResponse.getNickname()),
 					jsonPath("$.data.phone").value(serviceResponse.getPhone()),
-					jsonPath("$.data.birth").value(serviceResponse.getBirth().toString()),
+					jsonPath("$.data.birthDay").value(serviceResponse.getBirthDay().toString()),
 					jsonPath("$.data.gender").value(serviceResponse.getGender().name()),
 					jsonPath("$.data.profileImageURL").value(serviceResponse.getProfileImageURL()));
 		}
@@ -603,7 +603,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.name("횽길동")
 			.nickname("nickname")
 			.phone("01012341234")
-			.birth(LocalDate.of(2020, 10, 10))
+			.birthDay(LocalDate.of(2020, 10, 10))
 			.gender(Gender.MALE)
 			.profileImageURL("imageURL")
 			.build();

@@ -7,8 +7,6 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 
 import com.dateplan.dateplan.global.constant.RepeatRule;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -40,7 +38,6 @@ public class ScheduleRequest {
 	@Size(max = 100, message = INVALID_SCHEDULE_CONTENT)
 	private String content;
 
-	@Enumerated(EnumType.STRING)
 	@NotNull(message = INVALID_REPEAT_RULE)
 	private RepeatRule repeatRule;
 

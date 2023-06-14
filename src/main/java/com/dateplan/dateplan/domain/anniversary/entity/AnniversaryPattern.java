@@ -1,7 +1,6 @@
 package com.dateplan.dateplan.domain.anniversary.entity;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,15 +44,16 @@ public class AnniversaryPattern {
 	private AnniversaryRepeatRule repeatRule;
 
 	@NotNull
-	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST, optional = false)
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "couple_id")
 	private Couple couple;
 
 	@Builder
 	public AnniversaryPattern(LocalDate repeatStartDate, LocalDate repeatEndDate,
 		AnniversaryRepeatRule repeatRule, Couple couple) {
+
 		this.repeatStartDate = repeatStartDate;
-		this.repeatEndDate = repeatEndDate;
+		this.repeatEndDate = repeatEndDate == null ? LocalDate.of(2049, 12, 31) : repeatEndDate;
 		this.repeatRule = repeatRule;
 		this.couple = couple;
 	}

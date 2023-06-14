@@ -17,12 +17,14 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Table(name = "schedule_pattern")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class SchedulePattern {
 
 	@Id

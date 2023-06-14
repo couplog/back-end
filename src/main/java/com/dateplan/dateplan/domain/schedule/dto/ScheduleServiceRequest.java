@@ -1,6 +1,6 @@
 package com.dateplan.dateplan.domain.schedule.dto;
 
-import static com.dateplan.dateplan.global.util.ScheduleDateUtil.*;
+import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
@@ -30,7 +30,10 @@ public class ScheduleServiceRequest {
 	private LocalDate repeatEndTime;
 
 	public void setDefaultRepeatEndTime() {
-		this.repeatEndTime = LocalDate.of(2049, 12, 31);
+		if (repeatEndTime != null) {
+			return;
+		}
+		repeatEndTime = LocalDate.of(2049, 12, 31);
 	}
 
 	public void checkValidation() {
@@ -43,7 +46,7 @@ public class ScheduleServiceRequest {
 		if (repeatEndTime.isAfter(LocalDate.of(2049, 12, 31))) {
 			throw new InvalidRepeatEndTimeRange();
 		}
-		if (repeatEndTime.isBefore(startDateTime.toLocalDate())) {
+		if (repeatEndTime.isBefore(endDateTime.toLocalDate())) {
 			throw new InvalidRepeatEndTimeRange();
 		}
 	}

@@ -51,7 +51,7 @@ public class ScheduleServiceRequest {
 		throwIfInvalidDifferenceDateTime();
 	}
 
-	public void setDefaultRepeatEndTime() {
+	private void setDefaultRepeatEndTime() {
 		if (repeatEndTime != null) {
 			return;
 		}

@@ -6,6 +6,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TIME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 
+import com.dateplan.dateplan.global.constant.InputPattern;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,7 +15,6 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 
 @Getter
 @Builder
@@ -25,11 +25,11 @@ public class ScheduleRequest {
 	private String title;
 
 	@NotNull(message = INVALID_SCHEDULE_TIME)
-	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@DateTimeFormat(pattern = InputPattern.DATE_TIME_PATTERN)
 	private LocalDateTime startDateTime;
 
 	@NotNull(message = INVALID_SCHEDULE_TIME)
-	@DateTimeFormat(iso = ISO.DATE_TIME)
+	@DateTimeFormat(pattern = InputPattern.DATE_TIME_PATTERN)
 	private LocalDateTime endDateTime;
 
 	@Size(max = 20, message = INVALID_SCHEDULE_LOCATION)
@@ -41,7 +41,7 @@ public class ScheduleRequest {
 	@NotNull(message = INVALID_REPEAT_RULE)
 	private RepeatRule repeatRule;
 
-	@DateTimeFormat(iso = ISO.DATE)
+	@DateTimeFormat(pattern = InputPattern.DATE_PATTERN)
 	private LocalDate repeatEndTime;
 
 	public ScheduleServiceRequest toScheduleServiceRequest() {

@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.schedule.service;
 
+import static com.dateplan.dateplan.global.util.ScheduleDateUtil.*;
+
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
@@ -44,23 +46,29 @@ public class ScheduleService {
 		scheduleJDBCRepository.processBatchInsert(schedulePattern, schedules);
 	}
 
-	private List<Schedule> getSchedules(ScheduleServiceRequest request,
-		SchedulePattern schedulePattern) {
+	private List<Schedule> getSchedules(ScheduleServiceRequest request, SchedulePattern schedulePattern) {
 		List<Schedule> schedules = new ArrayList<>();
+
 		LocalDateTime now = request.getStartDateTime();
-		while (isBeforeOfRepeatEndDate(request.getRepeatEndTime(), now.toLocalDate())) {
-			schedules.add(buildScheduleEntity(now, request, schedulePattern));
-			if (request.getRepeatRule().equals(RepeatRule.N)) {
-				break;
+		int count = 1;
+
+		schedules.add(buildScheduleEntity(now, request, schedulePattern));
+		if (request.getRepeatRule().equals(RepeatRule.N)) {
+			return schedules;
+		}
+
+		while (isBeforeOfRepeatEndDate(request.getRepeatEndTime(), getNextCycle(now, request.getRepeatRule(), count))) {
+			LocalDateTime nextCycle = getNextCycle(now, request.getRepeatRule(), count++);
+			if (nextCycle.getDayOfMonth() == now.getDayOfMonth()) {
+				schedules.add(buildScheduleEntity(nextCycle, request, schedulePattern));
 			}
-			now = ScheduleDateUtil.getNextCycle(now, request.getRepeatRule());
 		}
 
 		return schedules;
 	}
 
-	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDate now) {
-		return !now.isAfter(repeatEndTime);
+	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDateTime now) {
+		return !now.toLocalDate().isAfter(repeatEndTime);
 	}
 
 	private static SchedulePattern buildSchedulePatternEntity(ScheduleServiceRequest request,

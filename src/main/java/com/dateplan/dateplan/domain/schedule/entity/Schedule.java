@@ -13,11 +13,13 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "schedule")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class Schedule {
 
 	@Id

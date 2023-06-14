@@ -27,7 +27,7 @@ public class ScheduleDateUtil {
 	}
 
 	public static LocalDateTime getNextWeekDate(LocalDateTime now) {
-		return now.plusDays(7);
+		return now.plusWeeks(1);
 	}
 
 	private static LocalDateTime getNextMonthDate(int year, int month, int day, LocalDateTime now) {

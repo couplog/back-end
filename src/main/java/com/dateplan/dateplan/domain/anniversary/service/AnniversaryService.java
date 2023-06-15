@@ -9,8 +9,10 @@ import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.global.constant.DateConstants;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,25 +28,29 @@ public class AnniversaryService {
 	private final AnniversaryRepository anniversaryRepository;
 	private final AnniversaryJDBCRepository anniversaryJDBCRepository;
 
-	public void createAnniversaryForBirthDay(Member member) {
+	public void createAnniversariesForBirthDay(Member member) {
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
 		LocalDate birthDay = member.getBirthDay();
 
-		AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
-			.couple(couple)
-			.repeatStartDate(birthDay)
-			.repeatEndDate(birthDay)
-			.repeatRule(AnniversaryRepeatRule.YEAR)
-			.build();
-
+		AnniversaryPattern anniversaryPattern = AnniversaryPattern.ofBirthDay(couple, birthDay);
 		anniversaryPatternRepository.save(anniversaryPattern);
 
-		LocalDate limitEndDate = LocalDate.of(2050, 1, 1);
+		List<Anniversary> anniversaries = createRepeatedAnniversariesForBirthDay(member, birthDay,
+			anniversaryPattern);
 
-		List<Anniversary> anniversaries = IntStream.iterate(0,
-				years -> birthDay.plusYears(years).isBefore(limitEndDate),
+		anniversaryJDBCRepository.saveAll(anniversaries);
+	}
+
+	private List<Anniversary> createRepeatedAnniversariesForBirthDay(Member member,
+		LocalDate birthDay,
+		AnniversaryPattern anniversaryPattern) {
+
+		return IntStream.iterate(
+			0,
+				years -> birthDay.plusYears(years)
+					.isBefore(DateConstants.CALENDER_END_DATE.minusDays(1)),
 				years -> years + 1)
 			.mapToObj(years -> Anniversary.ofBirthDay(
 				member.getName() + " 님의 생일",
@@ -52,83 +58,77 @@ public class AnniversaryService {
 				anniversaryPattern
 			))
 			.toList();
-
-		anniversaryJDBCRepository.saveAll(anniversaries);
 	}
 
-	public void createAnniversaryForFirstDate(Couple couple) {
+	public void createAnniversariesForFirstDate(Couple couple) {
 
 		LocalDate firstDate = couple.getFirstDate();
 
-		AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
-			.couple(couple)
-			.repeatStartDate(firstDate)
-			.repeatEndDate(firstDate)
-			.repeatRule(AnniversaryRepeatRule.NONE)
-			.build();
+		AnniversaryPattern anniversaryPattern = AnniversaryPattern.ofFirstDate(couple, firstDate,
+			AnniversaryRepeatRule.NONE);
 
 		anniversaryPatternRepository.save(anniversaryPattern);
 
 		Anniversary anniversary = Anniversary.ofFirstDate("처음 만난 날", firstDate, anniversaryPattern);
 		anniversaryRepository.save(anniversary);
 
-		createAnniversaryForFirstDateWithHundredRepeat(couple);
-		createAnniversaryForFirstDateWithYearRepeat(couple);
+		createAndSaveAnniversariesForFirstDate(couple, AnniversaryRepeatRule.HUNDRED_DAYS);
+		createAndSaveAnniversariesForFirstDate(couple, AnniversaryRepeatRule.YEAR);
 	}
 
-	private void createAnniversaryForFirstDateWithHundredRepeat(Couple couple) {
+	private void createAndSaveAnniversariesForFirstDate(Couple couple,
+		AnniversaryRepeatRule repeatRule) {
 
 		LocalDate firstDate = couple.getFirstDate();
 
-		AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
-			.couple(couple)
-			.repeatStartDate(firstDate)
-			.repeatRule(AnniversaryRepeatRule.HUNDRED_DAYS)
-			.build();
+		if (!Objects.equals(repeatRule, AnniversaryRepeatRule.NONE)) {
+			AnniversaryPattern anniversaryPattern = AnniversaryPattern.ofFirstDate(couple,
+				firstDate,
+				repeatRule);
 
-		anniversaryPatternRepository.save(anniversaryPattern);
+			anniversaryPatternRepository.save(anniversaryPattern);
 
-		// 첫 만남 날짜는 1일로 간주
-		LocalDate anniversaryDate = firstDate.minusDays(1L);
-		LocalDate limitEndDate = LocalDate.of(2050, 1, 1);
+			List<Anniversary> anniversaries = createRepeatedAnniversariesForFirstDate(
+				anniversaryPattern, firstDate);
 
-		List<Anniversary> anniversaries = IntStream.iterate(100,
-				days -> anniversaryDate.plusDays(days).isBefore(limitEndDate),
-				days -> days + 100)
-			.mapToObj(days -> Anniversary.ofFirstDate(
-				"만난지 " + days + "일",
-				anniversaryDate.plusDays(days),
-				anniversaryPattern
-			))
-			.toList();
-
-		anniversaryJDBCRepository.saveAll(anniversaries);
+			anniversaryJDBCRepository.saveAll(anniversaries);
+		}
 	}
 
-	private void createAnniversaryForFirstDateWithYearRepeat(Couple couple) {
+	private List<Anniversary> createRepeatedAnniversariesForFirstDate(
+		AnniversaryPattern anniversaryPattern, LocalDate firstDate) {
 
-		LocalDate firstDate = couple.getFirstDate();
+		return switch (anniversaryPattern.getRepeatRule()) {
 
-		AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
-			.couple(couple)
-			.repeatStartDate(firstDate)
-			.repeatRule(AnniversaryRepeatRule.YEAR)
-			.build();
+			case HUNDRED_DAYS -> {
+				LocalDate anniversaryDate = firstDate.minusDays(1);
 
-		anniversaryPatternRepository.save(anniversaryPattern);
+				yield IntStream.iterate(
+					100,
+						days -> anniversaryDate.plusDays(days)
+							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+						days -> days + 100)
+					.mapToObj(days -> Anniversary.ofFirstDate(
+						"만난지 " + days + "일",
+						anniversaryDate.plusDays(days),
+						anniversaryPattern
+					))
+					.toList();
+			}
 
-		LocalDate limitEndDate = LocalDate.of(2050, 1, 1);
+			case YEAR -> IntStream.iterate(
+					1,
+					years -> firstDate.plusYears(years)
+						.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+					years -> years + 1)
+				.mapToObj(years -> Anniversary.ofFirstDate(
+					"만난지 " + years + "주년",
+					firstDate.plusYears(years),
+					anniversaryPattern
+				))
+				.toList();
 
-		List<Anniversary> anniversaries = IntStream.iterate(1,
-				years -> firstDate.plusYears(years).isBefore(limitEndDate),
-				years -> years + 1)
-			.mapToObj(years -> Anniversary.ofFirstDate(
-				"만난지 " + years + "주년",
-				firstDate.plusYears(years),
-				anniversaryPattern
-			))
-			.toList();
-
-		anniversaryJDBCRepository.saveAll(anniversaries);
+			case NONE -> List.of();
+		};
 	}
 }

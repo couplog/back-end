@@ -1,7 +1,6 @@
 package com.dateplan.dateplan.domain.schedule.repository;
 
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
-import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
@@ -16,39 +15,34 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ScheduleJDBCRepository {
 
-	private final ScheduleRepository scheduleRepository;
 	private final JdbcTemplate jdbcTemplate;
 
-	public void processBatchInsert(SchedulePattern schedulePattern, List<Schedule> schedules) {
+	public void processBatchInsert(List<Schedule> schedules) {
 		String sql = "INSERT INTO schedule "
-			+ "(schedule_id, "
-			+ "start_date_time, "
+			+ "(start_date_time, "
 			+ "end_date_time, "
 			+ "title, "
 			+ "content, "
 			+ "location, "
 			+ "schedule_pattern_id) "
-			+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
+			+ "VALUES (?, ?, ?, ?, ?, ?)";
 
-		Long maxId = scheduleRepository.findTopByOrderByIdDesc()
-			.orElse(0L);
+		Long schedulePatternId = schedules.get(0).getSchedulePattern().getId();
 
-		jdbcTemplate.batchUpdate(sql, getBatchSetter(schedulePattern, schedules, maxId));
+		jdbcTemplate.batchUpdate(sql, getBatchSetter(schedulePatternId, schedules));
 	}
 
-
-	private BatchPreparedStatementSetter getBatchSetter(SchedulePattern schedulePattern,
-		List<Schedule> schedules, Long maxId) {
+	private BatchPreparedStatementSetter getBatchSetter(Long schedulePatternId,
+		List<Schedule> schedules) {
 		return new BatchPreparedStatementSetter() {
 			@Override
 			public void setValues(PreparedStatement ps, int i) throws SQLException {
-				ps.setLong(1, maxId + i + 1);
-				ps.setObject(2, schedules.get(i).getStartDateTime());
-				ps.setObject(3, schedules.get(i).getEndDateTime());
-				ps.setString(4, schedules.get(i).getTitle());
-				ps.setString(5, schedules.get(i).getContent());
-				ps.setString(6, schedules.get(i).getLocation());
-				ps.setLong(7, schedulePattern.getId());
+				ps.setObject(1, schedules.get(i).getStartDateTime());
+				ps.setObject(2, schedules.get(i).getEndDateTime());
+				ps.setString(3, schedules.get(i).getTitle());
+				ps.setString(4, schedules.get(i).getContent());
+				ps.setString(5, schedules.get(i).getLocation());
+				ps.setLong(6, schedulePatternId);
 			}
 
 			@Override

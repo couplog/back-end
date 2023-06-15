@@ -13,7 +13,6 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
-import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -43,7 +42,7 @@ public class ScheduleService {
 
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
-		scheduleJDBCRepository.processBatchInsert(schedulePattern, schedules);
+		scheduleJDBCRepository.processBatchInsert(schedules);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request, SchedulePattern schedulePattern) {

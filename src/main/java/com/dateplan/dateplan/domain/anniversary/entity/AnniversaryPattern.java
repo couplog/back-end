@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.anniversary.entity;
 
+import static com.dateplan.dateplan.global.constant.DateConstants.CALENDER_END_DATE;
+
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +16,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,8 +56,32 @@ public class AnniversaryPattern {
 		AnniversaryRepeatRule repeatRule, Couple couple) {
 
 		this.repeatStartDate = repeatStartDate;
-		this.repeatEndDate = repeatEndDate == null ? LocalDate.of(2049, 12, 31) : repeatEndDate;
+		this.repeatEndDate = repeatEndDate == null ? CALENDER_END_DATE : repeatEndDate;
 		this.repeatRule = repeatRule;
 		this.couple = couple;
+	}
+
+	public static AnniversaryPattern ofBirthDay(Couple couple, LocalDate birthDay) {
+
+		return AnniversaryPattern.builder()
+			.couple(couple)
+			.repeatStartDate(birthDay)
+			.repeatEndDate(CALENDER_END_DATE)
+			.repeatRule(AnniversaryRepeatRule.YEAR)
+			.build();
+	}
+
+	public static AnniversaryPattern ofFirstDate(Couple couple, LocalDate firstDate,
+		AnniversaryRepeatRule repeatRule) {
+
+		LocalDate repeatEndDate =
+			Objects.equals(repeatRule, AnniversaryRepeatRule.NONE) ? firstDate : CALENDER_END_DATE;
+
+		return AnniversaryPattern.builder()
+			.couple(couple)
+			.repeatStartDate(firstDate)
+			.repeatEndDate(repeatEndDate)
+			.repeatRule(repeatRule)
+			.build();
 	}
 }

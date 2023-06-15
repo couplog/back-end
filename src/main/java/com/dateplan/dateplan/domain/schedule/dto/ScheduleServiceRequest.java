@@ -2,12 +2,16 @@ package com.dateplan.dateplan.domain.schedule.dto;
 
 import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.domain.schedule.entity.Schedule;
+import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDifferenceDateTimeException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidRepeatEndTimeRange;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -79,4 +83,24 @@ public class ScheduleServiceRequest {
 		}
 	}
 
+	public SchedulePattern toSchedulePatternEntity(Member member) {
+		return SchedulePattern.builder()
+			.repeatStartDate(startDateTime.toLocalDate())
+			.repeatEndDate(repeatEndTime)
+			.member(member)
+			.repeatRule(repeatRule)
+			.build();
+	}
+
+	public Schedule toScheduleEntity(LocalDateTime now, SchedulePattern schedulePattern) {
+		long diff = ChronoUnit.SECONDS.between(startDateTime, endDateTime);
+		return Schedule.builder()
+			.startDateTime(now)
+			.endDateTime(now.plusSeconds(diff))
+			.title(title)
+			.content(content)
+			.location(location)
+			.schedulePattern(schedulePattern)
+			.build();
+	}
 }

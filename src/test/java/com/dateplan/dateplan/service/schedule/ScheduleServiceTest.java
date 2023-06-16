@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.service.schedule;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -17,9 +18,11 @@ import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,41 +69,62 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		@DisplayName("올바른 요청을 입력하면 성공한다.")
 		@Test
 		void successWithValidRequest() {
+
+			// Given
 			Long memberId = member.getId();
 			ScheduleServiceRequest request = createScheduleServiceRequest();
 
+			// When
 			scheduleService.createSchedule(memberId, request);
 
+			// Then
 			SchedulePattern schedulePattern = schedulePatternRepository.findById(1L).get();
 			List<Schedule> schedules = scheduleRepository.findAll();
 
-			assertThat(schedulePattern.getRepeatStartDate()).isEqualTo(request.getStartDateTime().toLocalDate());
+			// SchedulePattern assert
+			assertThat(schedulePattern.getRepeatStartDate()).isEqualTo(
+				request.getStartDateTime().toLocalDate());
 			assertThat(schedulePattern.getRepeatEndDate()).isEqualTo(request.getRepeatEndTime());
 			assertThat(schedulePattern.getRepeatRule()).isEqualTo(request.getRepeatRule());
 			assertThat(schedulePattern.getMember().getId()).isEqualTo(memberId);
 
-			Schedule schedule = schedules.get(0);
+			// Schedule assert
+			for (int i = 0; i < schedules.size(); i++) {
+				Schedule schedule = schedules.get(i);
+				assertThat(schedule.getContent()).isEqualTo(request.getContent());
+				assertThat(schedule.getLocation()).isEqualTo(request.getLocation());
+				assertThat(schedule.getTitle()).isEqualTo(request.getTitle());
 
-			assertThat(schedule.getContent()).isEqualTo(request.getContent());
-			assertThat(schedule.getLocation()).isEqualTo(request.getLocation());
-			assertThat(schedule.getTitle()).isEqualTo(request.getTitle());
-			assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(request.getStartDateTime());
-			assertThat(schedule.getEndDateTime()).isEqualToIgnoringSeconds(request.getEndDateTime());
+				LocalDateTime nextStartDateTime = ScheduleDateUtil.getNextCycle(
+					request.getStartDateTime(), request.getRepeatRule(), i);
+				LocalDateTime nextEndDateTime = ScheduleDateUtil.getNextCycle(
+					request.getEndDateTime(), request.getRepeatRule(), i);
+				assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(nextStartDateTime);
+				assertThat(schedule.getEndDateTime()).isEqualToIgnoringSeconds(nextEndDateTime);
 
-			Schedule lastSchedule = schedules.get(schedules.size() - 1);
-			assertThat(lastSchedule.getStartDateTime().toLocalDate()).isBeforeOrEqualTo(request.getRepeatEndTime());
+				long diff = ChronoUnit.SECONDS.between(
+					schedule.getStartDateTime(), schedule.getEndDateTime());
+				assertThat(diff).isEqualTo(ChronoUnit.SECONDS.between(
+					request.getStartDateTime(), request.getEndDateTime()));
+			}
 		}
 
 		@DisplayName("로그인한 회원 외의 회원에 대한 요청을 하면 실패한다")
 		@Test
 		void FailWithNoPermissionRequest() {
+
+			// Given
 			Long memberId = member.getId();
-			ScheduleServiceRequest request = createScheduleServiceRequest();
 			Long otherMemberId = memberId + 1;
 
+			// When
+			ScheduleServiceRequest request = createScheduleServiceRequest();
+
+			// Then
 			assertThatThrownBy(() -> scheduleService.createSchedule(otherMemberId, request))
 				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(), Operation.CREATE.getName()));
+				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
+					Operation.CREATE.getName()));
 		}
 	}
 
@@ -122,7 +146,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.startDateTime(LocalDateTime.now())
 			.endDateTime(LocalDateTime.now().plusDays(5))
 			.repeatRule(RepeatRule.M)
-			.repeatEndTime(LocalDate.now().plusYears(5))
 			.build();
 	}
 }

@@ -67,6 +67,8 @@ public enum ErrorCode {
 		public static final String MISSING_REQUEST_PARAMETER = "요청 파라미터에서 %s 값은 필수입니다.";
 		public static final String MEDIA_TYPE_NOT_SUPPORTED = "%s : 지원하지 않는 media type 입니다. 지원 type : %s";
 		public static final String INVALID_DATE_PATTERN = "날짜는 yyyy-MM-dd 형식으로 입력해 주세요.";
+		public static final String INVALID_CALENDER_TIME_RANGE = "날짜 및 시간은 2050 년 이전으로 입력해 주세요.";
+
 
 		// 회원 관련
 		public static final String ALREADY_REGISTERED_PHONE = "이미 가입된 전화번호입니다.";
@@ -100,6 +102,11 @@ public enum ErrorCode {
 		public static final String TOKEN_NOT_FOUND = "access token을 찾을 수 없습니다.";
 		public static final String NO_PERMISSION = "해당 %s 에 대한 %s 권한이 없습니다.";
 		public static final String PHONE_AUTH_LIMIT_OVER = "하루 전화번호 인증 횟수(5회)를 초과하였습니다. 24시간 이후에 다시 시도해 주세요.";
+
+		// 기념일 관련
+		public static final String INVALID_ANNIVERSARY_TITLE = "기념일 제목은 2 - 15자로 입력해 주세요.";
+		public static final String INVALID_ANNIVERSARY_CONTENT = "기념일 내용은 100자 이하로 입력해 주세요.";
+		public static final String INVALID_ANNIVERSARY_REPEAT_RULE = "반복 규칙은 NONE, YEAR 로 입력해 주세요.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

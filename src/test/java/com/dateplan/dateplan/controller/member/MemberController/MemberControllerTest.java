@@ -6,6 +6,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_TIME_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DIFFERENCE_DATE_TIME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_END_TIME_RANGE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_RULE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_LOCATION;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
@@ -665,7 +666,8 @@ public class MemberControllerTest extends ControllerTestSupport {
 					.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(ErrorCode.INVALID_REPEAT_END_TIME_RANGE.getCode()))
+				.andExpect(
+					jsonPath("$.code").value(ErrorCode.INVALID_REPEAT_END_TIME_RANGE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_REPEAT_END_TIME_RANGE));
 		}
 
@@ -675,7 +677,8 @@ public class MemberControllerTest extends ControllerTestSupport {
 			"2023-01-01T15:00, 2023-02-02T16:00, M",
 			"2023-01-01T15:00, 2024-01-02T16:00, Y",})
 		@ParameterizedTest
-		void failWithInvalidDifferenceDateTime(LocalDateTime startDateTime, LocalDateTime endDateTime,
+		void failWithInvalidDifferenceDateTime(LocalDateTime startDateTime,
+			LocalDateTime endDateTime,
 			RepeatRule repeatRule) throws Exception {
 
 			// Given
@@ -698,7 +701,8 @@ public class MemberControllerTest extends ControllerTestSupport {
 					.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(ErrorCode.INVALID_DIFFERENCE_DATE_TIME.getCode()))
+				.andExpect(
+					jsonPath("$.code").value(ErrorCode.INVALID_DIFFERENCE_DATE_TIME.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_DIFFERENCE_DATE_TIME));
 		}
 
@@ -821,6 +825,37 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_SCHEDULE_LOCATION));
 		}
+
+		@DisplayName("올바르지 않은 반복 패턴을 입력하면 실패한다.")
+		@ParameterizedTest
+		@CsvSource({"A", "B", "NDWMY", "가나다", "1", "!@"})
+		void failWithInvalidRepeatRule(String rule) throws Exception {
+
+			RepeatRule repeatRule = RepeatRule.from(rule);
+
+			// Given
+			ScheduleRequest request = ScheduleRequest.builder()
+				.title("title")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().minusDays(1))
+				.repeatRule(repeatRule)
+				.build();
+
+			// Stub
+			willDoNothing()
+				.given(scheduleService)
+				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(post(REQUEST_URL, 1L)
+					.content(om.writeValueAsString(request))
+					.contentType(MediaType.APPLICATION_JSON)
+					.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
+				.andExpect(jsonPath("$.message").value(INVALID_REPEAT_RULE));
+		}
 	}
 
 	private ConnectionServiceResponse createConnectionServiceResponse(String connectionCode) {
@@ -856,7 +891,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.build();
 	}
 
-	private ProfileImageURLServiceResponse createProfileImageURLServiceResponse(){
+	private ProfileImageURLServiceResponse createProfileImageURLServiceResponse() {
 
 		return ProfileImageURLServiceResponse.builder()
 			.profileImageURL("profileImageURL")

@@ -61,6 +61,17 @@ public class Anniversary {
 		this.anniversaryPattern = anniversaryPattern;
 	}
 
+	public static Anniversary ofOther(String title, String content, LocalDate date, AnniversaryPattern anniversaryPattern){
+
+		return Anniversary.builder()
+			.title(title)
+			.content(content)
+			.anniversaryPattern(anniversaryPattern)
+			.date(date)
+			.category(AnniversaryCategory.OTHER)
+			.build();
+	}
+
 	public static Anniversary ofFirstDate(String title, LocalDate date,
 		AnniversaryPattern anniversaryPattern) {
 

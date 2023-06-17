@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.domain.anniversary.service;
 
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
@@ -10,6 +11,9 @@ import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.DateConstants;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +31,55 @@ public class AnniversaryService {
 	private final AnniversaryPatternRepository anniversaryPatternRepository;
 	private final AnniversaryRepository anniversaryRepository;
 	private final AnniversaryJDBCRepository anniversaryJDBCRepository;
+
+	public void createAnniversaries(Member member, Long coupleId,
+		AnniversaryCreateServiceRequest request) {
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (!Objects.equals(couple.getId(), coupleId)) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.CREATE);
+		}
+
+		AnniversaryPattern anniversaryPattern = request.toAnniversaryPattern(couple);
+		anniversaryPatternRepository.save(anniversaryPattern);
+
+		List<Anniversary> anniversaries = createRepeatedAnniversaries(anniversaryPattern,
+			request);
+
+		anniversaryJDBCRepository.saveAll(anniversaries);
+	}
+
+	private List<Anniversary> createRepeatedAnniversaries(AnniversaryPattern anniversaryPattern,
+		AnniversaryCreateServiceRequest request) {
+
+		return switch (anniversaryPattern.getRepeatRule()) {
+
+			case NONE -> List.of(
+				Anniversary.ofOther(request.getTitle(), request.getContent(), request.getDate(),
+					anniversaryPattern));
+
+			case YEAR -> {
+				LocalDate date = request.getDate();
+				String title = request.getTitle();
+				String content = request.getContent();
+
+				yield IntStream.iterate(
+						0,
+						years -> date.plusYears(years)
+							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+						years -> years + 1)
+					.mapToObj(years -> Anniversary.ofOther(
+						title,
+						content,
+						date.plusYears(years),
+						anniversaryPattern
+					))
+					.toList();
+			}
+			case HUNDRED_DAYS -> List.of();
+		};
+	}
 
 	public void createAnniversariesForBirthDay(Member member) {
 
@@ -48,9 +101,9 @@ public class AnniversaryService {
 		AnniversaryPattern anniversaryPattern) {
 
 		return IntStream.iterate(
-			0,
+				0,
 				years -> birthDay.plusYears(years)
-					.isBefore(DateConstants.CALENDER_END_DATE.minusDays(1)),
+					.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 				years -> years + 1)
 			.mapToObj(years -> Anniversary.ofBirthDay(
 				member.getName() + " 님의 생일",
@@ -104,7 +157,7 @@ public class AnniversaryService {
 				LocalDate anniversaryDate = firstDate.minusDays(1);
 
 				yield IntStream.iterate(
-					100,
+						100,
 						days -> anniversaryDate.plusDays(days)
 							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 						days -> days + 100)

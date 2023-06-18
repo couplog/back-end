@@ -4,7 +4,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_FIRST_DATE_RANGE;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.PastOrPresent;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,7 +22,7 @@ public class FirstDateRequest {
 
 	@NotNull(message = INVALID_DATE_PATTERN)
 	@DateTimeFormat(iso = ISO.DATE)
-	@Past(message = INVALID_FIRST_DATE_RANGE)
+	@PastOrPresent(message = INVALID_FIRST_DATE_RANGE)
 	private LocalDate firstDate;
 
 	public FirstDateServiceRequest toFirstDateServiceRequest() {

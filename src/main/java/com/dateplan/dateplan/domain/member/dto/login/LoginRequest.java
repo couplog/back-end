@@ -1,10 +1,14 @@
 package com.dateplan.dateplan.domain.member.dto.login;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginRequest {
 
 	private String phone;

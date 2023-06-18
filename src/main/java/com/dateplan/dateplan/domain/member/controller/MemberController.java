@@ -12,6 +12,8 @@ import com.dateplan.dateplan.domain.member.dto.ProfileImageURLResponse;
 import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
+import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -34,6 +36,7 @@ public class MemberController {
 	private final MemberReadService memberReadService;
 	private final CoupleService coupleService;
 	private final CoupleReadService coupleReadService;
+	private final ScheduleService scheduleService;
 
 	@GetMapping("/me")
 	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo() {
@@ -95,6 +98,13 @@ public class MemberController {
 	public ApiResponse<Void> connectCouple(@PathVariable("member_id") Long memberId,
 		@Valid @RequestBody ConnectionRequest request) {
 		coupleService.connectCouple(memberId, request.toConnectionServiceRequest());
+		return ApiResponse.ofSuccess();
+	}
+
+	@PostMapping("/{member_id}/schedules")
+	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
+		@Valid @RequestBody ScheduleRequest request) {
+		scheduleService.createSchedule(memberId, request.toScheduleServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 }

@@ -215,12 +215,12 @@ public class CoupleServiceTest extends ServiceTestSupport {
 	class ConnectCouple {
 
 		Member member;
-		Member oppositeMember;
+		Member partner;
 
 		@BeforeEach
 		void setUp() {
 			member = memberRepository.save(createMember("01012345678", "nickname1"));
-			oppositeMember = memberRepository.save(createMember("01012345679", "nickname2"));
+			partner = memberRepository.save(createMember("01012345679", "nickname2"));
 			MemberThreadLocal.set(member);
 		}
 
@@ -265,16 +265,16 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			String connectionCode = "ABC123";
 
 			ValueOperations<String, String> opsForValue = redisTemplate.opsForValue();
-			opsForValue.set(getConnectionKey(oppositeMember.getId()), connectionCode);
-			opsForValue.set(connectionCode, String.valueOf(oppositeMember.getId()));
+			opsForValue.set(getConnectionKey(partner.getId()), connectionCode);
+			opsForValue.set(connectionCode, String.valueOf(partner.getId()));
 
 			ConnectionServiceRequest request = createConnectionServiceRequest(connectionCode);
 
 			// Stubbing
-			given(memberReadService.findMemberByIdOrElseThrow(anyLong())).willReturn(
-				oppositeMember);
+			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
+				.willReturn(partner);
 			given(coupleRepository.findById(anyLong())).willReturn(
-				Optional.ofNullable(createCouple(member, oppositeMember)));
+				Optional.ofNullable(createCouple(member, partner)));
 
 			// When
 			coupleService.connectCouple(member.getId(), request);
@@ -283,8 +283,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			Couple couple = coupleRepository.findById(1L).orElse(null);
 			assertThat(couple).isNotNull();
 			assertThat(couple.getFirstDate()).isEqualTo(request.getFirstDate());
-			assertThat(couple.getMember1().getId()).isIn(member.getId(), oppositeMember.getId());
-			assertThat(couple.getMember2().getId()).isIn(member.getId(), oppositeMember.getId());
+			assertThat(couple.getMember1().getId()).isIn(member.getId(), partner.getId());
+			assertThat(couple.getMember2().getId()).isIn(member.getId(), partner.getId());
 		}
 
 		@DisplayName("존재하지 않는 코드를 입력하면 실패한다")
@@ -297,7 +297,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// Stubbing
 			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
-				.willReturn(oppositeMember);
+				.willReturn(partner);
 
 			// When & Then
 			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
@@ -310,15 +310,15 @@ public class CoupleServiceTest extends ServiceTestSupport {
 		void failWithAlreadyConnected() {
 
 			// Given
-			coupleRepository.save(createCouple(member, oppositeMember));
+			coupleRepository.save(createCouple(member, partner));
 			String connectionCode = "ABC123";
 			ValueOperations<String, String> opsForValue = redisTemplate.opsForValue();
-			opsForValue.set(connectionCode, String.valueOf(oppositeMember.getId()));
+			opsForValue.set(connectionCode, String.valueOf(partner.getId()));
 			ConnectionServiceRequest request = createConnectionServiceRequest(connectionCode);
 
 			// Stubbing
 			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
-				.willReturn(oppositeMember);
+				.willReturn(partner);
 
 			// When & Then
 			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
@@ -341,7 +341,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 			// Stubbing
 			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
-				.willReturn(oppositeMember);
+				.willReturn(partner);
 
 			// When & Then
 			assertThatThrownBy(() -> coupleService.connectCouple(member.getId(), request))
@@ -500,10 +500,10 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	private Couple createCouple(Member member, Member oppositeMember) {
+	private Couple createCouple(Member member, Member partner) {
 		return Couple.builder()
 			.member1(member)
-			.member2(oppositeMember)
+			.member2(partner)
 			.firstDate(LocalDate.now().minusDays(1L))
 			.build();
 	}

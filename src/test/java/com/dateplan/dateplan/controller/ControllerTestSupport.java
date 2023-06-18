@@ -10,6 +10,7 @@ import com.dateplan.dateplan.domain.member.controller.MemberController;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.domain.sms.service.SmsSendClient;
 import com.dateplan.dateplan.global.auth.JwtProvider;
 import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
@@ -54,6 +55,9 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected CoupleReadService coupleReadService;
+
+	@MockBean
+	protected ScheduleService scheduleService;
 
 	@MockBean
 	protected AnniversaryService anniversaryService;

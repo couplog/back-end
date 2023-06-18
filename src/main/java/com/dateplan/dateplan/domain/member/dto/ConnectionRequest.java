@@ -6,16 +6,20 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_FIRST_DATE_RANGE;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConnectionRequest {
 
 	@NotNull(message = INVALID_CONNECTION_CODE_PATTERN)
@@ -24,7 +28,7 @@ public class ConnectionRequest {
 
 	@NotNull(message = INVALID_DATE_PATTERN)
 	@DateTimeFormat(iso = ISO.DATE)
-	@Past(message = INVALID_FIRST_DATE_RANGE)
+	@PastOrPresent(message = INVALID_FIRST_DATE_RANGE)
 	private LocalDate firstDate;
 
 	public ConnectionServiceRequest toConnectionServiceRequest() {

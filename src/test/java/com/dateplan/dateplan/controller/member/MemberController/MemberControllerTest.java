@@ -56,6 +56,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -831,15 +833,12 @@ public class MemberControllerTest extends ControllerTestSupport {
 		@CsvSource({"A", "B", "NDWMY", "가나다", "1", "!@"})
 		void failWithInvalidRepeatRule(String rule) throws Exception {
 
-			RepeatRule repeatRule = RepeatRule.from(rule);
-
 			// Given
-			ScheduleRequest request = ScheduleRequest.builder()
-				.title("title")
-				.startDateTime(LocalDateTime.now())
-				.endDateTime(LocalDateTime.now().minusDays(1))
-				.repeatRule(repeatRule)
-				.build();
+			Map<String, Object> requestBody = new HashMap<>();
+			requestBody.put("title", "title");
+			requestBody.put("startDateTime", LocalDateTime.now());
+			requestBody.put("endDateTime", LocalDateTime.now().minusDays(1));
+			requestBody.put("repeatRule", rule);
 
 			// Stub
 			willDoNothing()
@@ -848,7 +847,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
-					.content(om.writeValueAsString(request))
+					.content(om.writeValueAsString(requestBody))
 					.contentType(MediaType.APPLICATION_JSON)
 					.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isBadRequest())

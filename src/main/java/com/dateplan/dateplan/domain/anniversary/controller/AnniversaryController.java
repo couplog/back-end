@@ -6,10 +6,12 @@ import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,6 +21,7 @@ public class AnniversaryController {
 
 	private final AnniversaryService anniversaryService;
 
+	@ResponseStatus(value = HttpStatus.CREATED)
 	@PostMapping
 	public ApiResponse<Void> createAnniversary(@PathVariable("couple_id") Long coupleId,
 		@RequestBody @Valid AnniversaryCreateRequest request) {

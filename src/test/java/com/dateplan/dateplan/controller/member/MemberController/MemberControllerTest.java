@@ -742,7 +742,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 			// Given
 			ScheduleRequest request = ScheduleRequest.builder()
-				.title(createRandomString(20))
+				.title(createRandomString(16))
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
 				.location("location")
@@ -775,7 +775,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.title("title")
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
-				.location(createRandomString(30))
+				.location(createRandomString(21))
 				.content("content")
 				.repeatRule(RepeatRule.M)
 				.build();
@@ -805,7 +805,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.title("title")
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
-				.location(createRandomString(110))
+				.location(createRandomString(101))
 				.content("content")
 				.repeatRule(RepeatRule.M)
 				.build();

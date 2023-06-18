@@ -3,6 +3,7 @@ package com.dateplan.dateplan.controller.member.MemberController;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.ALREADY_CONNECTED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE_PATTERN;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_FIRST_DATE_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_DELETE_OBJECT_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
@@ -274,6 +275,36 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.SELF_CONNECTION_NOT_ALLOWED.getCode()),
 					jsonPath("$.message").value(SELF_CONNECTION_NOT_ALLOWED)
+				);
+		}
+
+		@DisplayName("올바르지 않은 처음 만난 날 범위 입력하면 실패한다")
+		@Test
+		void failWithInvalidFirstDate() throws Exception {
+
+			// Given
+			String connectionCode = RandomCodeGenerator.generateConnectionCode(6);
+			ConnectionRequest request = ConnectionRequest.builder()
+				.connectionCode(connectionCode)
+				.firstDate(LocalDate.now().plusDays(1))
+				.build();
+
+			// Stub
+			willDoNothing()
+				.given(coupleService)
+				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, "1")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(INVALID_FIRST_DATE_RANGE)
 				);
 		}
 
@@ -585,7 +616,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 	private ConnectionRequest createConnectionRequest(String connectionCode) {
 		return ConnectionRequest.builder()
 			.connectionCode(connectionCode)
-			.firstDate(LocalDate.now().minusDays(1L))
+			.firstDate(LocalDate.now())
 			.build();
 	}
 

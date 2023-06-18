@@ -744,7 +744,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 			// Given
 			ScheduleRequest request = ScheduleRequest.builder()
-				.title(createRandomString(16))
+				.title(createLengthString(16))
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
 				.location("location")
@@ -777,7 +777,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.title("title")
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
-				.location(createRandomString(21))
+				.location(createLengthString(21))
 				.content("content")
 				.repeatRule(RepeatRule.M)
 				.build();
@@ -807,7 +807,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.title("title")
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
-				.location(createRandomString(101))
+				.location(createLengthString(101))
 				.content("content")
 				.repeatRule(RepeatRule.M)
 				.build();
@@ -920,12 +920,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.build();
 	}
 
-	private String createRandomString(int length) {
-		StringBuilder sb = new StringBuilder(length);
-		for (int i = 0; i < length; i++) {
-			char randomChar = (char) ('A' + (int) (Math.random() * 26));
-			sb.append(randomChar);
-		}
-		return sb.toString();
+	private String createLengthString(int length) {
+		return new String(new char[length]).replace('\0', ' ');
 	}
 }

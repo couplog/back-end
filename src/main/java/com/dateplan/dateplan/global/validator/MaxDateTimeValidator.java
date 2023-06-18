@@ -18,7 +18,7 @@ public class MaxDateTimeValidator implements ConstraintValidator<BeforeCalenderE
 	@Override
 	public boolean isValid(LocalDate time, ConstraintValidatorContext context) {
 
-		if (DateConstants.CALENDER_END_DATE.isBefore(time)) {
+		if (time != null && DateConstants.CALENDER_END_DATE.isBefore(time)) {
 			context.disableDefaultConstraintViolation();
 			context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
 			return false;

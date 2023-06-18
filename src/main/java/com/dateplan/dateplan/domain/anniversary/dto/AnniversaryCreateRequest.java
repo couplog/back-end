@@ -7,7 +7,6 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.global.validator.BeforeCalenderEndTime;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -28,7 +27,7 @@ public class AnniversaryCreateRequest {
 	@Size(min = 2, max = 15, message = INVALID_ANNIVERSARY_TITLE)
 	private String title;
 
-	@Max(value = 100, message = INVALID_ANNIVERSARY_CONTENT)
+	@Size(max = 100, message = INVALID_ANNIVERSARY_CONTENT)
 	private String content;
 
 	@NotNull(message = INVALID_ANNIVERSARY_REPEAT_RULE)

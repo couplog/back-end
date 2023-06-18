@@ -494,7 +494,7 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 		return Couple.builder()
 			.member1(member1)
 			.member2(member2)
-			.firstDate(LocalDate.of(2010, 10, 10))
+			.firstDate(firstDate)
 			.build();
 	}
 

@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.controller;
 
+import com.dateplan.dateplan.domain.anniversary.controller.AnniversaryController;
+import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.controller.CoupleController;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
@@ -19,7 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @ActiveProfiles("test")
-@WebMvcTest(controllers = {AuthController.class, MemberController.class, CoupleController.class})
+@WebMvcTest(controllers = {AuthController.class, MemberController.class, CoupleController.class,
+	AnniversaryController.class})
 public abstract class ControllerTestSupport {
 
 	@Autowired
@@ -51,4 +54,7 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected CoupleReadService coupleReadService;
+
+	@MockBean
+	protected AnniversaryService anniversaryService;
 }

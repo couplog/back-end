@@ -5,11 +5,11 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_CONNECTION_CODE_PATTERN;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_TIME_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DIFFERENCE_DATE_TIME;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_FIRST_DATE_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_END_TIME_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_RULE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_LOCATION;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
-import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_FIRST_DATE_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_CREATE_PRESIGNED_URL_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_DELETE_OBJECT_FAIL;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +33,7 @@ import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
@@ -169,9 +171,15 @@ public class MemberControllerTest extends ControllerTestSupport {
 			ConnectionRequest request = createConnectionRequest(connectionCode);
 
 			// Stub
-			willDoNothing()
+			willReturn(createCoupleConnectServiceResponse())
 				.given(coupleService)
 				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+			willDoNothing()
+				.given(anniversaryService)
+				.createAnniversariesForBirthDay(anyLong());
+			willDoNothing()
+				.given(anniversaryService)
+				.createAnniversariesForFirstDate(anyLong());
 
 			// When & Then
 			mockMvc.perform(
@@ -191,11 +199,6 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 			// Given
 			ConnectionRequest request = createConnectionRequest(connectionCode);
-
-			// Stub
-			willDoNothing()
-				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -300,11 +303,6 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.connectionCode(connectionCode)
 				.firstDate(LocalDate.now().plusDays(1))
 				.build();
-
-			// Stub
-			willDoNothing()
-				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -948,6 +946,15 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.content("content")
 			.repeatRule(RepeatRule.M)
 			.repeatEndTime(LocalDate.now().plusYears(10))
+			.build();
+	}
+
+	private CoupleConnectServiceResponse createCoupleConnectServiceResponse() {
+
+		return CoupleConnectServiceResponse.builder()
+			.coupleId(1L)
+			.member1Id(1L)
+			.member2Id(2L)
 			.build();
 	}
 

@@ -78,8 +78,13 @@ public class Member {
 		this.password = password;
 	}
 
-	public void updateProfileImageUrl(String profileImageUrl){
+	public void updateProfileImageUrl(String profileImageUrl) {
 
 		this.profileImageUrl = profileImageUrl;
+	}
+
+	public void updateBirthDay(LocalDate birthDay) {
+
+		this.birthDay = birthDay;
 	}
 }

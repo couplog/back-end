@@ -1,10 +1,12 @@
 package com.dateplan.dateplan.domain.member.controller;
 
+import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
@@ -38,6 +40,7 @@ public class MemberController {
 	private final CoupleService coupleService;
 	private final CoupleReadService coupleReadService;
 	private final ScheduleService scheduleService;
+	private final AnniversaryService anniversaryService;
 
 	@GetMapping("/me")
 	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo() {
@@ -107,7 +110,11 @@ public class MemberController {
 	@PostMapping("/{member_id}/connect")
 	public ApiResponse<Void> connectCouple(@PathVariable("member_id") Long memberId,
 		@Valid @RequestBody ConnectionRequest request) {
-		coupleService.connectCouple(memberId, request.toConnectionServiceRequest());
+		CoupleConnectServiceResponse serviceResponse = coupleService.connectCouple(
+			memberId, request.toConnectionServiceRequest());
+		anniversaryService.createAnniversariesForFirstDate(serviceResponse.getCoupleId());
+		anniversaryService.createAnniversariesForBirthDay(serviceResponse.getMember1Id());
+		anniversaryService.createAnniversariesForBirthDay(serviceResponse.getMember2Id());
 		return ApiResponse.ofSuccess();
 	}
 

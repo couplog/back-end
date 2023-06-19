@@ -13,6 +13,7 @@ import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
+import com.dateplan.dateplan.global.exception.couple.CoupleNotFoundException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -243,6 +244,60 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			assertThatThrownBy(() -> coupleReadService.getPartnerId(notConnectedMember))
 				.isInstanceOf(MemberNotConnectedException.class)
 				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
+		}
+	}
+
+	@Nested
+	@DisplayName("커플 id가 주어졌을 때")
+	class FindCoupleByIdOrElseThrow {
+
+		private String phone1 = "01012345678";
+		private String phone2 = "01012345679";
+		private Couple couple;
+
+		@BeforeEach
+		void setUp() {
+			Member member1 = createMember(phone1, "nickname1");
+			Member member2 = createMember(phone2, "nickname2");
+			memberRepository.save(member1);
+			memberRepository.save(member2);
+
+			couple = createCouple(member1, member2);
+			coupleRepository.save(couple);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("존재하는 커플 id 라면 커플 엔티티를 반환한다.")
+		@Test
+		void withExistsCoupleId() {
+
+			// Given
+			Long coupleId = couple.getId();
+
+			// When
+			Couple findCouple = coupleReadService.findCoupleByIdOrElseThrow(coupleId);
+
+			// Then
+			assertThat(findCouple.getId())
+				.isEqualTo(couple.getId());
+		}
+
+		@DisplayName("존재하지 않는 커플 id 라면 예외를 발생시킨다.")
+		@Test
+		void withNotExistsCoupleId() {
+
+			// Given
+			Long coupleId = couple.getId() + 100;
+
+			// When & Then
+			assertThatThrownBy(() -> coupleReadService.findCoupleByIdOrElseThrow(coupleId))
+				.isInstanceOf(CoupleNotFoundException.class)
+				.hasMessage(DetailMessage.COUPLE_NOT_FOUND);
 		}
 	}
 

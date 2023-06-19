@@ -20,6 +20,7 @@ import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
@@ -257,7 +258,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			}
 		}
 
-		@DisplayName("올바른 요청 코드를 입력하면 상대방과 연결된다")
+		@DisplayName("올바른 요청 코드를 입력하면 상대방과 연결되고, 커플 정보를 담아 응답한다.")
 		@Test
 		void connectCoupleWithValidRequest() {
 
@@ -277,7 +278,8 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				Optional.ofNullable(createCouple(member, partner)));
 
 			// When
-			coupleService.connectCouple(member.getId(), request);
+			CoupleConnectServiceResponse serviceResponse = coupleService.connectCouple(
+				member.getId(), request);
 
 			// Then
 			Couple couple = coupleRepository.findById(1L).orElse(null);
@@ -285,6 +287,10 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			assertThat(couple.getFirstDate()).isEqualTo(request.getFirstDate());
 			assertThat(couple.getMember1().getId()).isIn(member.getId(), partner.getId());
 			assertThat(couple.getMember2().getId()).isIn(member.getId(), partner.getId());
+
+			assertThat(serviceResponse).isNotNull();
+			assertThat(List.of(serviceResponse.getMember1Id(), serviceResponse.getMember2Id()))
+				.containsExactlyInAnyOrder(member.getId(), partner.getId());
 		}
 
 		@DisplayName("존재하지 않는 코드를 입력하면 실패한다")

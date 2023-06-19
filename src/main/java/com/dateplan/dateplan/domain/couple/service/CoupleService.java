@@ -8,6 +8,7 @@ import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
@@ -93,7 +94,8 @@ public class CoupleService {
 			.build();
 	}
 
-	public void connectCouple(Long memberId, ConnectionServiceRequest request) {
+	public CoupleConnectServiceResponse connectCouple(Long memberId,
+		ConnectionServiceRequest request) {
 		final Member loginMember = MemberThreadLocal.get();
 
 		if (!isSameMember(memberId, loginMember.getId())) {
@@ -112,6 +114,8 @@ public class CoupleService {
 			.firstDate(request.getFirstDate())
 			.build();
 		coupleRepository.save(couple);
+
+		return CoupleConnectServiceResponse.from(couple);
 	}
 
 	private void throwIfAlreadyConnected(Member partner) {

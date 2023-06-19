@@ -14,7 +14,7 @@ public class SignUpServiceRequest {
 	private String name;
 	private String nickname;
 	private String password;
-	private LocalDate birth;
+	private LocalDate birthDay;
 	private Gender gender;
 
 	public Member toMember(){
@@ -24,7 +24,7 @@ public class SignUpServiceRequest {
 			.name(this.name)
 			.nickname(this.nickname)
 			.password(this.password)
-			.birth(this.birth)
+			.birthDay(this.birthDay)
 			.gender(this.gender)
 			.build();
 	}

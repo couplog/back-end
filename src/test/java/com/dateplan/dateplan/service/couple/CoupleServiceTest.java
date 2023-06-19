@@ -513,7 +513,7 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.name("name")
-			.birth(LocalDate.now().minusDays(1L))
+			.birthDay(LocalDate.now().minusDays(1L))
 			.gender(Gender.MALE)
 			.nickname(nickname)
 			.build();

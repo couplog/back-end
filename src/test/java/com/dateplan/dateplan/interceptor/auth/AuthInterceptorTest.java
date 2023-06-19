@@ -208,7 +208,7 @@ public class AuthInterceptorTest {
 			.phone("01012345678")
 			.nickname("nickname")
 			.gender(Gender.MALE)
-			.birth(LocalDate.now().minusDays(1))
+			.birthDay(LocalDate.now().minusDays(1))
 			.build();
 	}
 }

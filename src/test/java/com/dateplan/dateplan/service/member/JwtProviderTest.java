@@ -20,6 +20,7 @@ import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.TokenExpiredException;
 import com.dateplan.dateplan.global.exception.auth.TokenInvalidException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
+import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -243,6 +244,7 @@ public class JwtProviderTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)
+			.birthDay(LocalDate.of(2000, 10, 10))
 			.build();
 	}
 }

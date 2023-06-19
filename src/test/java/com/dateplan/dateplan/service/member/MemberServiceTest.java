@@ -104,7 +104,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 					"name",
 					"phone",
 					"nickname",
-					"birth",
+					"birthDay",
 					"gender")
 				.contains(
 					request.getName(),
@@ -541,7 +541,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.phone("01012341234")
 			.password("password")
 			.gender(Gender.MALE)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.build();
 	}
 
@@ -553,7 +553,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.MALE)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.build();
 
 		member.updateProfileImageUrl(profileImageURL);

@@ -254,6 +254,7 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)
+			.birthDay(LocalDate.of(2000, 10, 10))
 			.build();
 	}
 

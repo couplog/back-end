@@ -10,6 +10,7 @@ import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AnniversaryService {
 
+	private final MemberReadService memberReadService;
 	private final CoupleReadService coupleReadService;
 	private final AnniversaryPatternRepository anniversaryPatternRepository;
 	private final AnniversaryRepository anniversaryRepository;
@@ -81,7 +83,9 @@ public class AnniversaryService {
 		};
 	}
 
-	public void createAnniversariesForBirthDay(Member member) {
+	public void createAnniversariesForBirthDay(Long memberId) {
+
+		Member member = memberReadService.findMemberByIdOrElseThrow(memberId);
 
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
@@ -113,7 +117,9 @@ public class AnniversaryService {
 			.toList();
 	}
 
-	public void createAnniversariesForFirstDate(Couple couple) {
+	public void createAnniversariesForFirstDate(Long coupleId) {
+
+		Couple couple = coupleReadService.findCoupleByIdOrElseThrow(coupleId);
 
 		LocalDate firstDate = couple.getFirstDate();
 

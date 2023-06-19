@@ -5,6 +5,7 @@ import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.exception.couple.CoupleNotFoundException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,12 @@ public class CoupleReadService {
 		Member loginMember = MemberThreadLocal.get();
 
 		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
+	}
+
+	public Couple findCoupleByIdOrElseThrow(Long coupleId){
+
+		return coupleRepository.findById(coupleId)
+			.orElseThrow(CoupleNotFoundException::new);
 	}
 
 	public Long getPartnerId(Member member){

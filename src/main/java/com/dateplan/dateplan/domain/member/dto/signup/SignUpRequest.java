@@ -41,7 +41,7 @@ public class SignUpRequest {
 	@DateTimeFormat(iso = ISO.DATE)
 	@Past(message = INVALID_BIRTH_RANGE)
 	@NotNull(message = INVALID_DATE_PATTERN)
-	private LocalDate birth;
+	private LocalDate birthDay;
 
 	@NotNull(message = INVALID_GENDER)
 	private Gender gender;
@@ -53,7 +53,7 @@ public class SignUpRequest {
 			.name(this.name)
 			.nickname(this.nickname)
 			.password(this.password)
-			.birth(this.birth)
+			.birthDay(this.birthDay)
 			.gender(this.gender)
 			.build();
 	}

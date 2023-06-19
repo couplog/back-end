@@ -885,7 +885,7 @@ class AuthControllerTest extends ControllerTestSupport {
 			.name(name)
 			.nickname(nickname)
 			.phone(phoneNumber)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.password(password)
 			.gender(Gender.MALE).build();
 	}
@@ -896,7 +896,7 @@ class AuthControllerTest extends ControllerTestSupport {
 		request.put("name", "이름");
 		request.put("nickname", "nickname");
 		request.put("phone", "01011112222");
-		request.put("birth", birth);
+		request.put("birthDay", birth);
 		request.put("password", "password");
 		request.put("gender", gender);
 

@@ -5,6 +5,7 @@ import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,8 +33,8 @@ public class ScheduleController {
 	@GetMapping("/{member_id}")
 	public ApiResponse<ScheduleResponse> readSchedule(
 		@PathVariable("member_id") Long memberId,
-		@RequestParam("year") Integer year,
-		@RequestParam("month") Integer month
+		@Nullable @RequestParam("year") Integer year,
+		@Nullable @RequestParam("month") Integer month
 	) {
 		ScheduleServiceResponse scheduleServiceResponse = scheduleService.readSchedule(memberId,
 			year, month);

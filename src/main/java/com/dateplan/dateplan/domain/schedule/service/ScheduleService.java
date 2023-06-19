@@ -19,11 +19,12 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,23 +54,35 @@ public class ScheduleService {
 			year, month);
 
 		return ScheduleServiceResponse.builder()
-			.memberSchedules(getSchedulesDate(year, month, memberSchedules))
-			.partnerSchedules(getSchedulesDate(year, month, partnerSchedules))
+			.memberSchedules(getSchedulesDate(memberSchedules, year, month))
+			.partnerSchedules(getSchedulesDate(partnerSchedules, year, month))
 			.build();
 	}
 
-	private List<LocalDate> getSchedulesDate(Integer year, Integer month,
-		List<Schedule> schedules) {
-
+	private List<LocalDate> getSchedulesDate(List<Schedule> schedules, Integer year, Integer month) {
 		return schedules.stream()
 			.flatMap(schedule -> {
-				int start = schedule.getStartDateTime().getDayOfMonth();
-				int end = schedule.getEndDateTime().getDayOfMonth();
-				return IntStream.rangeClosed(start, end)
-					.mapToObj(i -> LocalDate.of(year, month, i));
+				LocalDate startDate = schedule.getStartDateTime().toLocalDate();
+				LocalDate endDate = schedule.getEndDateTime().toLocalDate();
+				return Stream.iterate(startDate, date -> date.plusDays(1))
+					.limit(ChronoUnit.DAYS.between(startDate, endDate.plusDays(1)))
+					.filter(date -> checkDateRange(year, month, date));
 			})
 			.distinct()
 			.collect(Collectors.toList());
+	}
+
+	private boolean checkDateRange(Integer year, Integer month, LocalDate startDate) {
+		if (year == null && month == null) {
+			return true;
+		}
+		if (year != null && month == null) {
+			return startDate.getYear() == year;
+		}
+		if (year == null) {
+			return startDate.getMonthValue() == month;
+		}
+		return startDate.getYear() == year && startDate.getMonthValue() == month;
 	}
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
@@ -101,12 +114,21 @@ public class ScheduleService {
 		while (isBeforeOfRepeatEndDate(request.getRepeatEndTime(),
 			getNextCycle(now, request.getRepeatRule(), count))) {
 			LocalDateTime nextCycle = getNextCycle(now, request.getRepeatRule(), count++);
-			if (nextCycle.getDayOfMonth() == now.getDayOfMonth()) {
+			if (checkNextCycle(request, now, nextCycle)) {
 				schedules.add(request.toScheduleEntity(nextCycle, schedulePattern));
 			}
 		}
 
 		return schedules;
+	}
+
+	private boolean checkNextCycle(ScheduleServiceRequest request, LocalDateTime now,
+		LocalDateTime nextCycle) {
+		if (request.getRepeatRule().equals(RepeatRule.D) ||
+			request.getRepeatRule().equals(RepeatRule.W)) {
+			return true;
+		}
+		return nextCycle.getDayOfMonth() == now.getDayOfMonth();
 	}
 
 	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDateTime now) {

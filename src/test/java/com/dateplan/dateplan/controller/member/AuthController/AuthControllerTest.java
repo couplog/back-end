@@ -885,18 +885,18 @@ class AuthControllerTest extends ControllerTestSupport {
 			.name(name)
 			.nickname(nickname)
 			.phone(phoneNumber)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.password(password)
 			.gender(Gender.MALE).build();
 	}
 
-	private Map<String, String> createSignUpRequestWithMap(String birth, String gender) {
+	private Map<String, String> createSignUpRequestWithMap(String birthDay, String gender) {
 
 		Map<String, String> request = new HashMap<>();
 		request.put("name", "이름");
 		request.put("nickname", "nickname");
 		request.put("phone", "01011112222");
-		request.put("birth", birth);
+		request.put("birthDay", birthDay);
 		request.put("password", "password");
 		request.put("gender", gender);
 

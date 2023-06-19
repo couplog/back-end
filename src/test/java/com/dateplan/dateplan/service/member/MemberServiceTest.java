@@ -110,7 +110,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 					request.getName(),
 					request.getPhone(),
 					request.getNickname(),
-					request.getBirth(),
+					request.getBirthDay(),
 					request.getGender());
 		}
 
@@ -569,7 +569,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.MALE)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.build();
 	}
 }

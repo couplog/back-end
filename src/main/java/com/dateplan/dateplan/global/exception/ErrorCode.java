@@ -4,6 +4,7 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
@@ -42,6 +43,7 @@ public enum ErrorCode {
 	INVALID_DATE_TIME_RANGE(BAD_REQUEST, "C024"),
 	INVALID_REPEAT_END_TIME_RANGE(BAD_REQUEST, "C025"),
 	INVALID_DIFFERENCE_DATE_TIME(BAD_REQUEST, "C026"),
+	COUPLE_NOT_FOUND(NOT_FOUND, "C027"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -107,6 +109,7 @@ public enum ErrorCode {
 
 		// 커플 관련
 		public static final String Member_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";
+		public static final String COUPLE_NOT_FOUND = "존재하지 않는 커플입니다.";
 
 		// 인증, 인가 관련
 		public static final String TOKEN_EXPIRED = "토큰이 만료되었습니다.";

@@ -43,8 +43,9 @@ public class Member {
 	@Column(name = "nickname", unique = true, columnDefinition = "VARCHAR(30)")
 	private String nickname;
 
-	@Column(name = "birth", columnDefinition = "DATE", updatable = false)
-	private LocalDate birth;
+	@NotNull
+	@Column(name = "birth_day", columnDefinition = "DATE", updatable = false)
+	private LocalDate birthDay;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "gender", columnDefinition = "VARCHAR(10)")
@@ -64,14 +65,14 @@ public class Member {
 		String name,
 		String phone,
 		String nickname,
-		LocalDate birth,
+		LocalDate birthDay,
 		Gender gender,
 		String password
 	) {
 		this.name = name;
 		this.phone = phone;
 		this.nickname = nickname;
-		this.birth = birth;
+		this.birthDay = birthDay;
 		this.gender = gender;
 		this.profileImageUrl = DEFAULT_PROFILE_IMAGE;
 		this.password = password;

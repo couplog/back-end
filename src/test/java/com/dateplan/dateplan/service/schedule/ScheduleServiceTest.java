@@ -136,7 +136,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.phone("01012341234")
 			.password("password")
 			.gender(Gender.MALE)
-			.birth(LocalDate.of(1999, 10, 10))
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.build();
 	}
 

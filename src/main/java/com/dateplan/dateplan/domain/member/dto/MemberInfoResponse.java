@@ -13,7 +13,7 @@ public class MemberInfoResponse {
 	private String name;
 	private String nickname;
 	private String phone;
-	private LocalDate birth;
+	private LocalDate birthDay;
 	private Gender gender;
 	private String profileImageURL;
 	private boolean isConnected;

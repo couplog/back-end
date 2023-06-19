@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -22,8 +23,10 @@ import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
+import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -62,6 +65,9 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 	@MockBean
 	private CoupleReadService coupleReadService;
 
+	@MockBean
+	private MemberReadService memberReadService;
+
 	@Nested
 	@DisplayName("생일 기념일을 생성시")
 	class CreateAnniversaryForBirthDay {
@@ -98,11 +104,13 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 			LocalDate birthDay = connectedMember1.getBirthDay();
 
 			// Stub
+			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
+				.willReturn(connectedMember1);
 			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
 				.willReturn(couple);
 
 			// When
-			anniversaryService.createAnniversariesForBirthDay(connectedMember1);
+			anniversaryService.createAnniversariesForBirthDay(connectedMember1.getId());
 
 			// Then
 			AnniversaryPattern anniversaryPattern = anniversaryPatternRepository.findAll().get(0);
@@ -143,18 +151,50 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 			}
 		}
 
+		@DisplayName("존재하지 않은 회원의 경우, 예외를 발생시킨다.")
+		@Test
+		void withNotExistsMember() {
+
+			// Given
+			Long memberId = connectedMember1.getId() + 100;
+
+			// Stub
+			MemberNotFoundException expectedException = new MemberNotFoundException();
+			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(
+				() -> anniversaryService.createAnniversariesForBirthDay(memberId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+
+			then(anniversaryRepository)
+				.shouldHaveNoInteractions();
+			then(anniversaryPatternRepository)
+				.shouldHaveNoInteractions();
+			then(anniversaryJDBCRepository)
+				.shouldHaveNoInteractions();
+		}
+
 		@DisplayName("연결되지 않은 회원의 경우, 예외를 발생시킨다.")
 		@Test
 		void withNotConnectedMember() {
 
+			// Given
+			Long memberId = connectedMember1.getId();
+
 			// Stub
+			given(memberReadService.findMemberByIdOrElseThrow(anyLong()))
+				.willReturn(connectedMember1);
+
 			MemberNotConnectedException expectedException = new MemberNotConnectedException();
 			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
 				.willThrow(expectedException);
 
 			// when & then
 			assertThatThrownBy(
-				() -> anniversaryService.createAnniversariesForBirthDay(connectedMember1))
+				() -> anniversaryService.createAnniversariesForBirthDay(memberId))
 				.isInstanceOf(expectedException.getClass())
 				.hasMessage(expectedException.getMessage());
 
@@ -199,8 +239,15 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 		@Test
 		void withConnectedMember() {
 
+			// given
+			Long coupleId = couple.getId();
+
+			// stub
+			given(coupleReadService.findCoupleByIdOrElseThrow(anyLong()))
+				.willReturn(couple);
+
 			// when
-			anniversaryService.createAnniversariesForFirstDate(couple);
+			anniversaryService.createAnniversariesForFirstDate(coupleId);
 
 			// then
 			List<AnniversaryPattern> anniversaryPatterns = anniversaryPatternRepository.findAll();
@@ -216,7 +263,6 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 				AnniversaryRepeatRule.HUNDRED_DAYS);
 
 			LocalDate firstDate = couple.getFirstDate();
-			Long coupleId = couple.getId();
 
 			assertThat(noRepeatedAnniversaryPatterns)
 				.hasSize(1)

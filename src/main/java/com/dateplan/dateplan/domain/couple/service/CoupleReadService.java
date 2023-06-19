@@ -26,13 +26,6 @@ public class CoupleReadService {
 			.orElseThrow(MemberNotConnectedException::new);
 	}
 
-	public boolean isCurrentLoginMemberConnected() {
-
-		Member loginMember = MemberThreadLocal.get();
-
-		return coupleRepository.existsByMember1OrMember2(loginMember, loginMember);
-	}
-
 	public Long getPartnerId(Member member){
 
 		return findCoupleByMemberOrElseThrow(member)

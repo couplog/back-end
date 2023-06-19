@@ -14,18 +14,18 @@ public class MemberInfoServiceResponse {
 	private String name;
 	private String nickname;
 	private String phone;
-	private LocalDate birth;
+	private LocalDate birthDay;
 	private Gender gender;
 	private String profileImageURL;
 
-	public static MemberInfoServiceResponse of(Member member){
+	public static MemberInfoServiceResponse from(Member member){
 
 		return MemberInfoServiceResponse.builder()
 			.memberId(member.getId())
 			.name(member.getName())
 			.nickname(member.getNickname())
 			.phone(member.getPhone())
-			.birth(member.getBirth())
+			.birthDay(member.getBirthDay())
 			.gender(member.getGender())
 			.profileImageURL(member.getProfileImageUrl())
 			.build();
@@ -38,7 +38,7 @@ public class MemberInfoServiceResponse {
 			.name(this.name)
 			.nickname(this.nickname)
 			.phone(this.phone)
-			.birth(this.birth)
+			.birthDay(this.birthDay)
 			.gender(this.gender)
 			.profileImageURL(this.profileImageURL)
 			.isConnected(isConnected)

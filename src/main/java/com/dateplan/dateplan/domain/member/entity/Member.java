@@ -43,6 +43,7 @@ public class Member {
 	@Column(name = "nickname", unique = true, columnDefinition = "VARCHAR(30)")
 	private String nickname;
 
+	@NotNull
 	@Column(name = "birth_day", columnDefinition = "DATE", updatable = false)
 	private LocalDate birthDay;
 
@@ -77,12 +78,12 @@ public class Member {
 		this.password = password;
 	}
 
-	public void updateProfileImageUrl(String profileImageUrl){
+	public void updateProfileImageUrl(String profileImageUrl) {
 
 		this.profileImageUrl = profileImageUrl;
 	}
 
-	public void updateBirthDay(LocalDate birthDay){
+	public void updateBirthDay(LocalDate birthDay) {
 
 		this.birthDay = birthDay;
 	}

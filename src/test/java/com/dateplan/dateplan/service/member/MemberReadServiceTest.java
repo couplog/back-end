@@ -19,6 +19,7 @@ import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredNicknameException;
 import com.dateplan.dateplan.global.exception.member.AlReadyRegisteredPhoneException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -157,17 +158,16 @@ class MemberReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
-	@DisplayName("현재 로그인한 회원 정보를 조회하면")
+	@DisplayName("특정 회원의 회원 정보를 조회하면")
 	@Nested
-	class GetCurrentLoginMemberInfo {
+	class GetMemberInfo {
 
-		private Member loginMember;
+		private Member member;
 
 		@BeforeEach
 		void setUp() {
-			loginMember = createMember();
-			memberRepository.save(loginMember);
-			MemberThreadLocal.set(loginMember);
+			member = createMember();
+			memberRepository.save(member);
 		}
 
 		@AfterEach
@@ -175,21 +175,49 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			memberRepository.deleteAllInBatch();
 		}
 
-		@DisplayName("현재 로그인한 회원 정보를 조회한다.")
+		@DisplayName("존재하는 회원이라면 해당 회원 정보를 조회한다.")
 		@Test
-		void withLoginMember() {
+		void withExistsMember() {
 
 			// Given
-			MemberInfoServiceResponse expectedServiceResponse = MemberInfoServiceResponse.of(
-				loginMember);
+			Long memberId = member.getId();
 
 			// When
-			MemberInfoServiceResponse serviceResponse = memberReadService.getCurrentLoginMemberInfo();
+			MemberInfoServiceResponse serviceResponse = memberReadService.getMemberInfo(memberId);
 
 			// Then
 			assertThat(serviceResponse)
-				.usingRecursiveComparison()
-				.isEqualTo(expectedServiceResponse);
+				.extracting(
+					MemberInfoServiceResponse::getMemberId,
+					MemberInfoServiceResponse::getName,
+					MemberInfoServiceResponse::getNickname,
+					MemberInfoServiceResponse::getPhone,
+					MemberInfoServiceResponse::getBirthDay,
+					MemberInfoServiceResponse::getGender,
+					MemberInfoServiceResponse::getProfileImageURL
+				)
+				.containsExactly(
+					member.getId(),
+					member.getName(),
+					member.getNickname(),
+					member.getPhone(),
+					member.getBirthDay(),
+					member.getGender(),
+					member.getProfileImageUrl()
+				);
+		}
+
+		@DisplayName("존재하지 않는 회원이라면 예외를 발생시킨다.")
+		@Test
+		void withNotExistsMember() {
+
+			// Given
+			Long memberId = member.getId() + 100;
+
+			// When & Then
+			assertThatThrownBy(() -> memberReadService.getMemberInfo(memberId))
+				.isInstanceOf(MemberNotFoundException.class)
+				.hasMessage(DetailMessage.MEMBER_NOT_FOUND);
 		}
 	}
 
@@ -289,6 +317,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			.phone("01012345678")
 			.password("password")
 			.gender(Gender.MALE)
+			.birthDay(LocalDate.of(2020, 10, 10))
 			.build();
 	}
 
@@ -300,6 +329,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password("password")
 			.gender(Gender.FEMALE)
+			.birthDay(LocalDate.of(2020, 10, 10))
 			.build();
 	}
 

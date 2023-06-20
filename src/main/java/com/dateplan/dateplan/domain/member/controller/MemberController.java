@@ -12,6 +12,7 @@ import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.dto.ProfileImageURLResponse;
 import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
@@ -44,12 +45,21 @@ public class MemberController {
 	@GetMapping("/me")
 	public ApiResponse<MemberInfoResponse> getCurrentLoginMemberInfo() {
 
-		MemberInfoServiceResponse serviceResponse = memberReadService.getCurrentLoginMemberInfo();
-		boolean isConnected = coupleReadService.isCurrentLoginMemberConnected();
+		Member loginMember = MemberThreadLocal.get();
+		boolean isConnected = coupleReadService.isMemberConnected(loginMember);
 
-		MemberInfoResponse response = serviceResponse.toResponse(isConnected);
+		MemberInfoResponse response = MemberInfoResponse.of(loginMember, isConnected);
 
 		return ApiResponse.ofSuccess(response);
+	}
+
+	@GetMapping("/partner")
+	public ApiResponse<MemberInfoResponse> getPartnerMemberInfo() {
+
+		Long partnerId = coupleReadService.getPartnerId(MemberThreadLocal.get());
+		MemberInfoServiceResponse serviceResponse = memberReadService.getMemberInfo(partnerId);
+
+		return ApiResponse.ofSuccess(serviceResponse.toResponse(true));
 	}
 
 	@GetMapping("/{member_id}/profile/image")

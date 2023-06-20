@@ -18,7 +18,7 @@ public class MemberInfoServiceResponse {
 	private Gender gender;
 	private String profileImageURL;
 
-	public static MemberInfoServiceResponse of(Member member){
+	public static MemberInfoServiceResponse from(Member member){
 
 		return MemberInfoServiceResponse.builder()
 			.memberId(member.getId())

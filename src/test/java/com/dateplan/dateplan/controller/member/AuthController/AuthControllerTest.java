@@ -890,13 +890,13 @@ class AuthControllerTest extends ControllerTestSupport {
 			.gender(Gender.MALE).build();
 	}
 
-	private Map<String, String> createSignUpRequestWithMap(String birth, String gender) {
+	private Map<String, String> createSignUpRequestWithMap(String birthDay, String gender) {
 
 		Map<String, String> request = new HashMap<>();
 		request.put("name", "이름");
 		request.put("nickname", "nickname");
 		request.put("phone", "01011112222");
-		request.put("birthDay", birth);
+		request.put("birthDay", birthDay);
 		request.put("password", "password");
 		request.put("gender", gender);
 

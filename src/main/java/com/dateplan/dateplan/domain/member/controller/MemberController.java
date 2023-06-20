@@ -48,7 +48,7 @@ public class MemberController {
 		Member loginMember = MemberThreadLocal.get();
 		boolean isConnected = coupleReadService.isMemberConnected(loginMember);
 
-		MemberInfoResponse response = MemberInfoResponse.from(loginMember, isConnected);
+		MemberInfoResponse response = MemberInfoResponse.of(loginMember, isConnected);
 
 		return ApiResponse.ofSuccess(response);
 	}

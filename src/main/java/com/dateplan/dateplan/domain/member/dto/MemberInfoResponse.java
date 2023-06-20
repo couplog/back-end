@@ -19,7 +19,7 @@ public class MemberInfoResponse {
 	private String profileImageURL;
 	private boolean isConnected;
 
-	public static MemberInfoResponse from(Member member, boolean isConnected){
+	public static MemberInfoResponse of(Member member, boolean isConnected){
 
 		return MemberInfoResponse.builder()
 			.memberId(member.getId())

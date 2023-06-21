@@ -7,6 +7,8 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.entry.Exists;
+import com.dateplan.dateplan.domain.schedule.dto.entry.ScheduleEntry;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
@@ -19,10 +21,11 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -41,34 +44,54 @@ public class ScheduleService {
 
 	public ScheduleServiceResponse readSchedule(Long memberId, Integer year, Integer month) {
 		Member member = MemberThreadLocal.get();
+		validatePermission(memberId, member);
 
-		if (!isSameMember(memberId, member.getId())) {
-			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
-		}
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 		Long partnerId = couple.getPartnerId(member);
 
-		List<Schedule> memberSchedules = scheduleQueryRepository.findByYearAndMonth(memberId, year,
-			month);
-		List<Schedule> partnerSchedules = scheduleQueryRepository.findByYearAndMonth(partnerId,
-			year, month);
+		List<Schedule> memberSchedules = scheduleQueryRepository.findByYearAndMonth(memberId, year, month);
+		List<Schedule> partnerSchedules = scheduleQueryRepository.findByYearAndMonth(partnerId, year, month);
+
+		Map<LocalDate, Exists> existsMap = new TreeMap<>();
+		processSchedulesMapping(year, month, memberSchedules, existsMap, false);
+		processSchedulesMapping(year, month, partnerSchedules, existsMap, true);
 
 		return ScheduleServiceResponse.builder()
-			.memberSchedules(getSchedulesDate(memberSchedules, year, month))
-			.partnerSchedules(getSchedulesDate(partnerSchedules, year, month))
+			.schedules(createScheduleEntry(existsMap))
 			.build();
 	}
 
-	private List<LocalDate> getSchedulesDate(List<Schedule> schedules, Integer year, Integer month) {
-		return schedules.stream()
-			.flatMap(schedule -> {
-				LocalDate startDate = schedule.getStartDateTime().toLocalDate();
-				LocalDate endDate = schedule.getEndDateTime().toLocalDate();
-				return Stream.iterate(startDate, date -> date.plusDays(1))
-					.limit(ChronoUnit.DAYS.between(startDate, endDate.plusDays(1)))
-					.filter(date -> checkDateRange(year, month, date));
-			})
+	private void processSchedulesMapping(Integer year, Integer month, List<Schedule> schedules,
+		Map<LocalDate, Exists> existsMap, boolean isPartner) {
+		schedules.stream()
+			.flatMap(schedule -> getScheduleDateRange(schedule, year, month))
 			.distinct()
+			.forEach((v) -> {
+				Exists exists = existsMap.getOrDefault(v, Exists.getInstance());
+				exists.updateSchedule(isPartner);
+				existsMap.put(v, exists);
+			});
+	}
+
+	private Stream<LocalDate> getScheduleDateRange(Schedule schedule, Integer year, Integer month) {
+		LocalDate startDate = schedule.getStartDateTime().toLocalDate();
+		LocalDate endDate = schedule.getEndDateTime().toLocalDate();
+		return startDate.datesUntil(endDate.plusDays(1))
+			.filter(date -> checkDateRange(year, month, date));
+	}
+
+	private void validatePermission(Long memberId, Member member) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
+		}
+	}
+
+	private List<ScheduleEntry> createScheduleEntry(Map<LocalDate, Exists> existsMap) {
+		return existsMap.entrySet().stream()
+			.map(e -> ScheduleEntry.builder()
+				.date(e.getKey())
+				.exists(e.getValue())
+				.build())
 			.collect(Collectors.toList());
 	}
 

@@ -1,6 +1,6 @@
 package com.dateplan.dateplan.domain.schedule.dto;
 
-import java.time.LocalDate;
+import com.dateplan.dateplan.domain.schedule.dto.entry.ScheduleEntry;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +13,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ScheduleResponse {
 
-	private List<LocalDate> memberSchedules;
-	private List<LocalDate> partnerSchedules;
-	private List<LocalDate> dateSchedules;
+	private List<ScheduleEntry> schedules;
 }

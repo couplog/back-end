@@ -18,19 +18,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/schedules")
+@RequestMapping("/api/members")
 public class ScheduleController {
 
 	private final ScheduleService scheduleService;
 
-	@PostMapping("/{member_id}")
+	@PostMapping("/{member_id}/schedules")
 	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
 		@Valid @RequestBody ScheduleRequest request) {
 		scheduleService.createSchedule(memberId, request.toScheduleServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 
-	@GetMapping("/{member_id}")
+	@GetMapping("/{member_id}/schedules/date")
 	public ApiResponse<ScheduleResponse> readSchedule(
 		@PathVariable("member_id") Long memberId,
 		@Nullable @RequestParam("year") Integer year,

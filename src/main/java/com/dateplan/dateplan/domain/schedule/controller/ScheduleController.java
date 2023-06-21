@@ -3,6 +3,7 @@ package com.dateplan.dateplan.domain.schedule.controller;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.annotation.Nullable;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ScheduleController {
 
 	private final ScheduleService scheduleService;
+	private final ScheduleReadService scheduleReadService;
 
 	@PostMapping("/{member_id}/schedules")
 	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
@@ -36,8 +38,8 @@ public class ScheduleController {
 		@Nullable @RequestParam("year") Integer year,
 		@Nullable @RequestParam("month") Integer month
 	) {
-		ScheduleServiceResponse scheduleServiceResponse = scheduleService.readSchedule(memberId,
-			year, month);
+		ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedule(
+			memberId, year, month);
 
 		return ApiResponse.ofSuccess(scheduleServiceResponse.toScheduleResponse());
 	}

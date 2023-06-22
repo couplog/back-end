@@ -17,7 +17,7 @@ public class ScheduleQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
 
-	public List<Schedule> findByYearAndMonth(Long memberId, Integer year, Integer month) {
+	public List<Schedule> findByYearAndMonthOrderByDate(Long memberId, Integer year, Integer month) {
 		return queryFactory
 			.select(schedule)
 			.from(schedule)
@@ -26,6 +26,7 @@ public class ScheduleQueryRepository {
 			.where(memberIdEq(memberId)
 				.and(yearEq(year))
 				.and(monthEq(month)))
+			.orderBy(schedule.startDateTime.asc())
 			.fetch();
 	}
 

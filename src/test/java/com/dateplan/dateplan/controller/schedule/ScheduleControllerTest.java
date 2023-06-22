@@ -7,27 +7,40 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_LOCATION;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +49,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.MediaType;
 
 public class ScheduleControllerTest extends ControllerTestSupport {
+
+	@BeforeEach
+	void setUp() {
+		given(
+			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
+				any(Object.class)))
+			.willReturn(true);
+	}
 
 	@Nested
 	@DisplayName("개인 일정을 생성할 때")
@@ -305,6 +326,96 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("일정 날짜 조회 시")
+	class ReadSchedule {
+
+		private final static String REQUEST_URL = "/api/members/{member_id}/schedules/dates";
+
+		@DisplayName("올바른 member_id, year, month를 입력하면 성공한다.")
+		@Test
+		void successWithValidRequest() throws Exception {
+
+			// Given
+			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
+			List<String> expectedDates = response.getScheduleDates().stream()
+				.map(LocalDate::toString).toList();
+
+			// Stubbing
+			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(jsonPath("$.data.scheduleDates")
+					.value(containsInAnyOrder(expectedDates.toArray()))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermissionRequest() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.CREATE);
+			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+				.willThrow(exception);
+
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
+		@Test
+		void failWithNotConnectedRequest() throws Exception {
+
+			// Stubbing
+			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+				.willThrow(new MemberNotConnectedException());
+
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isBadRequest())
+				.andExpectAll(
+					jsonPath("$.code").value(ErrorCode.MEMBER_NOT_CONNECTED.getCode()),
+					jsonPath("$.message").value(DetailMessage.Member_NOT_CONNECTED)
+				);
+		}
+
+		@DisplayName("year과 month에 올바르지 않은 값이 들어가면 실패한다.")
+		@ParameterizedTest
+		@CsvSource({"aaaa,12", "2019,aa"})
+		void failWithInvalidQueryParameter(String year, String month) throws Exception {
+			Map<String, String> requestMap = Map.of("year", year, "month", month);
+			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
+
+			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+				.willReturn(response);
+
+			mockMvc.perform(get(REQUEST_URL, 1)
+					.param("year", requestMap.get("year"))
+					.param("month", requestMap.get("month")))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value("C003"),
+					jsonPath("$.message").value(containsString("Integer"))
+				);
+		}
+	}
+
 	private ScheduleRequest createScheduleRequest() {
 		return ScheduleRequest.builder()
 			.title("title")
@@ -319,6 +430,18 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 	private String createLengthString(int length) {
 		return new String(new char[length]).replace('\0', ' ');
+	}
+
+	private ScheduleDatesServiceResponse createScheduleDatesServiceResponse() {
+		return ScheduleDatesServiceResponse.builder()
+			.scheduleDates(createScheduleDates())
+			.build();
+	}
+
+	private List<LocalDate> createScheduleDates() {
+		return LocalDate.now().withDayOfMonth(1)
+			.datesUntil(LocalDate.now().withDayOfMonth(1).plusMonths(1))
+			.collect(Collectors.toList());
 	}
 
 }

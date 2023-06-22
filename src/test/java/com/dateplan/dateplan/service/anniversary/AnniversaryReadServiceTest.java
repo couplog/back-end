@@ -21,6 +21,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.util.List;
@@ -147,6 +148,28 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			// stub
 			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
 				.willReturn(couple);
+
+			// when & then
+			assertThatThrownBy(() -> anniversaryReadService.readAnniversaryDates(
+				member, targetCoupleId, year, month))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("현재 로그인 회원이 연결 상태가 아니라면, 예외를 발생시킨다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// given
+			Long targetCoupleId = couple.getId();
+			Integer year = 2023;
+			Integer month = 1;
+
+			// stub
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willThrow(expectedException);
 
 			// when & then
 			assertThatThrownBy(() -> anniversaryReadService.readAnniversaryDates(

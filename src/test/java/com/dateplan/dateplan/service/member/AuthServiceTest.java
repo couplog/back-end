@@ -556,6 +556,7 @@ public class AuthServiceTest extends ServiceTestSupport {
 			.phone(phone)
 			.password(password)
 			.gender(Gender.FEMALE)
+			.birthDay(LocalDate.of(2020, 10, 10))
 			.build();
 	}
 }

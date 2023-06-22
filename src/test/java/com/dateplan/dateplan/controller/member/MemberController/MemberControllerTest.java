@@ -49,6 +49,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -57,6 +58,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class MemberControllerTest extends ControllerTestSupport {
 
@@ -506,17 +508,74 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 		private static final String REQUEST_URL = "/api/members/me";
 
+		private Member loginMember;
+
+		@BeforeEach
+		void setUp() {
+			loginMember = createMember();
+			MemberThreadLocal.set(loginMember);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		@DisplayName("현재 로그인 회원의 정보를 응답한다.")
 		@Test
 		void withLoginMember() throws Exception {
 
 			// Stub
-			MemberInfoServiceResponse serviceResponse = createMemberInfoServiceResponse();
 			boolean isConnected = true;
-			given(memberReadService.getCurrentLoginMemberInfo())
-				.willReturn(serviceResponse);
-			given(coupleReadService.isCurrentLoginMemberConnected())
+			given(coupleReadService.isMemberConnected(any(Member.class)))
 				.willReturn(isConnected);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpectAll(
+					jsonPath("$.data.memberId").value(loginMember.getId()),
+					jsonPath("$.data.name").value(loginMember.getName()),
+					jsonPath("$.data.nickname").value(loginMember.getNickname()),
+					jsonPath("$.data.phone").value(loginMember.getPhone()),
+					jsonPath("$.data.birthDay").value(loginMember.getBirthDay().toString()),
+					jsonPath("$.data.gender").value(loginMember.getGender().name()),
+					jsonPath("$.data.profileImageURL").value(loginMember.getProfileImageUrl()));
+		}
+	}
+
+	@Nested
+	@DisplayName("현재 로그인 회원의 상대 회원 정보 조회 요청시")
+	class GetPartnerMemberInfo {
+
+		private static final String REQUEST_URL = "/api/members/partner";
+
+		@BeforeEach
+		void setUp() {
+			Member loginMember = createMember();
+			MemberThreadLocal.set(loginMember);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("현재 로그인 회원의 상대 회원 정보를 응답한다.")
+		@Test
+		void withConnectedMember() throws Exception {
+
+			// Stub
+			Long partnerMemberId = 1L;
+			Member partnerMember = createMember();
+			ReflectionTestUtils.setField(partnerMember, "id", partnerMemberId, Long.class);
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willReturn(partnerMemberId);
+
+			MemberInfoServiceResponse serviceResponse = createMemberInfoServiceResponse();
+			given(memberReadService.getMemberInfo(anyLong()))
+				.willReturn(serviceResponse);
 
 			// When & Then
 			mockMvc.perform(get(REQUEST_URL))
@@ -530,6 +589,27 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.data.birthDay").value(serviceResponse.getBirthDay().toString()),
 					jsonPath("$.data.gender").value(serviceResponse.getGender().name()),
 					jsonPath("$.data.profileImageURL").value(serviceResponse.getProfileImageURL()));
+		}
+
+		@DisplayName("로그인 회원이 연결되지 않은 경우, 예외 코드와 메시지를 응답한다.")
+		@Test
+		void withNotConnectedMember() throws Exception {
+
+			// Stub
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+			willThrow(expectedException)
+				.given(coupleReadService)
+				.getPartnerId(any(Member.class));
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(expectedException.getErrorCode().getCode()),
+					jsonPath("$.message").value(expectedException.getMessage())
+				);
 		}
 	}
 
@@ -654,6 +734,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			.phone("01012341234")
 			.password("password")
 			.gender(Gender.FEMALE)
+			.birthDay(LocalDate.of(2020, 10, 10))
 			.build();
 	}
 

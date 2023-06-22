@@ -67,10 +67,10 @@ public class MemberReadService {
 			.build();
 	}
 
-	public MemberInfoServiceResponse getCurrentLoginMemberInfo() {
+	public MemberInfoServiceResponse getMemberInfo(Long memberId) {
 
-		Member loginMember = MemberThreadLocal.get();
+		Member member = findMemberByIdOrElseThrow(memberId);
 
-		return MemberInfoServiceResponse.of(loginMember);
+		return MemberInfoServiceResponse.from(member);
 	}
 }

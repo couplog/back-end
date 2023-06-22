@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.controller;
 
 import com.dateplan.dateplan.domain.anniversary.controller.AnniversaryController;
+import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.controller.CoupleController;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
@@ -66,4 +67,7 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected ScheduleReadService scheduleReadService;
+
+	@MockBean
+	protected AnniversaryReadService anniversaryReadService;
 }

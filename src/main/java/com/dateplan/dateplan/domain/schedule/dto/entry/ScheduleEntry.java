@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class ScheduleEntry {
 
 	private LocalDate date;
-	private Exists exists;
+	private ScheduleExists exists;
 
 }

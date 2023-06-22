@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Exists {
+public class ScheduleExists {
 
 	private Boolean memberSchedule;
 	private Boolean partnerSchedule;
@@ -23,8 +23,8 @@ public class Exists {
 		}
 	}
 
-	public static Exists getInstance() {
-		return Exists.builder()
+	public static ScheduleExists getInstance() {
+		return ScheduleExists.builder()
 			.memberSchedule(false)
 			.partnerSchedule(false)
 			.dateSchedule(false)

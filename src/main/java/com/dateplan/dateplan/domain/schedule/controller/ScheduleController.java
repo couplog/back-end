@@ -1,8 +1,8 @@
 package com.dateplan.dateplan.domain.schedule.controller;
 
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -32,15 +32,15 @@ public class ScheduleController {
 		return ApiResponse.ofSuccess();
 	}
 
-	@GetMapping("/{member_id}/schedules/date")
-	public ApiResponse<ScheduleResponse> readSchedule(
+	@GetMapping("/{member_id}/schedules/dates")
+	public ApiResponse<ScheduleDatesResponse> readSchedule(
 		@PathVariable("member_id") Long memberId,
 		@Nullable @RequestParam("year") Integer year,
 		@Nullable @RequestParam("month") Integer month
 	) {
-		ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedule(
-			memberId, year, month);
+		ScheduleDatesServiceResponse scheduleDatesServiceResponse = scheduleReadService
+			.readSchedule(memberId, year, month);
 
-		return ApiResponse.ofSuccess(scheduleServiceResponse.toScheduleResponse());
+		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
 	}
 }

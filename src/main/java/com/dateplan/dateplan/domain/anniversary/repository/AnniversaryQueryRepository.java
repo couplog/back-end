@@ -27,7 +27,7 @@ public class AnniversaryQueryRepository {
 		return queryFactory.selectFrom(anniversary)
 			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
 			.innerJoin(anniversaryPattern.couple, couple)
-			.where(yearEq(year), monthEq(month), couple.id.eq(coupleId))
+			.where(yearEq(year), monthEq(month), coupleIdEq(coupleId))
 			.orderBy(anniversary.date.asc())
 			.fetch();
 	}
@@ -48,5 +48,10 @@ public class AnniversaryQueryRepository {
 		}
 
 		return anniversary.date.month().eq(month);
+	}
+
+	private BooleanExpression coupleIdEq(Long coupleId){
+
+		return couple.id.eq(coupleId);
 	}
 }

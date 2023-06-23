@@ -12,9 +12,6 @@ import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,14 +33,18 @@ public class ScheduleReadService {
 		List<Schedule> schedules = scheduleQueryRepository
 			.findByYearAndMonthOrderByDate(requestId, year, month);
 
-		return ScheduleDatesServiceResponse.from(getScheduleDateSet(year, month, schedules));
+		return ScheduleDatesServiceResponse.builder()
+			.scheduleDates(getScheduleDates(year, month, schedules))
+			.build();
 	}
 
-	private Set<LocalDate> getScheduleDateSet(Integer year, Integer month, List<Schedule> schedules) {
+	private List<LocalDate> getScheduleDates(Integer year, Integer month, List<Schedule> schedules) {
 		return schedules.stream()
 			.flatMap(this::getScheduleDateRange)
 			.filter(date -> checkDateRange(year, month, date))
-			.collect(Collectors.toCollection(TreeSet::new));
+			.distinct()
+			.sorted(LocalDate::compareTo)
+			.toList();
 	}
 
 	private Stream<LocalDate> getScheduleDateRange(Schedule schedule) {

@@ -33,8 +33,7 @@ public class AnniversaryQueryRepository {
 			baseQuery
 				.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
 				.fetchJoin()
-				.innerJoin(anniversaryPattern.couple, couple)
-				.fetchJoin();
+				.innerJoin(anniversaryPattern.couple, couple);
 		} else {
 			baseQuery
 				.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)

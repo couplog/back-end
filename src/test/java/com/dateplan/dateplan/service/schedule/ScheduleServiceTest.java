@@ -22,13 +22,15 @@ import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ScheduleServiceTest extends ServiceTestSupport {
@@ -67,18 +69,19 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		}
 
 		@DisplayName("올바른 요청을 입력하면 성공한다.")
-		@Test
-		void successWithValidRequest() {
+		@ParameterizedTest
+		@EnumSource(value = RepeatRule.class, names = {"N", "D", "W", "M", "Y"})
+		void successWithValidRequest(RepeatRule repeatRule) {
 
 			// Given
 			Long memberId = member.getId();
-			ScheduleServiceRequest request = createScheduleServiceRequest();
+			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// When
 			scheduleService.createSchedule(memberId, request);
 
 			// Then
-			SchedulePattern schedulePattern = schedulePatternRepository.findById(1L).get();
+			SchedulePattern schedulePattern = schedulePatternRepository.findAll().get(0);
 			List<Schedule> schedules = scheduleRepository.findAll();
 
 			// SchedulePattern assert
@@ -110,15 +113,16 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		}
 
 		@DisplayName("로그인한 회원 외의 회원에 대한 요청을 하면 실패한다")
-		@Test
-		void FailWithNoPermissionRequest() {
+		@ParameterizedTest
+		@EnumSource(value = RepeatRule.class, names = {"N", "D", "W", "M", "Y"})
+		void FailWithNoPermissionRequest(RepeatRule repeatRule) {
 
 			// Given
 			Long memberId = member.getId();
 			Long otherMemberId = memberId + 1;
 
 			// When
-			ScheduleServiceRequest request = createScheduleServiceRequest();
+			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// Then
 			assertThatThrownBy(() -> scheduleService.createSchedule(otherMemberId, request))
@@ -127,7 +131,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					Operation.CREATE.getName()));
 		}
 	}
-
 	private Member createMember(String nickname) {
 
 		return Member.builder()
@@ -140,12 +143,12 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	private ScheduleServiceRequest createScheduleServiceRequest() {
+	private ScheduleServiceRequest createScheduleServiceRequest(RepeatRule repeatRule) {
 		return ScheduleServiceRequest.builder()
 			.title("title")
-			.startDateTime(LocalDateTime.now())
-			.endDateTime(LocalDateTime.now().plusDays(5))
-			.repeatRule(RepeatRule.M)
+			.startDateTime(LocalDateTime.now().with(LocalTime.MIN))
+			.endDateTime(LocalDateTime.now().with(LocalTime.MAX))
+			.repeatRule(repeatRule)
 			.build();
 	}
 }

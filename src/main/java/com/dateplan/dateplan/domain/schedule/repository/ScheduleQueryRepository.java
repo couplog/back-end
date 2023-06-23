@@ -17,15 +17,16 @@ public class ScheduleQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
 
-	public List<Schedule> findByYearAndMonthOrderByDate(Long memberId, Integer year, Integer month) {
+	public List<Schedule> findByYearAndMonthOrderByDate(Long memberId, Integer year,
+		Integer month) {
 		return queryFactory
 			.select(schedule)
 			.from(schedule)
 			.join(schedule.schedulePattern, schedulePattern)
 			.join(schedulePattern.member, member)
 			.where(memberIdEq(memberId)
-				.and(yearEq(year))
-				.and(monthEq(month)))
+				.and(startDateTimeLoe(year, month))
+				.and(endDateTimeGoe(year, month)))
 			.orderBy(schedule.startDateTime.asc())
 			.fetch();
 	}
@@ -34,17 +35,31 @@ public class ScheduleQueryRepository {
 		return schedulePattern.member.id.eq(memberId);
 	}
 
-	private BooleanExpression yearEq(Integer year) {
-		if (year == null) {
+	private BooleanExpression startDateTimeLoe(Integer year, Integer month) {
+		if (year == null && month == null) {
 			return null;
 		}
-		return schedule.startDateTime.year().eq(year);
+		if (year == null) {
+			return schedule.startDateTime.month().loe(month);
+		}
+		if (month == null) {
+			return schedule.startDateTime.year().loe(year);
+		}
+		return schedule.startDateTime.year().loe(year)
+			.and(schedule.startDateTime.month().loe(month));
 	}
 
-	private BooleanExpression monthEq(Integer month) {
-		if (month == null) {
+	private BooleanExpression endDateTimeGoe(Integer year, Integer month) {
+		if (year == null && month == null) {
 			return null;
 		}
-		return schedule.startDateTime.month().eq(month);
+		if (year == null) {
+			return schedule.endDateTime.month().goe(month);
+		}
+		if (month == null) {
+			return schedule.endDateTime.year().goe(year);
+		}
+		return schedule.endDateTime.year().goe(year)
+			.and(schedule.endDateTime.month().goe(month));
 	}
 }

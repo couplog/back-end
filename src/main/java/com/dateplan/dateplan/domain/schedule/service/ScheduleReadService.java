@@ -50,17 +50,17 @@ public class ScheduleReadService {
 			.filter(date -> checkDateRange(year, month, date));
 	}
 
-	private boolean checkDateRange(Integer year, Integer month, LocalDate startDate) {
+	private boolean checkDateRange(Integer year, Integer month, LocalDate date) {
 		if (year == null && month == null) {
 			return true;
 		}
 		if (year != null && month == null) {
-			return startDate.getYear() == year;
+			return date.getYear() == year;
 		}
 		if (year == null) {
-			return startDate.getMonthValue() == month;
+			return date.getMonthValue() == month;
 		}
-		return startDate.getYear() == year && startDate.getMonthValue() == month;
+		return date.getYear() == year && date.getMonthValue() == month;
 	}
 
 	private void validatePermission(Long requestId, Long memberId, Long partnerId) {

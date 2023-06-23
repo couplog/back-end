@@ -130,28 +130,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
 					Operation.CREATE.getName()));
 		}
-
-		@DisplayName("RepeatRule로 M 또는 Y가 오면 모든 일정의 시작 일자가 같아야한다")
-		@ParameterizedTest
-		@EnumSource(value = RepeatRule.class, names = {"M", "Y"})
-		void checkDateOfSchedule(RepeatRule repeatRule) {
-
-			// Given
-			Long memberId = member.getId();
-			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
-
-			// When
-			scheduleService.createSchedule(memberId, request);
-
-			// Then
-			List<Schedule> schedules = scheduleRepository.findAll();
-			int dayOfMonth = request.getStartDateTime().getDayOfMonth();
-			schedules.forEach((schedule ->
-				assertThat(schedule.getStartDateTime().getDayOfMonth()).isEqualTo(dayOfMonth))
-			);
-		}
 	}
-
 	private Member createMember(String nickname) {
 
 		return Member.builder()

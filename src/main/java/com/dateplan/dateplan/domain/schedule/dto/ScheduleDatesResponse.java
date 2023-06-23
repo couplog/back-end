@@ -1,7 +1,6 @@
 package com.dateplan.dateplan.domain.schedule.dto;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,8 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduleDatesResponse {
-
-	private List<LocalDate> scheduleDates = new ArrayList<>();
+	private List<LocalDate> scheduleDates;
 
 	public static ScheduleDatesResponse from(ScheduleDatesServiceResponse serviceResponse) {
 		return ScheduleDatesResponse.builder()

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,20 +35,21 @@ public class ScheduleReadService {
 
 		List<Schedule> schedules = scheduleQueryRepository
 			.findByYearAndMonthOrderByDate(requestId, year, month);
-		Set<LocalDate> scheduleDateSet = new TreeSet<>();
-		schedules.stream()
-			.flatMap(schedule -> getScheduleDateRange(schedule, year, month))
-			.distinct()
-			.forEach(scheduleDateSet::add);
 
-		return ScheduleDatesServiceResponse.from(scheduleDateSet);
+		return ScheduleDatesServiceResponse.from(getScheduleDateSet(year, month, schedules));
 	}
 
-	private Stream<LocalDate> getScheduleDateRange(Schedule schedule, Integer year, Integer month) {
+	private Set<LocalDate> getScheduleDateSet(Integer year, Integer month, List<Schedule> schedules) {
+		return schedules.stream()
+			.flatMap(this::getScheduleDateRange)
+			.filter(date -> checkDateRange(year, month, date))
+			.collect(Collectors.toCollection(TreeSet::new));
+	}
+
+	private Stream<LocalDate> getScheduleDateRange(Schedule schedule) {
 		LocalDate startDate = schedule.getStartDateTime().toLocalDate();
 		LocalDate endDate = schedule.getEndDateTime().toLocalDate();
-		return startDate.datesUntil(endDate.plusDays(1))
-			.filter(date -> checkDateRange(year, month, date));
+		return startDate.datesUntil(endDate.plusDays(1));
 	}
 
 	private boolean checkDateRange(Integer year, Integer month, LocalDate date) {

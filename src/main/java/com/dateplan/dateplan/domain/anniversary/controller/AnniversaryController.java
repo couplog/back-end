@@ -3,6 +3,8 @@ package com.dateplan.dateplan.domain.anniversary.controller;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateRequest;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesResponse;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -40,6 +42,22 @@ public class AnniversaryController {
 	}
 
 	@GetMapping
+	public ApiResponse<AnniversaryListResponse> readAnniversaries(
+		@PathVariable("couple_id") Long coupleId,
+		@RequestParam("year") Integer year,
+		@RequestParam("month") Integer month,
+		@RequestParam("day") Integer day
+	) {
+
+		Member loginMember = MemberThreadLocal.get();
+
+		AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
+			loginMember, coupleId, year, month, day);
+
+		return ApiResponse.ofSuccess(AnniversaryListResponse.from(serviceResponse));
+	}
+
+	@GetMapping("/dates")
 	public ApiResponse<AnniversaryDatesResponse> readAnniversaryDates(
 		@PathVariable("couple_id") Long coupleId,
 		@RequestParam("year") Integer year,

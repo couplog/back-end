@@ -59,12 +59,21 @@ public class ScheduleService {
 		while (isBeforeOfRepeatEndDate(request.getRepeatEndTime(),
 			getNextCycle(now, request.getRepeatRule(), count))) {
 			LocalDateTime nextCycle = getNextCycle(now, request.getRepeatRule(), count++);
-			if (nextCycle.getDayOfMonth() == now.getDayOfMonth()) {
+			if (checkNextCycle(request, now, nextCycle)) {
 				schedules.add(request.toScheduleEntity(nextCycle, schedulePattern));
 			}
 		}
 
 		return schedules;
+	}
+
+	private boolean checkNextCycle(ScheduleServiceRequest request, LocalDateTime now,
+		LocalDateTime nextCycle) {
+		if (request.getRepeatRule().equals(RepeatRule.D) ||
+			request.getRepeatRule().equals(RepeatRule.W)) {
+			return true;
+		}
+		return nextCycle.getDayOfMonth() == now.getDayOfMonth();
 	}
 
 	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDateTime now) {

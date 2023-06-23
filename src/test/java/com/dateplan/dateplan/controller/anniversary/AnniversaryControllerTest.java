@@ -21,13 +21,16 @@ import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateRequest;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
-import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.ErrorCode;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +50,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class AnniversaryControllerTest extends ControllerTestSupport {
 
@@ -314,7 +317,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 	@DisplayName("기념일 날짜 조회시")
 	class ReadAnniversaryDates {
 
-		private static final String REQUEST_URL = "/api/couples/{couple_id}/anniversary";
+		private static final String REQUEST_URL = "/api/couples/{couple_id}/anniversary/dates";
 
 		@BeforeEach
 		void setUp() {
@@ -414,6 +417,159 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("기념일 조회시")
+	class ReadAnniversaries {
+
+		private static final String REQUEST_URL = "/api/couples/{couple_id}/anniversary";
+
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 같다면, 기념일을 조회한다.")
+		@Test
+		void withSameValueLoginMemberCoupleIdAndTargetCoupleId() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Integer year = 2023;
+			Integer month = 1;
+			Integer day = 1;
+
+			AnniversaryListServiceResponse serviceResponse = createAnniversaryListServiceResponse();
+			List<AnniversaryServiceResponse> serviceResponses = serviceResponse.getAnniversaries();
+
+			// stub
+			given(
+				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
+					anyInt(), anyInt()))
+				.willReturn(serviceResponse);
+
+			// when & then
+			mockMvc.perform(get(REQUEST_URL, coupleId)
+					.queryParam("year", String.valueOf(year))
+					.queryParam("month", String.valueOf(month))
+					.queryParam("day", String.valueOf(day)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(
+					jsonPath("$.data.anniversaries[0].id").value(serviceResponses.get(0).getId()))
+				.andExpect(jsonPath("$.data.anniversaries[0].title").value(
+					serviceResponses.get(0).getTitle()))
+				.andExpect(jsonPath("$.data.anniversaries[0].content").value(
+					serviceResponses.get(0).getContent()))
+				.andExpect(jsonPath("$.data.anniversaries[0].repeatRule").value(
+					serviceResponses.get(0).getRepeatRule().name()))
+				.andExpect(jsonPath("$.data.anniversaries[0].date").value(
+					serviceResponses.get(0).getDate().toString()));
+		}
+
+		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNotConnectedMember() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Integer year = 2023;
+			Integer month = 1;
+			Integer day = 1;
+
+			// stub
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			given(
+				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
+					anyInt(), anyInt()))
+				.willThrow(expectedException);
+
+			// when & then
+			mockMvc.perform(get(REQUEST_URL, coupleId)
+					.queryParam("year", String.valueOf(year))
+					.queryParam("month", String.valueOf(month))
+					.queryParam("day", String.valueOf(day)))
+				.andExpect(
+					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+
+		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withDifferentValueLoginMemberCoupleIdAndTargetCoupleId() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Integer year = 2023;
+			Integer month = 1;
+			Integer day = 1;
+
+			// stub
+			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+
+			given(
+				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
+					anyInt(), anyInt()))
+				.willThrow(expectedException);
+
+			// when & then
+			mockMvc.perform(get(REQUEST_URL, coupleId)
+					.queryParam("year", String.valueOf(year))
+					.queryParam("month", String.valueOf(month))
+					.queryParam("day", String.valueOf(day)))
+				.andExpect(
+					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+
+		@DisplayName("조회 연도, 월, 일 중 하나라도 비어있다면 에러 코드, 메시지를 응답한다.")
+		@CsvSource({"year", "month", "day"})
+		@ParameterizedTest
+		void withEmptyYearOrMonthOrDay(String emptyProperty) throws Exception {
+
+			// given
+			Long coupleId = 1L;
+
+			Integer year = 2023;
+			Integer month = 1;
+			Integer day = 1;
+
+			// when & then
+
+			MockHttpServletRequestBuilder requestBuilder = get(REQUEST_URL,
+				coupleId);
+
+			switch (emptyProperty) {
+				case "year" -> requestBuilder.queryParam("month", String.valueOf(month))
+					.queryParam("day", String.valueOf(day));
+				case "month" -> requestBuilder.queryParam("year", String.valueOf(year))
+					.queryParam("day", String.valueOf(day));
+				case "day" -> requestBuilder.queryParam("year", String.valueOf(year))
+					.queryParam("month", String.valueOf(month));
+			}
+
+			mockMvc.perform(requestBuilder)
+				.andExpect(
+					status().is(ErrorCode.MISSING_REQUEST_PARAMETER.getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(ErrorCode.MISSING_REQUEST_PARAMETER.getCode()))
+				.andExpect(jsonPath("$.message").value(
+					String.format(DetailMessage.MISSING_REQUEST_PARAMETER, emptyProperty))
+				);
+		}
+	}
+
 	private Member createMember() {
 
 		return Member.builder()
@@ -446,11 +602,18 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			.build();
 	}
 
-	private Couple createCouple() {
+	private AnniversaryListServiceResponse createAnniversaryListServiceResponse() {
 
-		Couple couple = Couple.builder().build();
+		AnniversaryServiceResponse serviceResponse = AnniversaryServiceResponse.builder()
+			.id(1L)
+			.title("title")
+			.content("content")
+			.repeatRule(AnniversaryRepeatRule.YEAR)
+			.date(LocalDate.of(2021, 1, 1))
+			.build();
 
-		ReflectionTestUtils.setField(couple, "id", 1L);
-		return couple;
+		return AnniversaryListServiceResponse.builder()
+			.anniversaries(List.of(serviceResponse))
+			.build();
 	}
 }

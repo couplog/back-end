@@ -3,8 +3,6 @@ package com.dateplan.dateplan.service.schedule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -107,8 +105,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willReturn(partner.getId());
-			given(queryRepository.findByYearAndMonthOrderByDate(anyLong(), anyInt(), anyInt()))
-				.willReturn(savedSchedules);
 
 			ScheduleDatesServiceResponse response = scheduleReadService.readSchedule(
 				member.getId(), null, null);

@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.domain.anniversary.service;
 
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
@@ -23,6 +24,22 @@ public class AnniversaryReadService {
 
 	private final AnniversaryQueryRepository anniversaryQueryRepository;
 
+	public AnniversaryListServiceResponse readAnniversaries(Member loginMember,
+		Long targetCoupleId, Integer year, Integer month, Integer day) {
+
+		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
+			loginMember).getId();
+
+		if (!Objects.equals(loginMemberCoupleId, targetCoupleId)) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+		}
+
+		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
+			targetCoupleId, year, month, day, true);
+
+		return AnniversaryListServiceResponse.from(anniversaries);
+	}
+
 	public AnniversaryDatesServiceResponse readAnniversaryDates(Member loginMember,
 		Long targetCoupleId, Integer year, Integer month) {
 
@@ -33,8 +50,8 @@ public class AnniversaryReadService {
 			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
 		}
 
-		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndYearAndMonth(
-			targetCoupleId, year, month);
+		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
+			targetCoupleId, year, month, null, false);
 
 		return AnniversaryDatesServiceResponse.from(anniversaries);
 	}

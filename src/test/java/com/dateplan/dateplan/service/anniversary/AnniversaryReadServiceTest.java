@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
@@ -25,6 +27,7 @@ import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -111,7 +114,7 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			// given
 			Long coupleId = couple.getId();
 			Integer year = 2023;
-			Integer month = 1;
+			int month = 1;
 
 			// stub
 			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
@@ -131,6 +134,136 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			assertThat(actualDates)
 				.containsExactlyElementsOf(expectedDates)
 				.isSortedAccordingTo(LocalDate::compareTo);
+		}
+
+		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면, 예외를 발생시킨다.")
+		@Test
+		void withDifferentValueLoginMemberCoupleIdAndTargetCoupleId() {
+
+			// given
+			Long targetCoupleId = couple.getId() + 100;
+			Integer year = 2023;
+			Integer month = 1;
+
+			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+
+			// when & then
+			assertThatThrownBy(() -> anniversaryReadService.readAnniversaryDates(
+				member, targetCoupleId, year, month))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("현재 로그인 회원이 연결 상태가 아니라면, 예외를 발생시킨다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// given
+			Long targetCoupleId = couple.getId();
+			Integer year = 2023;
+			Integer month = 1;
+
+			// stub
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(() -> anniversaryReadService.readAnniversaryDates(
+				member, targetCoupleId, year, month))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("기념일 조회시")
+	class ReadAnniversaries {
+
+		private static final String NEED_ANNIVERSARIES = "needAnniversaries";
+
+		private Member member;
+		private Couple couple;
+		private List<Anniversary> savedAnniversaries;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+
+			member = createMember("01011112222", "nickname1", LocalDate.of(1999, 10, 10));
+			Member partner = createMember("01022223333", "nickname2", LocalDate.of(1999, 10, 10));
+
+			memberRepository.saveAll(List.of(member, partner));
+
+			couple = createCouple(member, partner, LocalDate.of(2020, 10, 10));
+			coupleRepository.save(couple);
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
+				List<LocalDate> anniversaryDates = List.of(
+					LocalDate.of(2023, 2, 1),
+					LocalDate.of(2023, 1, 1),
+					LocalDate.of(2023, 1, 1),
+					LocalDate.of(2023, 1, 2));
+
+				savedAnniversaries = anniversaryDates.stream()
+					.map(date -> {
+						AnniversaryPattern anniversaryPattern = createAnniversaryPattern(couple,
+							date);
+						Anniversary anniversary = createAnniversary("title", date,
+							anniversaryPattern);
+						return anniversary;
+					}).toList();
+
+				anniversaryRepository.saveAll(savedAnniversaries);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
+				anniversaryRepository.deleteAllInBatch();
+				anniversaryPatternRepository.deleteAllInBatch();
+			}
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_ANNIVERSARIES)
+		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 같다면, 해당 연, 월, 일에 맞는 기념일 목록을 시간 순으로 반환한다.")
+		@Test
+		void withSameValueLoginMemberCoupleIdAndTargetCoupleId() {
+
+			// given
+			Long coupleId = couple.getId();
+			int year = 2023;
+			int month = 1;
+			int day = 1;
+			LocalDate date = LocalDate.of(year, month, day);
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+
+			// when
+			AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
+				member, coupleId, year, month, day);
+
+			// then
+			List<AnniversaryServiceResponse> actualServiceResponseList = serviceResponse.getAnniversaries();
+			List<AnniversaryServiceResponse> expectedServiceResponseList = savedAnniversaries.stream()
+				.filter(anniversary -> Objects.equals(anniversary.getDate(), date))
+				.map(AnniversaryServiceResponse::of)
+				.toList();
+
+			assertThat(actualServiceResponseList)
+				.usingRecursiveFieldByFieldElementComparator()
+				.containsExactlyElementsOf(expectedServiceResponseList);
 		}
 
 		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면, 예외를 발생시킨다.")

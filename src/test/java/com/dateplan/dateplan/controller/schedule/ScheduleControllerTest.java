@@ -511,18 +511,37 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
 				anyInt(), anyInt(), anyInt())).willThrow(exception);
 
-			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue()))
 					.param("day", String.valueOf(LocalDate.now().getDayOfMonth())))
-				.andExpect(status().isForbidden())
+				.andExpect(status().is(exception.getErrorCode().getHttpStatusCode().value()))
 				.andExpectAll(
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 
+		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
+		@Test
+		void failWithNotConnected() throws Exception {
+
+			// Stubbing
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue()))
+					.param("day", String.valueOf(LocalDate.now().getDayOfMonth())))
+				.andExpect(status().is(exception.getErrorCode().getHttpStatusCode().value()))
+				.andExpectAll(
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
 	}
 
 	private ScheduleRequest createScheduleRequest() {

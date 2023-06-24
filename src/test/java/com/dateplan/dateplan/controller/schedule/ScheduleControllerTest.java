@@ -373,6 +373,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(exception);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
@@ -391,6 +392,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(new MemberNotConnectedException());
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
@@ -405,12 +407,15 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		@ParameterizedTest
 		@CsvSource({"aaaa,12", "2019,aa"})
 		void failWithInvalidQueryParameter(String year, String month) throws Exception {
+			// Given
 			Map<String, String> requestMap = Map.of("year", year, "month", month);
 			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
 
+			// Stubbing
 			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
 					.param("year", requestMap.get("year"))
 					.param("month", requestMap.get("month")))
@@ -442,14 +447,16 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		@DisplayName("올바른 member_id, year, month, day를 입력하면 성공한다")
 		@Test
 		void successWithValidRequest() throws Exception {
+			// Given
 			ScheduleServiceResponse response = createScheduleServiceResponse();
+			LocalDate now = LocalDate.now();
 
+			// Stubbing
 			given(scheduleReadService.readSchedules(
 				anyLong(), anyLong(), any(Member.class), any(), anyInt(), anyInt()))
 				.willReturn(response);
 
-			LocalDate now = LocalDate.now();
-
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
 					.param("year", String.valueOf(now.getYear()))
 					.param("month", String.valueOf(now.getMonthValue()))
@@ -473,12 +480,15 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		@ParameterizedTest
 		@CsvSource({"aaaa,10,10", "2010,aa,10", "2010,10,aa"})
 		void failWithInvalidQueryParameter(String year, String month, String day) throws Exception {
+			// Given
 			Map<String, String> requestMap = Map.of("year", year, "month", month, "day", day);
 			ScheduleServiceResponse response = createScheduleServiceResponse();
 
+			// Stubbing
 			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
 				anyInt(), anyInt(), anyInt())).willReturn(response);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
 					.param("year", requestMap.get("year"))
 					.param("month", requestMap.get("month"))
@@ -501,6 +511,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
 				anyInt(), anyInt(), anyInt())).willThrow(exception);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue()))

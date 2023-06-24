@@ -50,7 +50,7 @@ public class ScheduleController {
 	}
 
 	@GetMapping("/{member_id}/schedules")
-	public ApiResponse<ScheduleResponse> readSchedule(
+	public ApiResponse<ScheduleResponse> readSchedules(
 		@PathVariable("member_id") Long memberId,
 		@RequestParam(value = "year") Integer year,
 		@RequestParam(value = "month") Integer month,
@@ -58,7 +58,7 @@ public class ScheduleController {
 	) {
 		final Member member = MemberThreadLocal.get();
 		Long coupleId = coupleReadService.getPartnerId(member);
-		ScheduleServiceResponse response = scheduleReadService.readSchedule(memberId, coupleId,
+		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, coupleId,
 			member, year, month, day);
 		return ApiResponse.ofSuccess(ScheduleResponse.from(response));
 	}

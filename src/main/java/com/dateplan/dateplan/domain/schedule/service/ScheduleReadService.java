@@ -26,7 +26,7 @@ public class ScheduleReadService {
 	private final ScheduleQueryRepository scheduleQueryRepository;
 	private final CoupleReadService coupleReadService;
 
-	public ScheduleServiceResponse readSchedule(
+	public ScheduleServiceResponse readSchedules(
 		Long requestId,
 		Long coupleId,
 		Member member,

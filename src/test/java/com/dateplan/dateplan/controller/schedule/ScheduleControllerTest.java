@@ -7,6 +7,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_LOCATION;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,15 +16,19 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -31,6 +36,7 @@ import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -416,6 +423,105 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("일정 삭제 시")
+	class DeleteSchedule {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/schedules/{schedule_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("올바른 memberId, scheduleId를 입력하면 일정이 삭제된다.")
+		@Test
+		void successWithValidRequest() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+					.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+
+			// When & THen
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value("true")
+				);
+		}
+
+		@DisplayName("올바르지 않은 pathvariable을 입력하면 실패한다.")
+		@CsvSource({"1,a", "a,1"})
+		@ParameterizedTest
+		void failWithInvalidPathVariable(String memberId, String scheduleId) throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, memberId, scheduleId))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@DisplayName("요청에 대한 권한이 없으면 실패한다")
+		@Test
+		void failWithNoPermission() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			willThrow(exception)
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+
+			// When & Then
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("요청에 해당하는 일정이 존재하지 않으면 실패한다")
+		@Test
+		void failWIthScheduleNotFound() throws Exception {
+
+			// Stubbing
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			willThrow(exception)
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+
+			// When & Then
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+	}
+
 	private ScheduleRequest createScheduleRequest() {
 		return ScheduleRequest.builder()
 			.title("title")
@@ -444,4 +550,14 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			.collect(Collectors.toList());
 	}
 
+	private Member createMember() {
+		return Member.builder()
+			.phone("01012345678")
+			.password("password")
+			.name("name")
+			.nickname("nickname")
+			.birthDay(LocalDate.of(2010, 10, 10))
+			.gender(Gender.MALE)
+			.build();
+	}
 }

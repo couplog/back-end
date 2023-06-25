@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import java.time.LocalDate;
 
-public class MaxDateTimeValidator implements ConstraintValidator<BeforeCalenderEndTime, LocalDate> {
+public class MaxDateValidator implements ConstraintValidator<BeforeCalenderEndTime, LocalDate> {
 
 	private String message;
 

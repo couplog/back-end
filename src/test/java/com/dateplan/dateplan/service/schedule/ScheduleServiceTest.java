@@ -12,12 +12,14 @@ import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepositor
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -25,10 +27,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,6 +137,94 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					Operation.CREATE.getName()));
 		}
 	}
+
+	@Nested
+	@DisplayName("반복 일정 전체 삭제 시")
+	class DeleteRecurringSchedule {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("nickname"));
+			MemberThreadLocal.set(member);
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				for (int i = 0; i < 5; i++) {
+					SchedulePattern schedulePattern = schedulePatternRepository.save(
+						createSchedulePattern(member));
+					List<Schedule> schedules = List.of(
+						createSchedule(schedulePattern),
+						createSchedule(schedulePattern),
+						createSchedule(schedulePattern),
+						createSchedule(schedulePattern),
+						createSchedule(schedulePattern)
+					);
+					scheduleRepository.saveAll(schedules);
+				}
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 memberId, scheduleId를 요청하면 성공한다.")
+		@Test
+		void successWithValidRequest() {
+
+			Schedule schedule = scheduleRepository.findAll().get(0);
+			SchedulePattern schedulePattern = schedule.getSchedulePattern();
+
+			// When
+			scheduleService.deleteRecurringSchedules(member.getId(), schedule.getId(), member);
+
+			// Then
+			assertThat(schedulePatternRepository.findById(schedulePattern.getId()))
+				.isEqualTo(Optional.empty());
+			List<Schedule> schedules = scheduleRepository.findAll();
+			schedules.forEach(
+				s -> assertThat(s.getSchedulePattern().getId()).isNotEqualTo(
+					schedulePattern.getId())
+			);
+		}
+
+		@DisplayName("요청한 회원의 일정이 아니면 실패한다")
+		@Test
+		void failWithNoPermission() {
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			assertThatThrownBy(
+				() -> scheduleService.deleteRecurringSchedules(member.getId() + 10, 1L, member))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@DisplayName("요청한 일정이 존재하지 않으면 실패한다")
+		@Test
+		void failWithScheduleNotFound() {
+
+			// When & Then
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			assertThatThrownBy(
+				() -> scheduleService.deleteRecurringSchedules(
+					member.getId(), 1L, member))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
 	private Member createMember(String nickname) {
 
 		return Member.builder()
@@ -149,6 +243,26 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.startDateTime(LocalDateTime.now().with(LocalTime.MIN))
 			.endDateTime(LocalDateTime.now().with(LocalTime.MAX))
 			.repeatRule(repeatRule)
+			.build();
+	}
+
+	private SchedulePattern createSchedulePattern(Member member) {
+		return SchedulePattern.builder()
+			.member(member)
+			.repeatRule(RepeatRule.N)
+			.repeatStartDate(LocalDate.now())
+			.repeatEndDate(DateConstants.CALENDER_END_DATE)
+			.build();
+	}
+
+	private Schedule createSchedule(SchedulePattern schedulePattern) {
+		return Schedule.builder()
+			.schedulePattern(schedulePattern)
+			.title("title")
+			.content("content")
+			.location("location")
+			.startDateTime(LocalDateTime.now())
+			.endDateTime(LocalDateTime.now().plusDays(5))
 			.build();
 	}
 }

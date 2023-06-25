@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Constraint(validatedBy = MaxDateTimeValidator.class)
+@Constraint(validatedBy = {MaxDateValidator.class, MaxDateTimeValidator.class})
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface BeforeCalenderEndTime {

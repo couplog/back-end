@@ -8,6 +8,7 @@ import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
@@ -29,6 +30,8 @@ public class ScheduleService {
 
 	private final SchedulePatternRepository schedulePatternRepository;
 	private final ScheduleJDBCRepository scheduleJDBCRepository;
+	private final ScheduleReadService scheduleReadService;
+	private final ScheduleRepository scheduleRepository;
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
 		Member member = MemberThreadLocal.get();
@@ -42,6 +45,14 @@ public class ScheduleService {
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
 		scheduleJDBCRepository.processBatchInsert(schedules);
+	}
+
+	public void deleteSchedule(Long memberId, Long scheduleId, Member member) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		scheduleRepository.delete(schedule);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

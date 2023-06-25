@@ -12,12 +12,14 @@ import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepositor
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -25,10 +27,14 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,6 +137,83 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					Operation.CREATE.getName()));
 		}
 	}
+
+	@Nested
+	@DisplayName("일정 삭제 시")
+	class DeleteSchedule {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+		Schedule schedule;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("nickname"));
+			MemberThreadLocal.set(member);
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				SchedulePattern schedulePattern = schedulePatternRepository.save(
+					SchedulePattern.builder()
+						.member(member)
+						.repeatRule(RepeatRule.N)
+						.repeatStartDate(LocalDate.now())
+						.repeatEndDate(DateConstants.CALENDER_END_DATE)
+						.build()
+				);
+				schedule = scheduleRepository.save(createSchedule(schedulePattern));
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 memberId, scheduleId를 요청하면 성공한다.")
+		@Test
+		void successWithValidRequest() {
+
+			// When
+			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member);
+
+			// Then
+			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
+		}
+
+		@DisplayName("요청한 회원의 일정이 아니면 실패한다")
+		@Test
+		void failWithNoPermission() {
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			assertThatThrownBy(
+				() -> scheduleService.deleteSchedule(member.getId() + 10, 1L, member))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("요청한 일정이 존재하지 않으면 실패한다")
+		@Test
+		void failWithScheduleNotFound() {
+
+			// When & Then
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			assertThatThrownBy(
+				() -> scheduleService.deleteSchedule(member.getId(), schedule.getId() + 10, member))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
 	private Member createMember(String nickname) {
 
 		return Member.builder()
@@ -149,6 +232,17 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.startDateTime(LocalDateTime.now().with(LocalTime.MIN))
 			.endDateTime(LocalDateTime.now().with(LocalTime.MAX))
 			.repeatRule(repeatRule)
+			.build();
+	}
+
+	private Schedule createSchedule(SchedulePattern schedulePattern) {
+		return Schedule.builder()
+			.schedulePattern(schedulePattern)
+			.title("title")
+			.content("content")
+			.location("location")
+			.startDateTime(LocalDateTime.now())
+			.endDateTime(LocalDateTime.now().plusDays(5))
 			.build();
 	}
 }

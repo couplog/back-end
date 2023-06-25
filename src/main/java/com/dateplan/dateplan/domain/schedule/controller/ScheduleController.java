@@ -1,16 +1,20 @@
 package com.dateplan.dateplan.domain.schedule.controller;
 
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,5 +45,16 @@ public class ScheduleController {
 			.readSchedule(memberId, year, month);
 
 		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
+	}
+
+	@PutMapping("/{member_id}/schedules/{schedule_id}")
+	public ApiResponse<Void> updateSchedule(
+		@PathVariable("member_id") Long memberId,
+		@PathVariable("schedule_id") Long scheduleId,
+		@Valid @RequestBody ScheduleUpdateRequest request) {
+		Member member = MemberThreadLocal.get();
+		scheduleService.updateSchedule(
+			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member);
+		return ApiResponse.ofSuccess();
 	}
 }

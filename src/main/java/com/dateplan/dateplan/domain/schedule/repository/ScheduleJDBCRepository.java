@@ -32,6 +32,11 @@ public class ScheduleJDBCRepository {
 		jdbcTemplate.batchUpdate(sql, getBatchSetter(schedulePatternId, schedules));
 	}
 
+	public void deleteAllBySchedulePatternId(Long schedulePatternId) {
+		jdbcTemplate.update(
+			"DELETE FROM schedule WHERE schedule_pattern_id = ?", schedulePatternId);
+	}
+
 	private BatchPreparedStatementSetter getBatchSetter(Long schedulePatternId,
 		List<Schedule> schedules) {
 		return new BatchPreparedStatementSetter() {

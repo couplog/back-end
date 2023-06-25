@@ -29,6 +29,7 @@ public class ScheduleService {
 
 	private final SchedulePatternRepository schedulePatternRepository;
 	private final ScheduleJDBCRepository scheduleJDBCRepository;
+	private final ScheduleReadService scheduleReadService;
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
 		Member member = MemberThreadLocal.get();
@@ -42,6 +43,17 @@ public class ScheduleService {
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
 		scheduleJDBCRepository.processBatchInsert(schedules);
+	}
+
+	public void deleteRecurringSchedules(Long memberId, Long scheduleId, Member member) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		SchedulePattern schedulePattern = schedule.getSchedulePattern();
+
+		scheduleJDBCRepository.deleteAllBySchedulePatternId(schedulePattern.getId());
+		schedulePatternRepository.delete(schedulePattern);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

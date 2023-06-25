@@ -4,6 +4,7 @@ import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
@@ -29,6 +30,7 @@ public class ScheduleService {
 
 	private final SchedulePatternRepository schedulePatternRepository;
 	private final ScheduleJDBCRepository scheduleJDBCRepository;
+	private final ScheduleReadService scheduleReadService;
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
 		Member member = MemberThreadLocal.get();
@@ -42,6 +44,19 @@ public class ScheduleService {
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
 		scheduleJDBCRepository.processBatchInsert(schedules);
+	}
+
+	public void updateSchedule(
+		Long memberId,
+		Long scheduleId,
+		ScheduleUpdateServiceRequest request,
+		Member member
+	) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+		}
+		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		schedule.updateSchedule(request);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

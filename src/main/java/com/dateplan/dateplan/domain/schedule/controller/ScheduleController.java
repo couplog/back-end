@@ -1,13 +1,16 @@
 package com.dateplan.dateplan.domain.schedule.controller;
 
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,5 +44,15 @@ public class ScheduleController {
 			.readSchedule(memberId, year, month);
 
 		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
+	}
+
+	@DeleteMapping("/{member_id}/schedules")
+	public ApiResponse<Void> deleteRecurringSchedules(
+		@PathVariable("member_id") Long memberId,
+		@RequestParam(value = "scheduleId") Long scheduleId
+	) {
+		Member member = MemberThreadLocal.get();
+		scheduleService.deleteRecurringSchedules(memberId, scheduleId, member);
+		return ApiResponse.ofSuccess();
 	}
 }

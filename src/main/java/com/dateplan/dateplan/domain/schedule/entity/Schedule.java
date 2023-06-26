@@ -1,6 +1,5 @@
 package com.dateplan.dateplan.domain.schedule.entity;
 
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -65,14 +64,6 @@ public class Schedule {
 		this.content = content;
 		this.location = location;
 		this.schedulePattern = schedulePattern;
-	}
-
-	public void updateSchedule(ScheduleUpdateServiceRequest request) {
-		updateTitle(request.getTitle());
-		updateContent(request.getContent());
-		updateLocation(request.getLocation());
-		updateStartDateTime(request.getStartDateTime());
-		updateEndDateTime(request.getEndDateTime());
 	}
 
 	public void updateTitle(String title) {

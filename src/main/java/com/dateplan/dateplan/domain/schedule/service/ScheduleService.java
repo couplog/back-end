@@ -45,7 +45,7 @@ public class ScheduleService {
 		scheduleJDBCRepository.processBatchInsert(schedules);
 	}
 
-	public void deleteRecurringSchedules(Long memberId, Long scheduleId, Member member) {
+	public void deleteRepeatedSchedules(Long memberId, Long scheduleId, Member member) {
 		if (!isSameMember(memberId, member.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
 		}

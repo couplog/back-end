@@ -47,12 +47,12 @@ public class ScheduleController {
 	}
 
 	@DeleteMapping("/{member_id}/schedules")
-	public ApiResponse<Void> deleteRecurringSchedules(
+	public ApiResponse<Void> deleteRepeatedSchedules(
 		@PathVariable("member_id") Long memberId,
 		@RequestParam(value = "scheduleId") Long scheduleId
 	) {
 		Member member = MemberThreadLocal.get();
-		scheduleService.deleteRecurringSchedules(memberId, scheduleId, member);
+		scheduleService.deleteRepeatedSchedules(memberId, scheduleId, member);
 		return ApiResponse.ofSuccess();
 	}
 }

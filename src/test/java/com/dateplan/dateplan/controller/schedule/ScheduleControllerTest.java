@@ -425,7 +425,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 	@Nested
 	@DisplayName("반복 일정 전체 삭제 시")
-	class DeleteRecurringSchedule {
+	class DeleteRepeatedSchedule {
 
 		private static final String REQUEST_URL = "/api/members/{member_id}/schedules";
 
@@ -446,7 +446,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteRecurringSchedules(anyLong(), anyLong(), any(Member.class));
+				.deleteRepeatedSchedules(anyLong(), anyLong(), any(Member.class));
 
 			// When & THen
 			mockMvc.perform(
@@ -465,7 +465,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteRecurringSchedules(anyLong(), anyLong(), any(Member.class));
+				.deleteRepeatedSchedules(anyLong(), anyLong(), any(Member.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -486,7 +486,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteRecurringSchedules(anyLong(), anyLong(), any(Member.class));
+				.deleteRepeatedSchedules(anyLong(), anyLong(), any(Member.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -509,7 +509,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				Operation.DELETE);
 			willThrow(exception)
 				.given(scheduleService)
-				.deleteRecurringSchedules(anyLong(), anyLong(), any(Member.class));
+				.deleteRepeatedSchedules(anyLong(), anyLong(), any(Member.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -531,7 +531,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			willThrow(exception)
 				.given(scheduleService)
-				.deleteRecurringSchedules(anyLong(), anyLong(), any(Member.class));
+				.deleteRepeatedSchedules(anyLong(), anyLong(), any(Member.class));
 
 			// When & Then
 			mockMvc.perform(

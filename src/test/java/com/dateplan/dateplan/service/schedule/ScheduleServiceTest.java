@@ -140,7 +140,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 	@Nested
 	@DisplayName("반복 일정 전체 삭제 시")
-	class DeleteRecurringSchedule {
+	class DeleteRepeatedSchedule {
 
 		private static final String NEED_SCHEDULE = "needSchedule";
 
@@ -186,7 +186,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			SchedulePattern schedulePattern = schedule.getSchedulePattern();
 
 			// When
-			scheduleService.deleteRecurringSchedules(member.getId(), schedule.getId(), member);
+			scheduleService.deleteRepeatedSchedules(member.getId(), schedule.getId(), member);
 
 			// Then
 			assertThat(schedulePatternRepository.findById(schedulePattern.getId()))
@@ -206,7 +206,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.DELETE);
 			assertThatThrownBy(
-				() -> scheduleService.deleteRecurringSchedules(member.getId() + 10, 1L, member))
+				() -> scheduleService.deleteRepeatedSchedules(member.getId() + 10, 1L, member))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -218,7 +218,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// When & Then
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			assertThatThrownBy(
-				() -> scheduleService.deleteRecurringSchedules(
+				() -> scheduleService.deleteRepeatedSchedules(
 					member.getId(), 1L, member))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());

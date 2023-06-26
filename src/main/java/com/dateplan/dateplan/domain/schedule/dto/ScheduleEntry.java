@@ -13,10 +13,10 @@ public class ScheduleEntry {
 	private Long scheduleId;
 	private LocalDateTime startDateTime;
 	private LocalDateTime endDateTime;
-	String title;
-	String content;
-	String location;
-	RepeatRule repeatRule;
+	private String title;
+	private String content;
+	private String location;
+	private RepeatRule repeatRule;
 
 	public static ScheduleEntry from(Schedule schedule) {
 		return ScheduleEntry.builder()

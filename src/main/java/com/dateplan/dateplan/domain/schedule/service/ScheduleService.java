@@ -47,11 +47,25 @@ public class ScheduleService {
 		scheduleJDBCRepository.processBatchInsert(schedules);
 	}
 
-	public void deleteSchedule(Long memberId, Long scheduleId, Member member) {
+	public void deleteSchedule(Long memberId, Long scheduleId, Member member, Boolean deleteRepeat) {
 		if (!isSameMember(memberId, member.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		if (deleteRepeat) {
+			deleteRepeatSchedule(schedule);
+			return;
+		}
+		deleteSingleSchedule(schedule);
+	}
+
+	private void deleteRepeatSchedule(Schedule schedule) {
+		SchedulePattern schedulePattern = schedule.getSchedulePattern();
+		scheduleJDBCRepository.deleteAllBySchedulePatternId(schedulePattern.getId());
+		schedulePatternRepository.delete(schedulePattern);
+	}
+
+	private void deleteSingleSchedule(Schedule schedule) {
 		scheduleRepository.delete(schedule);
 		if (isSingleSchedule(schedule.getSchedulePattern().getId())) {
 			schedulePatternRepository.delete(schedule.getSchedulePattern());

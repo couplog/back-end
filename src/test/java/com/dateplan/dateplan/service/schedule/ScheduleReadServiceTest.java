@@ -12,6 +12,8 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleEntry;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
@@ -29,6 +31,9 @@ import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,7 +114,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willReturn(partner.getId());
 
-			ScheduleDatesServiceResponse response = scheduleReadService.readSchedule(
+			ScheduleDatesServiceResponse response = scheduleReadService.readScheduleDates(
 				member.getId(), null, null);
 
 			List<LocalDate> actualDates = response.getScheduleDates();
@@ -123,7 +128,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		void failWithNoPermission() {
 
 			assertThatThrownBy(
-				() -> scheduleReadService.readSchedule(member.getId() + 100, null, null))
+				() -> scheduleReadService.readScheduleDates(member.getId() + 100, null, null))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
 					Operation.READ.getName()));
@@ -139,12 +144,121 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willThrow(new MemberNotConnectedException());
 
-			assertThatThrownBy(() -> scheduleReadService.readSchedule(member.getId(), null, null))
+			assertThatThrownBy(
+				() -> scheduleReadService.readScheduleDates(member.getId(), null, null))
 				.isInstanceOf(MemberNotConnectedException.class)
 				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 
 			then(queryRepository)
 				.shouldHaveNoInteractions();
+		}
+	}
+
+	@DisplayName("일정 상세 조회 시")
+	@Nested
+	class ReadSchedules {
+
+		private static final String NEED_SCHEDULES = "needSchedules";
+		private Member member;
+		private Member partner;
+		private Couple couple;
+		private List<Schedule> schedules;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = createMember("01012345678", "aaa");
+			partner = createMember("01012345679", "bbb");
+			couple = createCouple(member, partner);
+			memberRepository.saveAll(List.of(member, partner));
+			coupleRepository.save(couple);
+
+			if (testInfo.getTags().contains(NEED_SCHEDULES)) {
+				List<ScheduleEntry> scheduleEntries = List.of(
+					createScheduleEntry(1L),
+					createScheduleEntry(2L),
+					createScheduleEntry(3L),
+					createScheduleEntry(4L),
+					createScheduleEntry(5L)
+				);
+
+				schedules = scheduleEntries.stream()
+					.map(entry -> {
+							SchedulePattern pattern = schedulePatternRepository.save(
+								createSchedulePattern(LocalDate.now(), LocalDate.now(),
+									member));
+							Schedule savedSchedule = Schedule.builder()
+								.schedulePattern(pattern)
+								.startDateTime(entry.getStartDateTime())
+								.endDateTime(entry.getEndDateTime())
+								.title(entry.getTitle())
+								.content(entry.getContent())
+								.location(entry.getLocation())
+								.build();
+							return scheduleRepository.save(savedSchedule);
+						}
+					)
+					.toList();
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULES)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULES)
+		@DisplayName("올바른 id, member, 날짜가 요청되면 성공하고, 일정 일시 오름차순으로 정렬되어 반환한다")
+		@Test
+		void successWithValidRequest() {
+
+			// Given
+			ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedules(
+				member.getId(), couple.getId(), member,
+				LocalDate.now().getYear(),
+				LocalDate.now().getMonthValue(),
+				LocalDate.now().getDayOfMonth());
+
+			// When & Then
+			scheduleServiceResponse.getSchedules()
+				.forEach(entry -> {
+					int index = scheduleServiceResponse.getSchedules().indexOf(entry);
+					Schedule actual = schedules.get(index);
+
+					assertThat(entry.getScheduleId()).isEqualTo(actual.getId());
+					assertThat(entry.getStartDateTime()).isEqualTo(
+						actual.getStartDateTime().truncatedTo(ChronoUnit.SECONDS));
+					assertThat(entry.getEndDateTime()).isEqualTo(
+						actual.getEndDateTime().truncatedTo(ChronoUnit.SECONDS));
+					assertThat(entry.getTitle()).isEqualTo(actual.getTitle());
+					assertThat(entry.getContent()).isEqualTo(actual.getContent());
+					assertThat(entry.getLocation()).isEqualTo(actual.getLocation());
+					assertThat(entry.getRepeatRule()).isEqualTo(actual.getSchedulePattern().getRepeatRule());
+				});
+			assertThat(scheduleServiceResponse.getSchedules())
+				.extracting(ScheduleEntry::getStartDateTime)
+				.isSortedAccordingTo(Comparator.naturalOrder());
+		}
+
+		@DisplayName("요청한 member_id가 회원 또는 연결된 회원의 id가 아니면 실패한다")
+		@Test
+		void failWithNoPermission() {
+
+			// Given
+			LocalDate now = LocalDate.now();
+			NoPermissionException exception =
+				new NoPermissionException(Resource.MEMBER, Operation.READ);
+
+			// When & Then
+			assertThatThrownBy(
+				() -> scheduleReadService.readSchedules(partner.getId() + 100, couple.getId(),
+					member, now.getYear(), now.getMonthValue(), now.getDayOfMonth()))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 
@@ -218,7 +332,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 	private SchedulePattern createSchedulePattern(LocalDate startDate, LocalDate endDate,
 		Member member) {
 		return SchedulePattern.builder()
-			.repeatRule(RepeatRule.D)
+			.repeatRule(RepeatRule.N)
 			.repeatStartDate(startDate)
 			.repeatEndDate(endDate)
 			.member(member)
@@ -242,6 +356,18 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			.password("password")
 			.gender(Gender.MALE)
 			.birthDay(LocalDate.of(1999, 10, 10))
+			.build();
+	}
+
+	private ScheduleEntry createScheduleEntry(Long scheduleId) {
+		return ScheduleEntry.builder()
+			.scheduleId(scheduleId)
+			.title("title")
+			.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+			.endDateTime(LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.SECONDS))
+			.repeatRule(RepeatRule.N)
+			.content("content")
+			.location("location")
 			.build();
 	}
 }

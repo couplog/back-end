@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;

@@ -1,6 +1,6 @@
 package com.dateplan.dateplan.domain.anniversary.service;
 
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateServiceRequest;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;

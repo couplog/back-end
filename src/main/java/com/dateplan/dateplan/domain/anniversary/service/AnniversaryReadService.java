@@ -1,8 +1,8 @@
 package com.dateplan.dateplan.domain.anniversary.service;
 
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;

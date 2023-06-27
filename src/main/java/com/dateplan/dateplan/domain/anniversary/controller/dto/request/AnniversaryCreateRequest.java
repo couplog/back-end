@@ -1,10 +1,11 @@
-package com.dateplan.dateplan.domain.anniversary.dto;
+package com.dateplan.dateplan.domain.anniversary.controller.dto.request;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_ANNIVERSARY_CONTENT;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_ANNIVERSARY_REPEAT_RULE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_ANNIVERSARY_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_PATTERN;
 
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.global.validator.BeforeCalenderEndTime;
 import jakarta.validation.constraints.NotNull;

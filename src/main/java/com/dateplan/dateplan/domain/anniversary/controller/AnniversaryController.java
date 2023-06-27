@@ -1,12 +1,12 @@
 package com.dateplan.dateplan.domain.anniversary.controller;
 
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateRequest;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryCreateRequest;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.response.AnniversaryDatesResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.response.AnniversaryListResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.response.ComingAnniversaryListResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.member.entity.Member;

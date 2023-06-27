@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.anniversary.dto;
+package com.dateplan.dateplan.domain.anniversary.service.dto.response;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import java.util.List;

@@ -1,5 +1,6 @@
-package com.dateplan.dateplan.domain.anniversary.dto;
+package com.dateplan.dateplan.domain.anniversary.controller.dto.response;
 
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryServiceResponse;
 import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Getter;

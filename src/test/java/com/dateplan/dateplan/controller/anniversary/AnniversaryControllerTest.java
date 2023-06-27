@@ -19,13 +19,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateRequest;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryCreateServiceRequest;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryCreateRequest;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;

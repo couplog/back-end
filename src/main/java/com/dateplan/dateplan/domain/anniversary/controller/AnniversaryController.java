@@ -5,13 +5,18 @@ import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesResponse;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListResponse;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -69,5 +74,20 @@ public class AnniversaryController {
 			loginMember, coupleId, year, month);
 
 		return ApiResponse.ofSuccess(AnniversaryDatesResponse.from(serviceResponse));
+	}
+
+	@GetMapping("/coming")
+	public ApiResponse<ComingAnniversaryListResponse> readComingAnniversaries(
+		@PathVariable("couple_id") Long coupleId,
+		@RequestParam(value = "size", defaultValue = "3") Integer size,
+		@DateTimeFormat(iso = ISO.DATE) LocalDate startDate
+	) {
+
+		Member loginMember = MemberThreadLocal.get();
+
+		ComingAnniversaryListServiceResponse serviceResponse = anniversaryReadService.readComingAnniversaries(
+			loginMember, coupleId, startDate, size);
+
+		return ApiResponse.ofSuccess(ComingAnniversaryListResponse.from(serviceResponse));
 	}
 }

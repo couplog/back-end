@@ -59,30 +59,24 @@ public class Schedule {
 		SchedulePattern schedulePattern
 	) {
 		this.startDateTime = startDateTime;
-		this. endDateTime = endDateTime;
+		this.endDateTime = endDateTime;
 		this.title = title;
 		this.content = content;
 		this.location = location;
 		this.schedulePattern = schedulePattern;
 	}
 
-	public void updateTitle(String title) {
+	public void updateSchedule(
+		String title,
+		String content,
+		String location,
+		LocalDateTime startDateTime,
+		LocalDateTime endDateTime
+	) {
 		this.title = title;
-	}
-
-	public void updateContent(String content) {
 		this.content = content;
-	}
-
-	public void updateLocation(String location) {
 		this.location = location;
-	}
-
-	public void updateStartDateTime(LocalDateTime startDateTime) {
 		this.startDateTime = startDateTime;
-	}
-
-	public void updateEndDateTime(LocalDateTime endDateTime) {
 		this.endDateTime = endDateTime;
 	}
 }

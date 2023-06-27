@@ -56,15 +56,13 @@ public class ScheduleService {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
-		updateScheduleFiled(schedule, request);
-	}
-
-	private void updateScheduleFiled(Schedule schedule, ScheduleUpdateServiceRequest request) {
-		schedule.updateTitle(request.getTitle());
-		schedule.updateContent(request.getContent());
-		schedule.updateLocation(request.getLocation());
-		schedule.updateStartDateTime(request.getStartDateTime());
-		schedule.updateEndDateTime(request.getEndDateTime());
+		schedule.updateSchedule(
+			request.getTitle(),
+			request.getContent(),
+			request.getLocation(),
+			request.getStartDateTime(),
+			request.getEndDateTime()
+		);
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

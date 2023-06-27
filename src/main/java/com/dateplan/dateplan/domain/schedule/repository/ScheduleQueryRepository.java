@@ -7,6 +7,8 @@ import static com.dateplan.dateplan.domain.schedule.entity.QSchedulePattern.sche
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,19 @@ import org.springframework.stereotype.Repository;
 public class ScheduleQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
+
+	public List<Schedule> findByDateBetween(Long memberId, Integer year, Integer month,
+		Integer day) {
+		return queryFactory
+			.selectFrom(schedule)
+			.join(schedule.schedulePattern, schedulePattern)
+			.fetchJoin()
+			.join(schedulePattern.member, member)
+			.where(memberIdEq(memberId)
+				.and(dateBetween(year, month, day)))
+			.orderBy(schedule.startDateTime.asc())
+			.fetch();
+	}
 
 	public List<Schedule> findByYearAndMonthOrderByDate(Long memberId, Integer year,
 		Integer month) {
@@ -29,6 +44,12 @@ public class ScheduleQueryRepository {
 				.and(endDateTimeGoe(year, month)))
 			.orderBy(schedule.startDateTime.asc())
 			.fetch();
+	}
+
+	private BooleanExpression dateBetween(Integer year, Integer month, Integer day) {
+		LocalDate requestDate = LocalDate.of(year, month, day);
+		return schedule.startDateTime.loe(requestDate.atTime(LocalTime.MAX))
+			.and(schedule.endDateTime.goe(requestDate.atTime(LocalTime.MIN)));
 	}
 
 	private BooleanExpression memberIdEq(Long memberId) {

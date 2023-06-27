@@ -26,12 +26,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleEntry;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -50,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -339,7 +342,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 	@Nested
 	@DisplayName("일정 날짜 조회 시")
-	class ReadSchedule {
+	class ReadScheduleDates {
 
 		private final static String REQUEST_URL = "/api/members/{member_id}/schedules/dates";
 
@@ -353,7 +356,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.map(LocalDate::toString).toList();
 
 			// Stubbing
-			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -374,9 +377,10 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.CREATE);
-			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(exception);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
@@ -392,9 +396,10 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		void failWithNotConnectedRequest() throws Exception {
 
 			// Stubbing
-			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(new MemberNotConnectedException());
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
@@ -409,12 +414,15 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		@ParameterizedTest
 		@CsvSource({"aaaa,12", "2019,aa"})
 		void failWithInvalidQueryParameter(String year, String month) throws Exception {
+			// Given
 			Map<String, String> requestMap = Map.of("year", year, "month", month);
 			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
 
-			given(scheduleReadService.readSchedule(anyLong(), anyInt(), anyInt()))
+			// Stubbing
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
+			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
 					.param("year", requestMap.get("year"))
 					.param("month", requestMap.get("month")))
@@ -423,6 +431,122 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value("C003"),
 					jsonPath("$.message").value(containsString("Integer"))
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("일정 상세 조회 시")
+	class ReadSchedules {
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/schedules";
+
+		@DisplayName("올바른 member_id, year, month, day를 입력하면 성공한다")
+		@Test
+		void successWithValidRequest() throws Exception {
+			// Given
+			ScheduleServiceResponse response = createScheduleServiceResponse();
+			LocalDate now = LocalDate.now();
+
+			// Stubbing
+			given(scheduleReadService.readSchedules(
+				anyLong(), anyLong(), any(Member.class), any(), anyInt(), anyInt()))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1)
+					.param("year", String.valueOf(now.getYear()))
+					.param("month", String.valueOf(now.getMonthValue()))
+					.param("day", String.valueOf(now.getDayOfMonth())))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.data.schedules[0].scheduleId").value(
+						response.getSchedules().get(0).getScheduleId()),
+					jsonPath("$.data.schedules[0].title").value(
+						response.getSchedules().get(0).getTitle()),
+					jsonPath("$.data.schedules[0].content").value(
+						response.getSchedules().get(0).getContent()),
+					jsonPath("$.data.schedules[0].location").value(
+						response.getSchedules().get(0).getLocation()),
+					jsonPath("$.data.schedules[0].repeatRule").value(
+						response.getSchedules().get(0).getRepeatRule().toString())
+				);
+		}
+
+		@DisplayName("year, month, day에 올바르지 않은 데이터가 들어가면 실패한다")
+		@ParameterizedTest
+		@CsvSource({"aaaa,10,10", "2010,aa,10", "2010,10,aa"})
+		void failWithInvalidQueryParameter(String year, String month, String day) throws Exception {
+			// Given
+			Map<String, String> requestMap = Map.of("year", year, "month", month, "day", day);
+			ScheduleServiceResponse response = createScheduleServiceResponse();
+
+			// Stubbing
+			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
+				anyInt(), anyInt(), anyInt())).willReturn(response);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1)
+					.param("year", requestMap.get("year"))
+					.param("month", requestMap.get("month"))
+					.param("day", requestMap.get("day")))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value("C003"),
+					jsonPath("$.message").value(containsString("Integer"))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermissionRequest() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
+				anyInt(), anyInt(), anyInt())).willThrow(exception);
+
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue()))
+					.param("day", String.valueOf(LocalDate.now().getDayOfMonth())))
+				.andExpect(status().is(exception.getErrorCode().getHttpStatusCode().value()))
+				.andExpectAll(
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
+		@Test
+		void failWithNotConnected() throws Exception {
+
+			// Stubbing
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue()))
+					.param("day", String.valueOf(LocalDate.now().getDayOfMonth())))
+				.andExpect(status().is(exception.getErrorCode().getHttpStatusCode().value()))
+				.andExpectAll(
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}
@@ -736,6 +860,24 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		return LocalDate.now().withDayOfMonth(1)
 			.datesUntil(LocalDate.now().withDayOfMonth(1).plusMonths(1))
 			.collect(Collectors.toList());
+	}
+
+	private ScheduleServiceResponse createScheduleServiceResponse() {
+		return ScheduleServiceResponse.builder()
+			.schedules(createScheduleEntries())
+			.build();
+	}
+
+	private List<ScheduleEntry> createScheduleEntries() {
+		return IntStream.rangeClosed(1, 5)
+			.mapToObj(i -> ScheduleEntry.builder()
+				.scheduleId((long) i)
+				.title("title")
+				.repeatRule(RepeatRule.N)
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().plusDays(5))
+				.build())
+			.toList();
 	}
 
 	private Member createMember() {

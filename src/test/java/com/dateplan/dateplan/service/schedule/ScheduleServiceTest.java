@@ -228,7 +228,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				.hasMessage(exception.getMessage());
 		}
 
-		@Tag(NEED_SCHEDULE)
 		@DisplayName("요청한 일정이 존재하지 않으면 실패한다")
 		@Test
 		void failWithScheduleNotFound() {
@@ -241,34 +240,10 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				.hasMessage(exception.getMessage());
 		}
 
+		@Tag(NEED_SCHEDULE)
 		@DisplayName("일정이 모두 삭제되면 해당되는 일정 패턴도 삭제된다")
 		@Test
 		void removeCascadePattern() {
-
-			// Given
-			SchedulePattern schedulePattern = schedulePatternRepository.save(
-				SchedulePattern.builder()
-					.member(member)
-					.repeatRule(RepeatRule.D)
-					.repeatStartDate(LocalDate.now())
-					.repeatEndDate(LocalDate.now().plusDays(2))
-					.build()
-			);
-			List<Schedule> schedules = List.of(
-				Schedule.builder()
-					.title("title")
-					.startDateTime(LocalDateTime.now())
-					.endDateTime(LocalDateTime.now().plusDays(1))
-					.schedulePattern(schedulePattern)
-					.build(),
-				Schedule.builder()
-					.title("title")
-					.startDateTime(LocalDateTime.now().plusDays(1))
-					.endDateTime(LocalDateTime.now().plusDays(2))
-					.schedulePattern(schedulePattern)
-					.build()
-			);
-			scheduleRepository.saveAll(schedules);
 
 			// When
 			schedules.forEach(
@@ -277,11 +252,12 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			);
 
 			// Then
-			assertThat(schedulePatternRepository.findById(schedulePattern.getId())).isEqualTo(
-				Optional.empty());
 			schedules.forEach(
-				iterSchedule -> assertThat(
-					scheduleRepository.findById(iterSchedule.getId())).isEqualTo(Optional.empty())
+				iterSchedule -> {
+					assertThat(schedulePatternRepository.findById(
+						iterSchedule.getSchedulePattern().getId())).isEmpty();
+					assertThat(scheduleRepository.findById(iterSchedule.getId())).isEmpty();
+				}
 			);
 		}
 	}

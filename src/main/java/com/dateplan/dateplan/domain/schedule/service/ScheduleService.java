@@ -61,7 +61,7 @@ public class ScheduleService {
 
 	private void deleteRepeatSchedule(Schedule schedule) {
 		SchedulePattern schedulePattern = schedule.getSchedulePattern();
-		scheduleJDBCRepository.deleteAllBySchedulePatternId(schedulePattern.getId());
+		scheduleRepository.deleteAllBySchedulePatternId(schedulePattern.getId());
 		schedulePatternRepository.delete(schedulePattern);
 	}
 

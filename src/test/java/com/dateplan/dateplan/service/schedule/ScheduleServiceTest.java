@@ -185,6 +185,8 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 			// Then
 			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
+			assertThat(schedulePatternRepository.findById(
+				schedule.getSchedulePattern().getId())).isEqualTo(Optional.empty());
 		}
 
 		@DisplayName("요청한 회원의 일정이 아니면 실패한다")
@@ -211,6 +213,50 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				() -> scheduleService.deleteSchedule(member.getId(), schedule.getId() + 10, member))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
+		}
+
+		@DisplayName("일정이 모두 삭제되면 해당되는 일정 패턴도 삭제된다")
+		@Test
+		void removeCascadePattern() {
+
+			// Given
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(member)
+					.repeatRule(RepeatRule.D)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now().plusDays(2))
+					.build()
+			);
+			List<Schedule> schedules = List.of(
+				Schedule.builder()
+					.title("title")
+					.startDateTime(LocalDateTime.now())
+					.endDateTime(LocalDateTime.now().plusDays(1))
+					.schedulePattern(schedulePattern)
+					.build(),
+				Schedule.builder()
+					.title("title")
+					.startDateTime(LocalDateTime.now().plusDays(1))
+					.endDateTime(LocalDateTime.now().plusDays(2))
+					.schedulePattern(schedulePattern)
+					.build()
+			);
+			scheduleRepository.saveAll(schedules);
+
+			// When
+			schedules.forEach(
+				iterSchedule -> scheduleService.deleteSchedule(member.getId(), iterSchedule.getId(),
+					member)
+			);
+
+			// Then
+			assertThat(schedulePatternRepository.findById(schedulePattern.getId())).isEqualTo(
+				Optional.empty());
+			schedules.forEach(
+				iterSchedule -> assertThat(
+					scheduleRepository.findById(iterSchedule.getId())).isEqualTo(Optional.empty())
+			);
 		}
 	}
 

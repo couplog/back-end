@@ -26,6 +26,7 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.util.List;
@@ -33,7 +34,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -142,6 +145,64 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 			then(queryRepository)
 				.shouldHaveNoInteractions();
+		}
+	}
+
+	@DisplayName("일정 조회 시")
+	@Nested
+	class ReadSchedule {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+		Schedule schedule;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("01012345678", "nickname"));
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				SchedulePattern schedulePattern = schedulePatternRepository
+					.save(createSchedulePattern(LocalDate.now(), LocalDate.now(), member));
+				schedule = scheduleRepository.save(
+					createSchedule(LocalDate.now(), schedulePattern));
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 일정 id를 입력하면, 해당 id에 해당하는 일정을 반환한다")
+		@Test
+		void successWithValidRequest() {
+
+			Schedule findSchedule = scheduleReadService
+				.findScheduleByIdOrElseThrow(schedule.getId());
+
+			assertThat(findSchedule.getId()).isEqualTo(schedule.getId());
+			assertThat(findSchedule.getTitle()).isEqualTo(schedule.getTitle());
+			assertThat(findSchedule.getStartDateTime()).isEqualTo(schedule.getStartDateTime());
+			assertThat(findSchedule.getEndDateTime()).isEqualTo(schedule.getEndDateTime());
+			assertThat(findSchedule.getSchedulePattern().getId()).isEqualTo(
+				schedule.getSchedulePattern().getId());
+		}
+
+		@DisplayName("존재하지 않는 일정 id를 요청하면 실패한다")
+		@Test
+		void failWithInvalidRequest() {
+
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+
+			assertThatThrownBy(() -> scheduleReadService.findScheduleByIdOrElseThrow(100000L))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

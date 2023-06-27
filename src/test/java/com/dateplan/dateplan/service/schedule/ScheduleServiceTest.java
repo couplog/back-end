@@ -116,7 +116,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			}
 		}
 
-		@DisplayName("로그인한 회원 외의 회원에 대한 요청을 하면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@ParameterizedTest
 		@EnumSource(value = RepeatRule.class, names = {"N", "D", "W", "M", "Y"})
 		void FailWithNoPermissionRequest(RepeatRule repeatRule) {
@@ -129,10 +129,11 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.CREATE);
 			assertThatThrownBy(() -> scheduleService.createSchedule(otherMemberId, request))
-				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
-					Operation.CREATE.getName()));
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 
@@ -186,7 +187,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			assertThat(updatedSchedule.getEndDateTime()).isEqualTo(request.getEndDateTime());
 		}
 
-		@DisplayName("로그인 한 회원 이외의 요청이면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermission() {
 

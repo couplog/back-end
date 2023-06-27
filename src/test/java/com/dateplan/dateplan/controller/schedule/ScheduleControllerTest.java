@@ -95,7 +95,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("true"));
 		}
 
-		@DisplayName("로그인한 회원에 대한 요청이 아니면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermissionRequest() throws Exception {
 
@@ -496,7 +496,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("로그인한 회원의 요청이 아니면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@Test
 		void failWIthNoPermission() throws Exception {
 

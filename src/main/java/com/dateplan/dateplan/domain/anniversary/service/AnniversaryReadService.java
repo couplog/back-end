@@ -2,6 +2,7 @@ package com.dateplan.dateplan.domain.anniversary.service;
 
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
@@ -9,6 +10,7 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,22 @@ public class AnniversaryReadService {
 			targetCoupleId, year, month, day, true);
 
 		return AnniversaryListServiceResponse.from(anniversaries);
+	}
+
+	public ComingAnniversaryListServiceResponse readComingAnniversaries(Member loginMember,
+		Long targetCoupleId, LocalDate startDate, Integer size) {
+
+		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
+			loginMember).getId();
+
+		if (!Objects.equals(loginMemberCoupleId, targetCoupleId)) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+		}
+
+		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllComingAnniversariesByCoupleId(
+			startDate, targetCoupleId, size);
+
+		return ComingAnniversaryListServiceResponse.from(anniversaries);
 	}
 
 	public AnniversaryDatesServiceResponse readAnniversaryDates(Member loginMember,

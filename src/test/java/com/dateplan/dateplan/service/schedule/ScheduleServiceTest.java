@@ -145,7 +145,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		private static final String NEED_SCHEDULE = "needSchedule";
 
 		Member member;
-		Schedule schedule;
+		List<Schedule> schedules;
 
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
@@ -161,7 +161,14 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 						.repeatEndDate(DateConstants.CALENDER_END_DATE)
 						.build()
 				);
-				schedule = scheduleRepository.save(createSchedule(schedulePattern));
+				schedules = List.of(
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern)
+				);
+				scheduleRepository.saveAll(schedules);
 			}
 		}
 
@@ -176,20 +183,39 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		}
 
 		@Tag(NEED_SCHEDULE)
-		@DisplayName("올바른 memberId, scheduleId를 요청하면 성공한다.")
+		@DisplayName("올바른 memberId, scheduleId, deleteRepeat = false를 요청하면 일정이 단일 삭제된다.")
 		@Test
-		void successWithValidRequest() {
+		void successWithDeleteSingleSchedule() {
+			// Given
+			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member);
+			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, false);
 
 			// Then
 			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
 			assertThat(schedulePatternRepository.findById(
-				schedule.getSchedulePattern().getId())).isEqualTo(Optional.empty());
+				schedule.getSchedulePattern().getId())).isPresent();
 		}
 
-		@DisplayName("요청한 회원의 일정이 아니면 실패한다")
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 memberId, scheduleId, deleteRepeat = true를 요청하면 반복 일정이 모두 삭제된다.")
+		@Test
+		void successWithDeleteRepeatSchedule() {
+
+			// Given
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, true);
+
+			// Then
+			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
+			assertThat(schedulePatternRepository.findById(
+				schedule.getSchedulePattern().getId())).isEmpty();
+		}
+
+		@DisplayName("요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermission() {
 
@@ -197,7 +223,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.DELETE);
 			assertThatThrownBy(
-				() -> scheduleService.deleteSchedule(member.getId() + 10, 1L, member))
+				() -> scheduleService.deleteSchedule(member.getId() + 10, 1L, member, false))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -210,7 +236,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// When & Then
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			assertThatThrownBy(
-				() -> scheduleService.deleteSchedule(member.getId(), schedule.getId() + 10, member))
+				() -> scheduleService.deleteSchedule(member.getId(), 1000000L, member, false))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -247,7 +273,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// When
 			schedules.forEach(
 				iterSchedule -> scheduleService.deleteSchedule(member.getId(), iterSchedule.getId(),
-					member)
+					member, false)
 			);
 
 			// Then

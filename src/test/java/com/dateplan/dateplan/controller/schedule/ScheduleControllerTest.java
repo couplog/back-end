@@ -8,9 +8,11 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH;
+import static com.dateplan.dateplan.global.exception.ErrorCode.MISSING_REQUEST_PARAMETER;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
@@ -446,11 +448,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-					.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+					.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
 
-			// When & THen
+			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1))
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isOk(),
 					jsonPath("$.success").value("true")
@@ -465,11 +468,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
-					delete(REQUEST_URL, memberId, scheduleId))
+					delete(REQUEST_URL, memberId, scheduleId)
+						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isBadRequest(),
 					jsonPath("$.success").value(false),
@@ -478,7 +482,48 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("요청에 대한 권한이 없으면 실패한다")
+		@DisplayName("request param을 입력하지 않으면 실패한다.")
+		@Test
+		void failWithNullRequestParam() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(MISSING_REQUEST_PARAMETER.getCode()),
+					jsonPath("$.message").value(containsString("deleteRepeat"))
+				);
+		}
+
+		@DisplayName("request param의 타입이 올바르지 않으면 실패한다.")
+		@Test
+		void failWithInvalidRequestParam() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1)
+						.param("deleteRepeat", "asdf"))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("deleteRepeat"))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermission() throws Exception {
 
@@ -487,11 +532,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				Operation.DELETE);
 			willThrow(exception)
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1))
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isForbidden(),
 					jsonPath("$.success").value("false"),
@@ -502,17 +548,18 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 		@DisplayName("요청에 해당하는 일정이 존재하지 않으면 실패한다")
 		@Test
-		void failWIthScheduleNotFound() throws Exception {
+		void failWithScheduleNotFound() throws Exception {
 
 			// Stubbing
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			willThrow(exception)
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class));
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1))
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isNotFound(),
 					jsonPath("$.success").value("false"),

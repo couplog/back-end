@@ -53,6 +53,13 @@ public class ScheduleService {
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
 		scheduleRepository.delete(schedule);
+		if (isSingleSchedule(schedule.getSchedulePattern().getId())) {
+			schedulePatternRepository.delete(schedule.getSchedulePattern());
+		}
+	}
+
+	private boolean isSingleSchedule(Long schedulePatternId) {
+		return !(scheduleRepository.existsBySchedulePatternId(schedulePatternId));
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

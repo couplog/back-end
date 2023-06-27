@@ -1,10 +1,15 @@
 package com.dateplan.dateplan.domain.schedule.controller;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,7 @@ public class ScheduleController {
 
 	private final ScheduleService scheduleService;
 	private final ScheduleReadService scheduleReadService;
+	private final CoupleReadService coupleReadService;
 
 	@PostMapping("/{member_id}/schedules")
 	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
@@ -32,14 +38,28 @@ public class ScheduleController {
 	}
 
 	@GetMapping("/{member_id}/schedules/dates")
-	public ApiResponse<ScheduleDatesResponse> readSchedule(
+	public ApiResponse<ScheduleDatesResponse> readScheduleDates(
 		@PathVariable("member_id") Long memberId,
 		@RequestParam(value = "year", required = false) Integer year,
 		@RequestParam(value = "month", required = false) Integer month
 	) {
 		ScheduleDatesServiceResponse scheduleDatesServiceResponse = scheduleReadService
-			.readSchedule(memberId, year, month);
+			.readScheduleDates(memberId, year, month);
 
 		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
+	}
+
+	@GetMapping("/{member_id}/schedules")
+	public ApiResponse<ScheduleResponse> readSchedules(
+		@PathVariable("member_id") Long memberId,
+		@RequestParam(value = "year") Integer year,
+		@RequestParam(value = "month") Integer month,
+		@RequestParam(value = "day") Integer day
+	) {
+		final Member member = MemberThreadLocal.get();
+		Long coupleId = coupleReadService.getPartnerId(member);
+		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, coupleId,
+			member, year, month, day);
+		return ApiResponse.ofSuccess(ScheduleResponse.from(response));
 	}
 }

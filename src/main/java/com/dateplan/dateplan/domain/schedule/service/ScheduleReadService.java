@@ -3,6 +3,7 @@ package com.dateplan.dateplan.domain.schedule.service;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
@@ -25,7 +26,25 @@ public class ScheduleReadService {
 	private final ScheduleQueryRepository scheduleQueryRepository;
 	private final CoupleReadService coupleReadService;
 
-	public ScheduleDatesServiceResponse readSchedule(Long requestId, Integer year, Integer month) {
+	public ScheduleServiceResponse readSchedules(
+		Long requestId,
+		Long coupleId,
+		Member member,
+		Integer year,
+		Integer month,
+		Integer day
+	) {
+		validatePermission(requestId, member.getId(), coupleId);
+		List<Schedule> schedules = scheduleQueryRepository.findByDateBetween(member.getId(),
+			year, month, day);
+		return ScheduleServiceResponse.from(schedules);
+	}
+
+	public ScheduleDatesServiceResponse readScheduleDates(
+		Long requestId,
+		Integer year,
+		Integer month
+	) {
 		Member member = MemberThreadLocal.get();
 		Long partnerId = coupleReadService.getPartnerId(member);
 		validatePermission(requestId, member.getId(), partnerId);
@@ -38,7 +57,11 @@ public class ScheduleReadService {
 			.build();
 	}
 
-	private List<LocalDate> getScheduleDates(Integer year, Integer month, List<Schedule> schedules) {
+	private List<LocalDate> getScheduleDates(
+		Integer year,
+		Integer month,
+		List<Schedule> schedules
+	) {
 		return schedules.stream()
 			.flatMap(this::getScheduleDateRange)
 			.filter(date -> checkDateRange(year, month, date))

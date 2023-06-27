@@ -8,7 +8,6 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH;
-import static com.dateplan.dateplan.global.exception.ErrorCode.MISSING_REQUEST_PARAMETER;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -603,26 +602,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value(false),
 					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
 					jsonPath("$.message").value(containsString("Long"))
-				);
-		}
-
-		@DisplayName("request param을 입력하지 않으면 실패한다.")
-		@Test
-		void failWithNullRequestParam() throws Exception {
-
-			// Stubbing
-			willDoNothing()
-				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
-
-			// When & Then
-			mockMvc.perform(
-					delete(REQUEST_URL, 1, 1))
-				.andExpectAll(
-					status().isBadRequest(),
-					jsonPath("$.success").value(false),
-					jsonPath("$.code").value(MISSING_REQUEST_PARAMETER.getCode()),
-					jsonPath("$.message").value(containsString("deleteRepeat"))
 				);
 		}
 

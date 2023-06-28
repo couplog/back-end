@@ -5,11 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
-import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
@@ -17,7 +17,10 @@ import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryJDBCRepository;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository;
+import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryModifyServiceRequest;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
@@ -26,21 +29,33 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
+import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.anniversary.AnniversaryNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
+import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.EnumSource.Mode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class AnniversaryServiceTest extends ServiceTestSupport {
 
@@ -61,6 +76,9 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 
 	@SpyBean
 	private AnniversaryJDBCRepository anniversaryJDBCRepository;
+
+	@MockBean
+	private AnniversaryReadService anniversaryReadService;
 
 	@MockBean
 	private CoupleReadService coupleReadService;
@@ -523,6 +541,246 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("기념일 수정시")
+	class ModifyAnniversary {
+
+		private static final String NEED_ANNIVERSARY = "needAnniversary";
+
+		private Member member;
+		private Couple couple;
+		private List<Anniversary> savedAnniversaries;
+		private LocalDate startDate;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+
+			member = createMember("01011112222", "nickname1", LocalDate.of(2000, 1, 1));
+			Member partner = createMember("01022223333", "nickname2",
+				LocalDate.of(2000, 1, 1));
+			memberRepository.save(member);
+			memberRepository.save(partner);
+
+			couple = createCouple(member, partner,
+				LocalDate.of(2010, 1, 1));
+			coupleRepository.save(couple);
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARY)) {
+
+				startDate = LocalDate.of(2040, 10, 10);
+
+				AnniversaryPattern anniversaryPattern = createAnniversaryPattern(couple,
+					startDate, AnniversaryRepeatRule.YEAR);
+
+				savedAnniversaries = createRepeatedAnniversaries(startDate,
+					"title", "content", anniversaryPattern);
+
+				anniversaryRepository.saveAll(savedAnniversaries);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+
+			savedAnniversaries = null;
+			startDate = null;
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARY)) {
+				anniversaryRepository.deleteAllInBatch();
+				anniversaryPatternRepository.deleteAllInBatch();
+			}
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("로그인한 회원의 커플이 소유한 기념일이라면, 해당 기념일 및 연관된 기념일 모두 수정된다.")
+		@Test
+		void withLoginMembersCoupleHaveGivenAnniversary() {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+			String modifiedTitle = "newTitle";
+			String modifiedContent = "newContent";
+			int dayDiff = 20;
+			LocalDate modifiedDate = startDate.plusDays(dayDiff);
+
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				modifiedTitle, modifiedContent, modifiedDate);
+
+			List<LocalDate> originalLocalDates = savedAnniversaries.stream()
+				.map(Anniversary::getDate)
+				.sorted((a1, a2) -> a1.isAfter(a2) ? 1 : 0)
+				.toList();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(savedAnniversaries.get(0));
+
+			// when
+			anniversaryService.modifyAnniversary(member, couple.getId(), targetAnniversaryId,
+				serviceRequest);
+
+			// then
+			savedAnniversaries = anniversaryRepository.findAllById(
+				savedAnniversaries.stream().map(Anniversary::getId).toList());
+
+			assertThat(savedAnniversaries)
+				.allSatisfy(anniversary -> {
+					assertThat(anniversary.getTitle()).isEqualTo(modifiedTitle);
+					assertThat(anniversary.getContent()).isEqualTo(modifiedContent);
+				});
+
+			List<LocalDate> modifiedDates = savedAnniversaries.stream()
+				.map(Anniversary::getDate)
+				.sorted((a1, a2) -> a1.isAfter(a2) ? 1 : 0)
+				.toList();
+
+			int size = modifiedDates.size();
+			for (int i = 0; i < size; i++) {
+				assertThat(ChronoUnit.DAYS.between(originalLocalDates.get(i),
+					modifiedDates.get(i))).isEqualTo(dayDiff);
+			}
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("로그인한 회원의 커플이 소유한 기념일이 아니라면, 예외를 발생시킨다.")
+		@Test
+		void withLoginMembersCoupleNotHaveGivenAnniversary() {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				"title", "content", LocalDate.of(2020, 12, 12));
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.UPDATE);
+
+			// stub
+			Couple anotherCouple = createCouple(null, null, null);
+			ReflectionTestUtils.setField(anotherCouple, "id", 100L);
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(anotherCouple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(savedAnniversaries.get(0));
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.modifyAnniversary(member, couple.getId(), targetAnniversaryId,
+					serviceRequest))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("주어진 커플 id 와 로그인한 회원의 커플 id 가 다르다면, 예외를 발생시킨다.")
+		@Test
+		void withDifferentCoupleId() {
+
+			// given
+			Long coupleId = 1000L;
+			Long targetAnniversaryId = 1000L;
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				"title", "content", LocalDate.of(2020, 12, 12));
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.UPDATE);
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.modifyAnniversary(member, coupleId, targetAnniversaryId,
+					serviceRequest))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("존재하지 않는 기념일 id 가 주어졌다면, 예외를 발생시킨다.")
+		@Test
+		void withNotExistsAnniversaryId() {
+
+			// given
+			Long targetAnniversaryId = 1000L;
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				"title", "content", LocalDate.of(2020, 12, 12));
+
+			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.modifyAnniversary(member, couple.getId(), targetAnniversaryId,
+					serviceRequest))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("생일 및 처음만난 날 관련 기념일이라면, 예외를 발생시킨다.")
+		@EnumSource(value = AnniversaryCategory.class, mode = Mode.EXCLUDE, names = {"OTHER"})
+		@ParameterizedTest
+		void withFirstDateOrBirthDayAnniversary(AnniversaryCategory category) {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				"title", "content", LocalDate.of(2020, 12, 12));
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.UPDATE);
+
+			// stub
+			Anniversary anniversary = savedAnniversaries.get(0);
+			ReflectionTestUtils.setField(anniversary, "category", category);
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(anniversary);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.modifyAnniversary(member, couple.getId(), targetAnniversaryId,
+					serviceRequest))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("연결되지 않은 회원의 경우, 예외를 발생시킨다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// given
+			Long targetAnniversaryId = 1000L;
+			AnniversaryModifyServiceRequest serviceRequest = createAnniversaryModifyServiceRequest(
+				"title", "content", LocalDate.of(2020, 12, 12));
+
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.modifyAnniversary(member, couple.getId(), targetAnniversaryId,
+					serviceRequest))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+	}
+
 	private Member createMember(String phone, String nickname, LocalDate birth) {
 
 		return Member.builder()
@@ -552,6 +810,44 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 			.content("내용")
 			.date(date)
 			.repeatRule(repeatRule)
+			.build();
+	}
+
+	private AnniversaryPattern createAnniversaryPattern(Couple couple, LocalDate startDate,
+		AnniversaryRepeatRule repeatRule) {
+
+		return AnniversaryPattern.builder()
+			.repeatStartDate(startDate)
+			.repeatEndDate(CALENDER_END_DATE)
+			.repeatRule(repeatRule)
+			.couple(couple)
+			.build();
+	}
+
+	private List<Anniversary> createRepeatedAnniversaries(LocalDate startDate, String title,
+		String content, AnniversaryPattern anniversaryPattern) {
+
+		return IntStream.iterate(
+				0,
+				years -> startDate.plusYears(years)
+					.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+				years -> years + 1)
+			.mapToObj(years -> Anniversary.ofOther(
+				title,
+				content,
+				startDate.plusYears(years),
+				anniversaryPattern
+			))
+			.toList();
+	}
+
+	public AnniversaryModifyServiceRequest createAnniversaryModifyServiceRequest(String title,
+		String content, LocalDate date) {
+
+		return AnniversaryModifyServiceRequest.builder()
+			.title(title)
+			.content(content)
+			.date(date)
 			.build();
 	}
 }

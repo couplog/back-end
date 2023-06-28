@@ -29,6 +29,10 @@ public class ScheduleReadService {
 	private final CoupleReadService coupleReadService;
 	private final ScheduleRepository scheduleRepository;
 
+	public List<Schedule> findBySchedulePatternId(Long schedulePatternId) {
+		return scheduleRepository.findBySchedulePatternId(schedulePatternId);
+	}
+
 	public Schedule findScheduleByIdOrElseThrow(Long id) {
 		return scheduleRepository.findById(id)
 			.orElseThrow(ScheduleNotFoundException::new);

@@ -1,12 +1,15 @@
 package com.dateplan.dateplan.domain.anniversary.service;
 
-import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryJDBCRepository;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
+import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepository;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
+import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryModifyServiceRequest;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -30,9 +33,11 @@ public class AnniversaryService {
 
 	private final MemberReadService memberReadService;
 	private final CoupleReadService coupleReadService;
+	private final AnniversaryReadService anniversaryReadService;
 	private final AnniversaryPatternRepository anniversaryPatternRepository;
 	private final AnniversaryRepository anniversaryRepository;
 	private final AnniversaryJDBCRepository anniversaryJDBCRepository;
+	private final AnniversaryQueryRepository anniversaryQueryRepository;
 
 	public void createAnniversaries(Member member, Long coupleId,
 		AnniversaryCreateServiceRequest request) {
@@ -190,4 +195,30 @@ public class AnniversaryService {
 			case NONE -> List.of();
 		};
 	}
+
+	public void modifyAnniversary(Member loginMember, Long coupleId, Long anniversaryId,
+		AnniversaryModifyServiceRequest request) {
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(loginMember);
+
+		if (!Objects.equals(couple.getId(), coupleId)) {
+			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
+		}
+
+		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
+			anniversaryId, true);
+
+		Long anniversaryOwnerCoupleId = anniversary.getAnniversaryPattern().getCouple().getId();
+
+		if (!Objects.equals(anniversaryOwnerCoupleId, coupleId) ||
+			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
+		) {
+			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
+		}
+
+		anniversaryQueryRepository.updateAllRepeatedAnniversary(anniversaryId, request.getTitle(),
+			request.getContent(), request.getDate());
+	}
+
+
 }

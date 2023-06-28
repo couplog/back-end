@@ -69,10 +69,12 @@ public class ScheduleController {
 	public ApiResponse<Void> updateSchedule(
 		@PathVariable("member_id") Long memberId,
 		@PathVariable("schedule_id") Long scheduleId,
-		@Valid @RequestBody ScheduleUpdateRequest request) {
+		@Valid @RequestBody ScheduleUpdateRequest request,
+		@RequestParam(value = "updateRepeat", required = false) Boolean updateRepeat
+	) {
 		Member member = MemberThreadLocal.get();
 		scheduleService.updateSchedule(
-			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member);
+			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member, updateRepeat);
 		return ApiResponse.ofSuccess();
 	}
 }

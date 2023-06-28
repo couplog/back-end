@@ -6,10 +6,16 @@ import static com.dateplan.dateplan.domain.couple.entity.QCouple.couple;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.DateTemplate;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.jpa.impl.JPAUpdateClause;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -54,6 +60,62 @@ public class AnniversaryQueryRepository {
 			.orderBy(anniversary.date.asc())
 			.limit(size)
 			.fetch();
+	}
+
+	public Optional<Anniversary> findById(Long anniversaryId, boolean patternFetchJoinRequired) {
+
+		JPAQuery<Anniversary> baseQuery = queryFactory.selectFrom(anniversary)
+			.where(anniversary.id.eq(anniversaryId));
+
+		if (patternFetchJoinRequired) {
+			baseQuery
+				.innerJoin(anniversary.anniversaryPattern)
+				.fetchJoin();
+		}
+
+		return Optional.ofNullable(baseQuery.fetchFirst());
+	}
+
+	public void updateAllRepeatedAnniversary(Long anniversaryId, String title, String content,
+		LocalDate date) {
+
+		Anniversary findAnniversary = queryFactory.selectFrom(anniversary)
+			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
+			.fetchJoin()
+			.where(anniversary.id.eq(anniversaryId))
+			.fetchFirst();
+
+		if (findAnniversary == null) {
+			return;
+		}
+
+		JPAUpdateClause baseQuery = queryFactory.update(anniversary)
+			.where(anniversary.anniversaryPattern.id.eq(
+				findAnniversary.getAnniversaryPattern().getId()));
+
+		if (!Objects.equals(findAnniversary.getTitle(), title)) {
+			baseQuery
+				.set(anniversary.title, title);
+		}
+
+		if (!Objects.equals(findAnniversary.getContent(), content)) {
+			baseQuery
+				.set(anniversary.content, content);
+		}
+
+		if (!Objects.equals(findAnniversary.getDate(), date)) {
+
+			long dayDiff = ChronoUnit.DAYS.between(findAnniversary.getDate(), date);
+
+			DateTemplate<LocalDate> dateTemplate = Expressions.dateTemplate(
+				LocalDate.class, "ADDDATE({0}, {1})", anniversary.date,
+				Expressions.asNumber(dayDiff));
+
+			baseQuery
+				.set(anniversary.date, dateTemplate);
+		}
+
+		baseQuery.execute();
 	}
 
 	private BooleanExpression startDateGoe(LocalDate startDate) {

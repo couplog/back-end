@@ -1,14 +1,15 @@
 package com.dateplan.dateplan.domain.anniversary.controller;
 
 import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryCreateRequest;
+import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryModifyRequest;
 import com.dateplan.dateplan.domain.anniversary.controller.dto.response.AnniversaryDatesResponse;
-import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.controller.dto.response.AnniversaryListResponse;
-import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.controller.dto.response.ComingAnniversaryListResponse;
-import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -21,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -89,5 +91,20 @@ public class AnniversaryController {
 			loginMember, coupleId, startDate, size);
 
 		return ApiResponse.ofSuccess(ComingAnniversaryListResponse.from(serviceResponse));
+	}
+
+	@PutMapping("/{anniversary_id}")
+	public ApiResponse<Void> modifyAnniversary(
+		@PathVariable("couple_id") Long coupleId,
+		@PathVariable("anniversary_id") Long anniversaryId,
+		@RequestBody @Valid AnniversaryModifyRequest request
+	) {
+
+		Member loginMember = MemberThreadLocal.get();
+
+		anniversaryService.modifyAnniversary(loginMember, coupleId, anniversaryId,
+			request.toServiceRequest());
+
+		return ApiResponse.ofSuccess();
 	}
 }

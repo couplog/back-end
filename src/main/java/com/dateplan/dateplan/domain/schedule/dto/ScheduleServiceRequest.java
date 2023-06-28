@@ -1,13 +1,10 @@
 package com.dateplan.dateplan.domain.schedule.dto;
 
-import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
-
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
-import com.dateplan.dateplan.global.exception.schedule.InvalidDifferenceDateTimeException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidRepeatEndTimeRange;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -52,7 +49,6 @@ public class ScheduleServiceRequest {
 		setDefaultRepeatEndTime();
 		throwIfInvalidDateTimeRange();
 		throwIfInvalidRepeatEndTime();
-		throwIfInvalidDifferenceDateTime();
 	}
 
 	private void setDefaultRepeatEndTime() {
@@ -74,12 +70,6 @@ public class ScheduleServiceRequest {
 	private void throwIfInvalidDateTimeRange() {
 		if (startDateTime.isAfter(endDateTime)) {
 			throw new InvalidDateTimeRangeException();
-		}
-	}
-
-	private void throwIfInvalidDifferenceDateTime() {
-		if (endDateTime.isAfter(getNextCycle(startDateTime, repeatRule, 1))) {
-			throw new InvalidDifferenceDateTimeException();
 		}
 	}
 

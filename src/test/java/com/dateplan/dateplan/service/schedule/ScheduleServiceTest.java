@@ -6,18 +6,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -29,6 +31,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,9 +60,8 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 		@BeforeEach
 		void setUp() {
-			member = createMember("nickname");
+			member = memberRepository.save(createMember("nickname"));
 			MemberThreadLocal.set(member);
-			memberRepository.save(member);
 		}
 
 		@AfterEach
@@ -112,7 +116,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			}
 		}
 
-		@DisplayName("로그인한 회원 외의 회원에 대한 요청을 하면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@ParameterizedTest
 		@EnumSource(value = RepeatRule.class, names = {"N", "D", "W", "M", "Y"})
 		void FailWithNoPermissionRequest(RepeatRule repeatRule) {
@@ -125,12 +129,167 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.CREATE);
 			assertThatThrownBy(() -> scheduleService.createSchedule(otherMemberId, request))
-				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
-					Operation.CREATE.getName()));
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
+
+	@DisplayName("일정 수정 시")
+	@Nested
+	class UpdateSchedule {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+		List<Schedule> schedules;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("nickname"));
+			MemberThreadLocal.set(member);
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				SchedulePattern schedulePattern = schedulePatternRepository.save(
+					SchedulePattern.builder()
+						.member(member)
+						.repeatRule(RepeatRule.N)
+						.repeatStartDate(LocalDate.now())
+						.repeatEndDate(DateConstants.CALENDER_END_DATE)
+						.build()
+				);
+				schedules = List.of(
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern)
+				);
+				scheduleRepository.saveAll(schedules);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("단일 일정 수정하는 요청 시, 요청의 내용으로 해당 일정이 수정된다.")
+		@Test
+		void successWithSingleUpdateRequest() {
+			// Given
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
+				false);
+
+			// Then
+			Schedule updatedSchedule = scheduleRepository.findById(schedule.getId()).get();
+
+			assertThat(updatedSchedule.getTitle()).isEqualTo(request.getTitle());
+			assertThat(updatedSchedule.getContent()).isEqualTo(request.getContent());
+			assertThat(updatedSchedule.getLocation()).isEqualTo(request.getLocation());
+			assertThat(updatedSchedule.getStartDateTime()).isEqualTo(request.getStartDateTime());
+			assertThat(updatedSchedule.getEndDateTime()).isEqualTo(request.getEndDateTime());
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("반복 일정 수정하는 요청 시, 요청의 내용으로 모든 일정이 수정된다.")
+		@Test
+		void successWithRepeatUpdateRequest() {
+			// Given
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
+				true);
+
+			// Then
+			List<Schedule> updatedSchedules = scheduleRepository.findBySchedulePatternId(
+				schedule.getSchedulePattern().getId());
+
+			long startTimeDiff = ChronoUnit.MINUTES.between(schedule.getStartDateTime(),
+				request.getStartDateTime());
+			long endTimeDiff = ChronoUnit.MINUTES.between(schedule.getEndDateTime(),
+				request.getEndDateTime());
+
+			for (int i = 0; i < updatedSchedules.size(); i++) {
+				assertThat(updatedSchedules.get(i).getTitle()).isEqualTo(request.getTitle());
+				assertThat(updatedSchedules.get(i).getContent()).isEqualTo(request.getContent());
+				assertThat(updatedSchedules.get(i).getLocation()).isEqualTo(request.getLocation());
+				assertThat(updatedSchedules.get(i).getStartDateTime()).isEqualTo(
+					schedules.get(i).getStartDateTime().plus(startTimeDiff, ChronoUnit.MINUTES));
+				assertThat(updatedSchedules.get(i).getEndDateTime()).isEqualTo(
+					schedules.get(i).getEndDateTime().plus(endTimeDiff, ChronoUnit.MINUTES));
+			}
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermission() {
+
+			// Given
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.UPDATE);
+			assertThatThrownBy(() ->
+				scheduleService.updateSchedule(member.getId() + 100, 1L, request, member, true))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+
+		}
+
+		@DisplayName("요청에 해당하는 일정을 찾을 수 없으면 실패한다")
+		@Test
+		void failWIthScheduleNotFound() {
+			// Given
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+
+			// When & Then
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			assertThatThrownBy(() ->
+				scheduleService.updateSchedule(
+					member.getId(), 100000L, request, member, true))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+
+		}
+	}
+
+	private Schedule createSchedule(SchedulePattern schedulePattern) {
+		return Schedule.builder()
+			.schedulePattern(schedulePattern)
+			.title("title")
+			.content("content")
+			.location("location")
+			.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+			.endDateTime(LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.SECONDS))
+			.build();
+	}
+
+	private ScheduleUpdateServiceRequest createScheduleUpdateServiceRequest() {
+		return ScheduleUpdateServiceRequest.builder()
+			.title("new Title")
+			.content("new Content")
+			.location("new Location")
+			.startDateTime(LocalDateTime.now().plusDays(10).truncatedTo(ChronoUnit.SECONDS))
+			.endDateTime(LocalDateTime.now().plusDays(20).truncatedTo(ChronoUnit.SECONDS))
+			.build();
+	}
+
 	private Member createMember(String nickname) {
 
 		return Member.builder()
@@ -146,8 +305,8 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 	private ScheduleServiceRequest createScheduleServiceRequest(RepeatRule repeatRule) {
 		return ScheduleServiceRequest.builder()
 			.title("title")
-			.startDateTime(LocalDateTime.now().with(LocalTime.MIN))
-			.endDateTime(LocalDateTime.now().with(LocalTime.MAX))
+			.startDateTime(LocalDateTime.now().with(LocalTime.MIN).truncatedTo(ChronoUnit.SECONDS))
+			.endDateTime(LocalDateTime.now().with(LocalTime.MAX).truncatedTo(ChronoUnit.SECONDS))
 			.repeatRule(repeatRule)
 			.build();
 	}

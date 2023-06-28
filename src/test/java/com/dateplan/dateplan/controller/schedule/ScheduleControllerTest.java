@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -830,6 +831,130 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value(false),
 					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
 					jsonPath("$.message").value(containsString("updateRepeat"))
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("일정 삭제 시")
+	class DeleteSchedule {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/schedules/{schedule_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("올바른 memberId, scheduleId를 입력하면 일정이 삭제된다.")
+		@Test
+		void successWithValidRequest() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+					.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value("true")
+				);
+		}
+
+		@DisplayName("올바르지 않은 pathvariable을 입력하면 실패한다.")
+		@CsvSource({"1,a", "a,1"})
+		@ParameterizedTest
+		void failWithInvalidPathVariable(String memberId, String scheduleId) throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, memberId, scheduleId)
+						.param("deleteRepeat", "true"))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@DisplayName("request param의 타입이 올바르지 않으면 실패한다.")
+		@Test
+		void failWithInvalidRequestParam() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1)
+						.param("deleteRepeat", "asdf"))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("deleteRepeat"))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermission() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			willThrow(exception)
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("요청에 해당하는 일정이 존재하지 않으면 실패한다")
+		@Test
+		void failWithScheduleNotFound() throws Exception {
+
+			// Stubbing
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			willThrow(exception)
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+				delete(REQUEST_URL, 1, 1)
+					.param("deleteRepeat", "true"))
+				.andExpectAll(
+					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}

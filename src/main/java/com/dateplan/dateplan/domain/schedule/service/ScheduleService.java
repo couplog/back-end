@@ -9,6 +9,7 @@ import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
@@ -32,6 +33,7 @@ public class ScheduleService {
 	private final SchedulePatternRepository schedulePatternRepository;
 	private final ScheduleJDBCRepository scheduleJDBCRepository;
 	private final ScheduleReadService scheduleReadService;
+	private final ScheduleRepository scheduleRepository;
 
 	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
 		Member member = MemberThreadLocal.get();
@@ -86,6 +88,35 @@ public class ScheduleService {
 			request.getStartDateTime(),
 			request.getEndDateTime()
 		);
+	}
+
+	public void deleteSchedule(Long memberId, Long scheduleId, Member member, Boolean deleteRepeat) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		if (deleteRepeat) {
+			deleteRepeatSchedule(schedule);
+			return;
+		}
+		deleteSingleSchedule(schedule);
+	}
+
+	private void deleteRepeatSchedule(Schedule schedule) {
+		SchedulePattern schedulePattern = schedule.getSchedulePattern();
+		scheduleRepository.deleteAllBySchedulePatternId(schedulePattern.getId());
+		schedulePatternRepository.delete(schedulePattern);
+	}
+
+	private void deleteSingleSchedule(Schedule schedule) {
+		scheduleRepository.delete(schedule);
+		if (isSingleSchedule(schedule.getSchedulePattern().getId())) {
+			schedulePatternRepository.delete(schedule.getSchedulePattern());
+		}
+	}
+
+	private boolean isSingleSchedule(Long schedulePatternId) {
+		return !(scheduleRepository.existsBySchedulePatternId(schedulePatternId));
 	}
 
 	private List<Schedule> getSchedules(ScheduleServiceRequest request,

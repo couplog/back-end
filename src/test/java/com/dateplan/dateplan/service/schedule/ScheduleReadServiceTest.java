@@ -183,9 +183,11 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		}
 
 		@AfterEach
-		void tearDown() {
-			scheduleRepository.deleteAllInBatch();
-			schedulePatternRepository.deleteAllInBatch();
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULES)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
 			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
 		}

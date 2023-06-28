@@ -31,8 +31,7 @@ import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -162,7 +161,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		private Member member;
 		private Member partner;
 		private Couple couple;
-		private List<Schedule> schedules;
+		private final List<ScheduleEntry> schedules = new ArrayList<>();
 
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
@@ -173,31 +172,13 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			coupleRepository.save(couple);
 
 			if (testInfo.getTags().contains(NEED_SCHEDULES)) {
-				List<ScheduleEntry> scheduleEntries = List.of(
-					createScheduleEntry(1L),
-					createScheduleEntry(2L),
-					createScheduleEntry(3L),
-					createScheduleEntry(4L),
-					createScheduleEntry(5L)
-				);
-
-				schedules = scheduleEntries.stream()
-					.map(entry -> {
-							SchedulePattern pattern = schedulePatternRepository.save(
-								createSchedulePattern(LocalDate.now(), LocalDate.now(),
-									member));
-							Schedule savedSchedule = Schedule.builder()
-								.schedulePattern(pattern)
-								.startDateTime(entry.getStartDateTime())
-								.endDateTime(entry.getEndDateTime())
-								.title(entry.getTitle())
-								.content(entry.getContent())
-								.location(entry.getLocation())
-								.build();
-							return scheduleRepository.save(savedSchedule);
-						}
-					)
-					.toList();
+				SchedulePattern pattern = schedulePatternRepository.save(
+					createSchedulePattern(LocalDate.now(), LocalDate.now(), member));
+				for (int i = 0; i < 5; i++) {
+					Schedule savedSchedule = createSchedule(LocalDate.now(), pattern);
+					schedules.add(
+						ScheduleEntry.from(scheduleRepository.save(savedSchedule)));
+				}
 			}
 		}
 
@@ -224,21 +205,17 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 				LocalDate.now().getDayOfMonth());
 
 			// When & Then
-			scheduleServiceResponse.getSchedules()
-				.forEach(entry -> {
-					int index = scheduleServiceResponse.getSchedules().indexOf(entry);
-					Schedule actual = schedules.get(index);
-
-					assertThat(entry.getScheduleId()).isEqualTo(actual.getId());
-					assertThat(entry.getStartDateTime()).isEqualTo(
-						actual.getStartDateTime().truncatedTo(ChronoUnit.SECONDS));
-					assertThat(entry.getEndDateTime()).isEqualTo(
-						actual.getEndDateTime().truncatedTo(ChronoUnit.SECONDS));
-					assertThat(entry.getTitle()).isEqualTo(actual.getTitle());
-					assertThat(entry.getContent()).isEqualTo(actual.getContent());
-					assertThat(entry.getLocation()).isEqualTo(actual.getLocation());
-					assertThat(entry.getRepeatRule()).isEqualTo(actual.getSchedulePattern().getRepeatRule());
-				});
+			for (int i = 0; i < scheduleServiceResponse.getSchedules().size(); i++) {
+				ScheduleEntry actual = scheduleServiceResponse.getSchedules().get(i);
+				assertThat(actual.getScheduleId()).isEqualTo(schedules.get(i).getScheduleId());
+				assertThat(actual.getTitle()).isEqualTo(schedules.get(i).getTitle());
+				assertThat(actual.getContent()).isEqualTo(schedules.get(i).getContent());
+				assertThat(actual.getLocation()).isEqualTo(schedules.get(i).getLocation());
+				assertThat(actual.getStartDateTime()).isEqualTo(
+					schedules.get(i).getStartDateTime());
+				assertThat(actual.getEndDateTime()).isEqualTo(schedules.get(i).getEndDateTime());
+				assertThat(actual.getRepeatRule()).isEqualTo(schedules.get(i).getRepeatRule());
+			}
 			assertThat(scheduleServiceResponse.getSchedules())
 				.extracting(ScheduleEntry::getStartDateTime)
 				.isSortedAccordingTo(Comparator.naturalOrder());
@@ -320,6 +297,71 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@DisplayName("일정 패턴 아이디로 일정 리스트 조회 시")
+	@Nested
+	class FindBySchedulePatternId {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+		List<Schedule> schedules;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("01012345678", "nickname"));
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				SchedulePattern schedulePattern = schedulePatternRepository
+					.save(createSchedulePattern(LocalDate.now(), LocalDate.now(), member));
+				schedules = scheduleRepository.saveAll(List.of(
+					createSchedule(LocalDate.now(), schedulePattern),
+					createSchedule(LocalDate.now(), schedulePattern),
+					createSchedule(LocalDate.now(), schedulePattern),
+					createSchedule(LocalDate.now(), schedulePattern)
+				));
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("일정이 존재하는 일정 패턴 id를 입력하면 해당하는 모든 일정들이 조회된다.")
+		@Test
+		void successWithValidRequest() {
+
+			// Given
+			Long schedulePatternId = schedules.get(0).getSchedulePattern().getId();
+
+			// When
+			List<Schedule> savedSchedules = scheduleReadService.findBySchedulePatternId(
+				schedulePatternId);
+
+			// Then
+			assertThat(savedSchedules).hasSize(schedules.size());
+			for (int i = 0; i < schedules.size(); i++) {
+				assertThat(schedules.get(i).getTitle()).isEqualTo(savedSchedules.get(i).getTitle());
+				assertThat(schedules.get(i).getContent()).isEqualTo(
+					savedSchedules.get(i).getContent());
+				assertThat(schedules.get(i).getLocation()).isEqualTo(
+					savedSchedules.get(i).getLocation());
+				assertThat(schedules.get(i).getStartDateTime()).isEqualTo(
+					savedSchedules.get(i).getStartDateTime());
+				assertThat(schedules.get(i).getEndDateTime()).isEqualTo(
+					savedSchedules.get(i).getEndDateTime());
+				assertThat(schedules.get(i).getId()).isEqualTo(savedSchedules.get(i).getId());
+				assertThat(schedules.get(i).getSchedulePattern().getId()).isEqualTo(
+					savedSchedules.get(i).getSchedulePattern().getId());
+			}
+		}
+	}
+
 	private Schedule createSchedule(LocalDate date, SchedulePattern schedulePattern) {
 		return Schedule.builder()
 			.schedulePattern(schedulePattern)
@@ -356,18 +398,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			.password("password")
 			.gender(Gender.MALE)
 			.birthDay(LocalDate.of(1999, 10, 10))
-			.build();
-	}
-
-	private ScheduleEntry createScheduleEntry(Long scheduleId) {
-		return ScheduleEntry.builder()
-			.scheduleId(scheduleId)
-			.title("title")
-			.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
-			.endDateTime(LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.SECONDS))
-			.repeatRule(RepeatRule.N)
-			.content("content")
-			.location("location")
 			.build();
 	}
 }

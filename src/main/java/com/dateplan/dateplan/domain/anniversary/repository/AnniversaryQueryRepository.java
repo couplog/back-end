@@ -8,6 +8,7 @@ import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -41,6 +42,27 @@ public class AnniversaryQueryRepository {
 		}
 
 		return baseQuery.fetch();
+	}
+
+	public List<Anniversary> findAllComingAnniversariesByCoupleId(LocalDate startDate,
+		Long coupleId, Integer size) {
+
+		return queryFactory.selectFrom(anniversary)
+			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
+			.innerJoin(anniversaryPattern.couple, couple)
+			.where(coupleIdEq(coupleId), startDateGoe(startDate))
+			.orderBy(anniversary.date.asc())
+			.limit(size)
+			.fetch();
+	}
+
+	private BooleanExpression startDateGoe(LocalDate startDate) {
+
+		if (startDate == null) {
+			return anniversary.date.goe(LocalDate.now());
+		}
+
+		return anniversary.date.goe(startDate);
 	}
 
 	private BooleanExpression yearEq(Integer year) {

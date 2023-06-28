@@ -99,7 +99,7 @@ public enum ErrorCode {
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
 
 		// 일정 관련
-		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 15자 이하여야 합니다.";
+		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 1자 이상 15자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_LOCATION = "일정 위치는 20자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 100자 이하여야 합니다.";
 		public static final String INVALID_REPEAT_RULE = "일정 규칙은 'N', 'D', 'W', 'M', 'Y' 중 하나여야 합니다.";

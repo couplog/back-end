@@ -7,6 +7,7 @@ import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -62,6 +64,19 @@ public class ScheduleController {
 		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, coupleId,
 			member, year, month, day);
 		return ApiResponse.ofSuccess(ScheduleResponse.from(response));
+	}
+
+	@PutMapping("/{member_id}/schedules/{schedule_id}")
+	public ApiResponse<Void> updateSchedule(
+		@PathVariable("member_id") Long memberId,
+		@PathVariable("schedule_id") Long scheduleId,
+		@Valid @RequestBody ScheduleUpdateRequest request,
+		@RequestParam(value = "updateRepeat", required = false) Boolean updateRepeat
+	) {
+		Member member = MemberThreadLocal.get();
+		scheduleService.updateSchedule(
+			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member, updateRepeat);
+		return ApiResponse.ofSuccess();
 	}
 
 	@DeleteMapping("/{member_id}/schedules/{schedule_id}")

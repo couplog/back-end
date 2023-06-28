@@ -1,9 +1,9 @@
 package com.dateplan.dateplan.controller.schedule;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_TIME_RANGE;
-import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DIFFERENCE_DATE_TIME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_END_TIME_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_RULE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_CONTENT;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_LOCATION;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_TITLE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
@@ -20,6 +20,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,9 +30,11 @@ import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleEntry;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -39,6 +42,7 @@ import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -95,7 +99,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("true"));
 		}
 
-		@DisplayName("로그인한 회원에 대한 요청이 아니면 실패한다")
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermissionRequest() throws Exception {
 
@@ -151,41 +155,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.andExpect(
 					jsonPath("$.code").value(ErrorCode.INVALID_REPEAT_END_TIME_RANGE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_REPEAT_END_TIME_RANGE));
-		}
-
-		@DisplayName("날짜 간격이 유효하지 않으면 실패한다")
-		@CsvSource({"2023-01-01T15:00, 2023-01-02T16:00, D",
-			"2023-01-01T15:00, 2023-01-09T16:00, W",
-			"2023-01-01T15:00, 2023-02-02T16:00, M",
-			"2023-01-01T15:00, 2024-01-02T16:00, Y",})
-		@ParameterizedTest
-		void failWithInvalidDifferenceDateTime(LocalDateTime startDateTime,
-			LocalDateTime endDateTime,
-			RepeatRule repeatRule) throws Exception {
-
-			// Given
-			ScheduleRequest request = ScheduleRequest.builder()
-				.title("title")
-				.startDateTime(startDateTime)
-				.endDateTime(endDateTime)
-				.repeatRule(repeatRule)
-				.build();
-
-			// Stub
-			willDoNothing()
-				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(post(REQUEST_URL, 1L)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(
-					jsonPath("$.code").value(ErrorCode.INVALID_DIFFERENCE_DATE_TIME.getCode()))
-				.andExpect(jsonPath("$.message").value(INVALID_DIFFERENCE_DATE_TIME));
 		}
 
 		@DisplayName("일정 종료일자가 일정 시작일자보다 앞서면 실패한다")
@@ -548,6 +517,324 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@DisplayName("일정 수정 시")
+	@Nested
+	class UpdateSchedule {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/schedules/{schedule_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("올바른 member_id, schedule_id, requestDTO를 입력하면 성공한다")
+		@Test
+		void successWithValidRequest() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value(true)
+				);
+		}
+
+		@DisplayName("올바르지 않은 pathvariable을 입력하면 실패한다.")
+		@CsvSource({"1,a", "a,1"})
+		@ParameterizedTest
+		void failWithInvalidPathVariable(String memberId, String scheduleId) throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, memberId, scheduleId)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWIthNoPermission() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+			NoPermissionException exception =
+				new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+
+			// Stubbing
+			willThrow(exception)
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("요청에 해당하는 schedule이 존재하지 않으면 실패한다")
+		@Test
+		void failWithScheduleNotFoundException() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+
+			// Stubbing
+			willThrow(exception)
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isNotFound(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("일정 종료가 일정 시작보다 앞서면 실패한다")
+		@Test
+		void failWithInvalidStartDateTime() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+			InvalidDateTimeRangeException exception = new InvalidDateTimeRangeException();
+
+			// Stubbing
+			willThrow(exception)
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("일정 종료일시가 유효한 범위가 아니면 실패한다")
+		@Test
+		void failWithInvalidEndDateTime() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = ScheduleUpdateRequest.builder()
+				.title("title")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.of(2050, 1, 1, 0, 0))
+				.location("location")
+				.content("content")
+				.build();
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_CALENDER_TIME_RANGE)
+				);
+		}
+
+		@DisplayName("올바르지 않은 제목을 입력하면 실패한다.")
+		@Test
+		void failWithInvalidTitle() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = ScheduleUpdateRequest.builder()
+				.title(createLengthString(16))
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().plusDays(5))
+				.location("location")
+				.content("content")
+				.build();
+
+			// Stub
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
+				.andExpect(jsonPath("$.message").value(INVALID_SCHEDULE_TITLE));
+		}
+
+		@DisplayName("올바르지 않은 지역을 입력하면 실패한다.")
+		@Test
+		void failWithInvalidLocation() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = ScheduleUpdateRequest.builder()
+				.title("title")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().plusDays(5))
+				.location(createLengthString(21))
+				.content("content")
+				.build();
+
+			// Stub
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
+				.andExpect(jsonPath("$.message").value(INVALID_SCHEDULE_LOCATION));
+		}
+
+		@DisplayName("올바르지 않은 일정 내용을 입력하면 실패한다.")
+		@Test
+		void failWithInvalidContent() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = ScheduleUpdateRequest.builder()
+				.title("title")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().plusDays(5))
+				.location("location")
+				.content(createLengthString(101))
+				.build();
+
+			// Stub
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
+				.andExpect(jsonPath("$.message").value(INVALID_SCHEDULE_CONTENT));
+		}
+
+		@DisplayName("request param의 타입이 올바르지 않으면 실패한다.")
+		@Test
+		void failWithInvalidRequestParam() throws Exception {
+
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "asdf")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("updateRepeat"))
+				);
+		}
+	}
+
 	@Nested
 	@DisplayName("일정 삭제 시")
 	class DeleteSchedule {
@@ -700,16 +987,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			.collect(Collectors.toList());
 	}
 
-	private Member createMember() {
-		return Member.builder()
-			.phone("01012345678")
-			.password("password")
-			.name("name")
-			.nickname("nickname")
-			.birthDay(LocalDate.of(2010, 10, 10))
-			.gender(Gender.MALE)
-			.build();
-	}
 	private ScheduleServiceResponse createScheduleServiceResponse() {
 		return ScheduleServiceResponse.builder()
 			.schedules(createScheduleEntries())
@@ -726,5 +1003,26 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.endDateTime(LocalDateTime.now().plusDays(5))
 				.build())
 			.toList();
+	}
+
+	private Member createMember() {
+		return Member.builder()
+			.phone("01012345678")
+			.password("password")
+			.name("name")
+			.nickname("nickname")
+			.birthDay(LocalDate.of(2010, 10, 10))
+			.gender(Gender.MALE)
+			.build();
+	}
+
+	private ScheduleUpdateRequest createScheduleUpdateRequest() {
+		return ScheduleUpdateRequest.builder()
+			.title("newTitle")
+			.startDateTime(LocalDateTime.now())
+			.endDateTime(LocalDateTime.now().plusDays(5))
+			.content("newContent")
+			.location("newLocation")
+			.build();
 	}
 }

@@ -4,6 +4,7 @@ import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
@@ -16,6 +17,7 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +47,47 @@ public class ScheduleService {
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
 
 		scheduleJDBCRepository.processBatchInsert(schedules);
+	}
+
+	public void updateSchedule(
+		Long memberId,
+		Long scheduleId,
+		ScheduleUpdateServiceRequest request,
+		Member member,
+		Boolean updateRepeat
+	) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+		}
+		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		if (updateRepeat) {
+			updateRepeatSchedules(request, schedule);
+			return;
+		}
+		updateSingleSchedule(request, schedule);
+	}
+
+	private void updateRepeatSchedules(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule
+	) {
+		long startTimeDiff = ChronoUnit.MINUTES.between(schedule.getStartDateTime(),
+			request.getStartDateTime());
+		long endTimeDiff = ChronoUnit.MINUTES.between(schedule.getEndDateTime(),
+			request.getEndDateTime());
+		List<Schedule> schedules = scheduleReadService.findBySchedulePatternId(
+			schedule.getSchedulePattern().getId());
+		scheduleJDBCRepository.processBatchUpdate(schedules, request.getTitle(), request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
+	}
+
+	private void updateSingleSchedule(ScheduleUpdateServiceRequest request, Schedule schedule) {
+		schedule.updateSchedule(
+			request.getTitle(),
+			request.getContent(),
+			request.getLocation(),
+			request.getStartDateTime(),
+			request.getEndDateTime()
+		);
 	}
 
 	public void deleteSchedule(Long memberId, Long scheduleId, Member member, Boolean deleteRepeat) {

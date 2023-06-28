@@ -3,9 +3,9 @@ package com.dateplan.dateplan.global.validator;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
-public class MaxDateTimeValidator implements ConstraintValidator<BeforeCalenderEndTime, LocalDateTime> {
+public class MaxDateValidator implements ConstraintValidator<BeforeCalenderEndTime, LocalDate> {
 
 	private String message;
 
@@ -16,9 +16,9 @@ public class MaxDateTimeValidator implements ConstraintValidator<BeforeCalenderE
 	}
 
 	@Override
-	public boolean isValid(LocalDateTime time, ConstraintValidatorContext context) {
+	public boolean isValid(LocalDate time, ConstraintValidatorContext context) {
 
-		if (time != null && DateConstants.CALENDER_END_DATE_TIME.isBefore(time)) {
+		if (time != null && DateConstants.CALENDER_END_DATE.isBefore(time)) {
 			context.disableDefaultConstraintViolation();
 			context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
 			return false;

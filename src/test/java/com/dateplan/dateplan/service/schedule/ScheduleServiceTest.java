@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -269,6 +270,130 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("일정 삭제 시")
+	class DeleteSchedule {
+
+		private static final String NEED_SCHEDULE = "needSchedule";
+
+		Member member;
+		List<Schedule> schedules;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+			member = memberRepository.save(createMember("nickname"));
+			MemberThreadLocal.set(member);
+
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				SchedulePattern schedulePattern = schedulePatternRepository.save(
+					SchedulePattern.builder()
+						.member(member)
+						.repeatRule(RepeatRule.N)
+						.repeatStartDate(LocalDate.now())
+						.repeatEndDate(DateConstants.CALENDER_END_DATE)
+						.build()
+				);
+				schedules = List.of(
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern),
+					createSchedule(schedulePattern)
+				);
+				scheduleRepository.saveAll(schedules);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
+				scheduleRepository.deleteAllInBatch();
+				schedulePatternRepository.deleteAllInBatch();
+			}
+			MemberThreadLocal.remove();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 memberId, scheduleId, deleteRepeat = false를 요청하면 일정이 단일 삭제된다.")
+		@Test
+		void successWithDeleteSingleSchedule() {
+			// Given
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, false);
+
+			// Then
+			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
+			assertThat(schedulePatternRepository.findById(
+				schedule.getSchedulePattern().getId())).isPresent();
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("올바른 memberId, scheduleId, deleteRepeat = true를 요청하면 반복 일정이 모두 삭제된다.")
+		@Test
+		void successWithDeleteRepeatSchedule() {
+
+			// Given
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, true);
+
+			// Then
+			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
+			assertThat(schedulePatternRepository.findById(
+				schedule.getSchedulePattern().getId())).isEmpty();
+		}
+
+		@DisplayName("요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermission() {
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			assertThatThrownBy(
+				() -> scheduleService.deleteSchedule(member.getId() + 10, 1L, member, false))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@DisplayName("요청한 일정이 존재하지 않으면 실패한다")
+		@Test
+		void failWithScheduleNotFound() {
+
+			// When & Then
+			ScheduleNotFoundException exception = new ScheduleNotFoundException();
+			assertThatThrownBy(
+				() -> scheduleService.deleteSchedule(member.getId(), 1000000L, member, false))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@DisplayName("일정이 모두 삭제되면 해당되는 일정 패턴도 삭제된다")
+		@Test
+		void removeCascadePattern() {
+
+			// When
+			schedules.forEach(
+				iterSchedule -> scheduleService.deleteSchedule(member.getId(), iterSchedule.getId(),
+					member, false)
+			);
+
+			// Then
+			schedules.forEach(
+				iterSchedule -> {
+					assertThat(schedulePatternRepository.findById(
+						iterSchedule.getSchedulePattern().getId())).isEmpty();
+					assertThat(scheduleRepository.findById(iterSchedule.getId())).isEmpty();
+				}
+			);
+		}
+	}
+
 	private Schedule createSchedule(SchedulePattern schedulePattern) {
 		return Schedule.builder()
 			.schedulePattern(schedulePattern)
@@ -289,6 +414,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			.endDateTime(LocalDateTime.now().plusDays(20).truncatedTo(ChronoUnit.SECONDS))
 			.build();
 	}
+
 
 	private Member createMember(String nickname) {
 

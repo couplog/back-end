@@ -14,6 +14,7 @@ import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -75,6 +76,17 @@ public class ScheduleController {
 		Member member = MemberThreadLocal.get();
 		scheduleService.updateSchedule(
 			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member, updateRepeat);
+		return ApiResponse.ofSuccess();
+	}
+
+	@DeleteMapping("/{member_id}/schedules/{schedule_id}")
+	public ApiResponse<Void> deleteSchedule(
+		@PathVariable("member_id") Long memberId,
+		@PathVariable("schedule_id") Long scheduleId,
+		@RequestParam(value = "deleteRepeat", defaultValue = "false") Boolean deleteRepeat
+	) {
+		Member member = MemberThreadLocal.get();
+		scheduleService.deleteSchedule(memberId, scheduleId, member, deleteRepeat);
 		return ApiResponse.ofSuccess();
 	}
 }

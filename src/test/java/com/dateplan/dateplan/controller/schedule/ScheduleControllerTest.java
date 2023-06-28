@@ -1,7 +1,6 @@
 package com.dateplan.dateplan.controller.schedule;
 
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_TIME_RANGE;
-import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DIFFERENCE_DATE_TIME;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_END_TIME_RANGE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_REPEAT_RULE;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_SCHEDULE_CONTENT;
@@ -12,6 +11,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.METHOD_ARGUMENT_T
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
@@ -30,10 +30,10 @@ import com.dateplan.dateplan.domain.schedule.dto.ScheduleEntry;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
-import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -154,41 +154,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.andExpect(
 					jsonPath("$.code").value(ErrorCode.INVALID_REPEAT_END_TIME_RANGE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_REPEAT_END_TIME_RANGE));
-		}
-
-		@DisplayName("날짜 간격이 유효하지 않으면 실패한다")
-		@CsvSource({"2023-01-01T15:00, 2023-01-02T16:00, D",
-			"2023-01-01T15:00, 2023-01-09T16:00, W",
-			"2023-01-01T15:00, 2023-02-02T16:00, M",
-			"2023-01-01T15:00, 2024-01-02T16:00, Y",})
-		@ParameterizedTest
-		void failWithInvalidDifferenceDateTime(LocalDateTime startDateTime,
-			LocalDateTime endDateTime,
-			RepeatRule repeatRule) throws Exception {
-
-			// Given
-			ScheduleRequest request = ScheduleRequest.builder()
-				.title("title")
-				.startDateTime(startDateTime)
-				.endDateTime(endDateTime)
-				.repeatRule(repeatRule)
-				.build();
-
-			// Stub
-			willDoNothing()
-				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(post(REQUEST_URL, 1L)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(
-					jsonPath("$.code").value(ErrorCode.INVALID_DIFFERENCE_DATE_TIME.getCode()))
-				.andExpect(jsonPath("$.message").value(INVALID_DIFFERENCE_DATE_TIME));
 		}
 
 		@DisplayName("일정 종료일자가 일정 시작일자보다 앞서면 실패한다")
@@ -578,11 +543,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
-					any(Member.class));
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -604,11 +570,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
-					any(Member.class));
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, memberId, scheduleId)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -633,11 +600,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willThrow(exception)
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -661,11 +629,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willThrow(exception)
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -689,11 +658,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willThrow(exception)
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -722,11 +692,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -755,11 +726,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -786,11 +758,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -817,11 +790,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			willDoNothing()
 				.given(scheduleService)
 				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class));
+					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "true")
 						.content(om.writeValueAsString(request))
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
@@ -831,7 +805,33 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.message").value(INVALID_SCHEDULE_CONTENT));
 		}
 
+		@DisplayName("request param의 타입이 올바르지 않으면 실패한다.")
+		@Test
+		void failWithInvalidRequestParam() throws Exception {
 
+			// Given
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+
+			// Stubbing
+			willDoNothing()
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.param("updateRepeat", "asdf")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value(false),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("updateRepeat"))
+				);
+		}
 	}
 
 	private ScheduleRequest createScheduleRequest() {

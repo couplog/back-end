@@ -16,6 +16,7 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -50,12 +51,34 @@ public class ScheduleService {
 		Long memberId,
 		Long scheduleId,
 		ScheduleUpdateServiceRequest request,
-		Member member
+		Member member,
+		Boolean updateRepeat
 	) {
 		if (!isSameMember(memberId, member.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+		if (updateRepeat) {
+			updateRepeatSchedules(request, schedule);
+			return;
+		}
+		updateSingleSchedule(request, schedule);
+	}
+
+	private void updateRepeatSchedules(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule
+	) {
+		long startTimeDiff = ChronoUnit.MINUTES.between(schedule.getStartDateTime(),
+			request.getStartDateTime());
+		long endTimeDiff = ChronoUnit.MINUTES.between(schedule.getEndDateTime(),
+			request.getEndDateTime());
+		List<Schedule> schedules = scheduleReadService.findBySchedulePatternId(
+			schedule.getSchedulePattern().getId());
+		scheduleJDBCRepository.processBatchUpdate(schedules, request.getTitle(), request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
+	}
+
+	private void updateSingleSchedule(ScheduleUpdateServiceRequest request, Schedule schedule) {
 		schedule.updateSchedule(
 			request.getTitle(),
 			request.getContent(),

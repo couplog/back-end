@@ -93,17 +93,25 @@ public class AnniversaryQueryRepository {
 			.where(anniversary.anniversaryPattern.id.eq(
 				findAnniversary.getAnniversaryPattern().getId()));
 
-		if (!Objects.equals(findAnniversary.getTitle(), title)) {
+		boolean isTitleChanged = !Objects.equals(findAnniversary.getTitle(), title);
+		boolean isContentChanged = !Objects.equals(findAnniversary.getContent(), content);
+		boolean isDateChanged = !Objects.equals(findAnniversary.getDate(), date);
+
+		if (!isTitleChanged && !isContentChanged && !isDateChanged) {
+			return;
+		}
+
+		if (isTitleChanged) {
 			baseQuery
 				.set(anniversary.title, title);
 		}
 
-		if (!Objects.equals(findAnniversary.getContent(), content)) {
+		if (isContentChanged) {
 			baseQuery
 				.set(anniversary.content, content);
 		}
 
-		if (!Objects.equals(findAnniversary.getDate(), date)) {
+		if (isDateChanged) {
 
 			long dayDiff = ChronoUnit.DAYS.between(findAnniversary.getDate(), date);
 

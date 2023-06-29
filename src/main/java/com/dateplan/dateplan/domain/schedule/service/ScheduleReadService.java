@@ -6,10 +6,12 @@ import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +27,16 @@ public class ScheduleReadService {
 
 	private final ScheduleQueryRepository scheduleQueryRepository;
 	private final CoupleReadService coupleReadService;
+	private final ScheduleRepository scheduleRepository;
+
+	public List<Schedule> findBySchedulePatternId(Long schedulePatternId) {
+		return scheduleRepository.findBySchedulePatternId(schedulePatternId);
+	}
+
+	public Schedule findScheduleByIdOrElseThrow(Long id) {
+		return scheduleRepository.findById(id)
+			.orElseThrow(ScheduleNotFoundException::new);
+	}
 
 	public ScheduleServiceResponse readSchedules(
 		Long requestId,

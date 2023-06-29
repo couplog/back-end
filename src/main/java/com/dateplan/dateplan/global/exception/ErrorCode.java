@@ -44,6 +44,7 @@ public enum ErrorCode {
 	INVALID_REPEAT_END_TIME_RANGE(BAD_REQUEST, "C025"),
 	INVALID_DIFFERENCE_DATE_TIME(BAD_REQUEST, "C026"),
 	COUPLE_NOT_FOUND(NOT_FOUND, "C027"),
+	SCHEDULE_NOT_FOUND(NOT_FOUND, "C028"),
 	ANNIVERSARY_NOT_FOUND(NOT_FOUND, "C029"),
 
 	// SERVER
@@ -99,7 +100,7 @@ public enum ErrorCode {
 		public static final String S3_IMAGE_NOT_FOUND = "S3 에 이미지가 존재하지 않습니다.";
 
 		// 일정 관련
-		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 15자 이하여야 합니다.";
+		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 1자 이상 15자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_LOCATION = "일정 위치는 20자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 100자 이하여야 합니다.";
 		public static final String INVALID_REPEAT_RULE = "일정 규칙은 'N', 'D', 'W', 'M', 'Y' 중 하나여야 합니다.";
@@ -107,6 +108,7 @@ public enum ErrorCode {
 		public static final String INVALID_DATE_TIME_RANGE = "일정 시작 시간은 일정 종료 시간 이전이어야 합니다.";
 		public static final String INVALID_REPEAT_END_TIME_RANGE = "일정 반복 종료 시간은 2050년 이전이며, 일정 종료 시간 이후여야 합니다.";
 		public static final String INVALID_DIFFERENCE_DATE_TIME = "일정 시작과 끝 사이의 간격은 반복 규칙보다 클 수 없습니다.";
+		public static final String SCHEDULE_NOT_FOUND = "요청에 해당하는 일정을 찾을 수 없습니다.";
 
 		// 커플 관련
 		public static final String Member_NOT_CONNECTED = "다른 회원과 아직 연결되지 않은 회원입니다.";

@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.anniversary.dto;
+package com.dateplan.dateplan.domain.anniversary.service.dto.response;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import java.time.LocalDate;
@@ -11,7 +11,7 @@ import lombok.Getter;
 @Builder
 public class AnniversaryDatesServiceResponse {
 
-	private List<LocalDate> anniversaryDates = new ArrayList<>();
+	private List<LocalDate> anniversaryDates;
 
 	public static AnniversaryDatesServiceResponse from(List<Anniversary> anniversaries) {
 

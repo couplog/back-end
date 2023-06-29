@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.anniversary.dto;
+package com.dateplan.dateplan.domain.anniversary.service.dto.request;
 
 import static com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule.NONE;
 import static com.dateplan.dateplan.global.constant.DateConstants.CALENDER_END_DATE;

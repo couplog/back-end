@@ -10,4 +10,9 @@ public class FirstDateResponse {
 
 	private LocalDate firstDate;
 
+	public static FirstDateResponse from(FirstDateServiceResponse response) {
+		return FirstDateResponse.builder()
+			.firstDate(response.getFirstDate())
+			.build();
+	}
 }

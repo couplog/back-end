@@ -4,6 +4,7 @@ import com.dateplan.dateplan.domain.couple.dto.CoupleInfoResponse;
 import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.dto.FirstDateResponse;
+import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -27,8 +28,8 @@ public class CoupleController {
 	@Deprecated
 	@GetMapping("/{couple_id}/first-date")
 	public ApiResponse<FirstDateResponse> getFirstDate(@PathVariable("couple_id") Long coupleId) {
-		FirstDateResponse response = coupleService.getFirstDate(coupleId).toFirstDateResponse();
-		return ApiResponse.ofSuccess(response);
+		FirstDateServiceResponse response = coupleService.getFirstDate(coupleId);
+		return ApiResponse.ofSuccess(FirstDateResponse.from(response));
 	}
 
 	@PutMapping("/{couple_id}/first-date")
@@ -41,6 +42,6 @@ public class CoupleController {
 	@GetMapping("/me")
 	public ApiResponse<CoupleInfoResponse> getCoupleInfo() {
 		CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo();
-		return ApiResponse.ofSuccess(response.toCoupleInfoResponse());
+		return ApiResponse.ofSuccess(CoupleInfoResponse.from(response));
 	}
 }

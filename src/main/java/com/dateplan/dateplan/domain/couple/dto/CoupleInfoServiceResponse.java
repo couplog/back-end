@@ -11,12 +11,4 @@ public class CoupleInfoServiceResponse {
 	private Long coupleId;
 	private Long partnerId;
 	private LocalDate firstDate;
-
-	public CoupleInfoResponse toCoupleInfoResponse() {
-		return CoupleInfoResponse.builder()
-			.coupleId(coupleId)
-			.partnerId(partnerId)
-			.firstDate(firstDate)
-			.build();
-	}
 }

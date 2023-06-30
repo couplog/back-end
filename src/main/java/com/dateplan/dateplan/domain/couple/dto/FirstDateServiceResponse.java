@@ -9,11 +9,4 @@ import lombok.Getter;
 public class FirstDateServiceResponse {
 
 	private LocalDate firstDate;
-
-	public FirstDateResponse toFirstDateResponse() {
-		return FirstDateResponse.builder()
-			.firstDate(firstDate)
-			.build();
-	}
-
 }

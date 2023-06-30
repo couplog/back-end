@@ -1,5 +1,6 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.controller.dto.request;
 
+import com.dateplan.dateplan.domain.member.service.dto.request.PhoneServiceRequest;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -10,17 +11,14 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PhoneAuthCodeRequest {
+public class PhoneRequest {
 
 	@NotNull(message = DetailMessage.INVALID_PHONE_PATTERN)
 	@Pattern(regexp = "^010\\d{4}\\d{4}$", message = DetailMessage.INVALID_PHONE_PATTERN)
 	private String phone;
 
-	@NotNull(message = DetailMessage.INVALID_PHONE_AUTH_CODE_PATTERN)
-	@Pattern(regexp = "^\\d{6}$", message = DetailMessage.INVALID_PHONE_AUTH_CODE_PATTERN)
-	private String code;
+	public PhoneServiceRequest toServiceRequest() {
 
-	public PhoneAuthCodeServiceRequest toServiceRequest() {
-		return new PhoneAuthCodeServiceRequest(this.phone, this.code);
+		return new PhoneServiceRequest(this.phone);
 	}
 }

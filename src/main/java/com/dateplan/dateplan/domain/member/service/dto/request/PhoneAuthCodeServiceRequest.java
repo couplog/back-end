@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.service.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,5 +1,6 @@
-package com.dateplan.dateplan.domain.member.dto;
+package com.dateplan.dateplan.domain.member.service.dto.response;
 
+import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Gender;
 import java.time.LocalDate;

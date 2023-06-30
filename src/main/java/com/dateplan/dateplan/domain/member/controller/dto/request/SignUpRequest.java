@@ -1,9 +1,10 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.controller.dto.request;
 
 import static com.dateplan.dateplan.global.constant.InputPattern.*;
 import static com.dateplan.dateplan.global.constant.InputPattern.PHONE_PATTERN;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.*;
 
+import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.global.constant.Gender;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;

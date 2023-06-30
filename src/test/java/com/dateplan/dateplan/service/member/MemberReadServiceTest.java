@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;

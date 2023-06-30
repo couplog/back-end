@@ -1,5 +1,6 @@
-package com.dateplan.dateplan.domain.member.dto.signup;
+package com.dateplan.dateplan.domain.member.service.dto.response;
 
+import com.dateplan.dateplan.domain.member.controller.dto.response.SendSmsResponse;
 import lombok.Builder;
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package com.dateplan.dateplan.domain.member.dto;
+package com.dateplan.dateplan.domain.member.service.dto.response;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import lombok.Builder;

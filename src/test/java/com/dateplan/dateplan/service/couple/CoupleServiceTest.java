@@ -20,7 +20,7 @@ import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;

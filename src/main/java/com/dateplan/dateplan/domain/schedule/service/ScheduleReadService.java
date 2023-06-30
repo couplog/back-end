@@ -2,8 +2,8 @@ package com.dateplan.dateplan.domain.schedule.service;
 
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;

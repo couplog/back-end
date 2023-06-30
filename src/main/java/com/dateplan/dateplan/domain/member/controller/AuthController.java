@@ -2,15 +2,15 @@ package com.dateplan.dateplan.domain.member.controller;
 
 import static com.dateplan.dateplan.global.constant.Auth.BEARER;
 
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.login.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginResponse;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.SendSmsResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.AuthToken;
+import com.dateplan.dateplan.domain.member.controller.dto.request.LoginRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.LoginResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.PhoneAuthCodeRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.request.PhoneRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.SendSmsResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.SendSmsServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.SignUpRequest;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -66,7 +66,7 @@ public class AuthController {
 		HttpHeaders responseHeaders = setHeaderTokens(response.getAuthToken());
 		return ResponseEntity.ok()
 			.headers(responseHeaders)
-			.body(ApiResponse.ofSuccess(response.toLoginResponse()));
+			.body(ApiResponse.ofSuccess(LoginResponse.from(response)));
 	}
 
 	@PostMapping("/refresh")

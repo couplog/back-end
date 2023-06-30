@@ -1,6 +1,6 @@
 package com.dateplan.dateplan.domain.couple.service;
 
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;

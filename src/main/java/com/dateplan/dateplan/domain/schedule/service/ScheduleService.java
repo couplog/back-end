@@ -3,8 +3,8 @@ package com.dateplan.dateplan.domain.schedule.service;
 import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;

@@ -2,12 +2,12 @@ package com.dateplan.dateplan.domain.schedule.controller;
 
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleDatesResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleRequest;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleUpdateRequest;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;

@@ -21,17 +21,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.login.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.SignUpRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.AuthToken;
+import com.dateplan.dateplan.domain.member.controller.dto.request.LoginRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.PhoneAuthCodeRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.PhoneAuthCodeServiceRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.request.PhoneRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.SendSmsServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.SignUpRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.sms.type.SmsType;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;

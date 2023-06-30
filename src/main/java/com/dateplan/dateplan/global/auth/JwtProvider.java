@@ -7,7 +7,7 @@ import static com.dateplan.dateplan.global.constant.Auth.REFRESH_TOKEN_EXPIRATIO
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_ACCESS_TOKEN;
 import static com.dateplan.dateplan.global.constant.Auth.SUBJECT_REFRESH_TOKEN;
 
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
+import com.dateplan.dateplan.domain.member.service.dto.response.AuthToken;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;

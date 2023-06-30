@@ -3,15 +3,15 @@ package com.dateplan.dateplan.domain.member.controller;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
-import com.dateplan.dateplan.domain.member.dto.ConnectionRequest;
-import com.dateplan.dateplan.domain.member.dto.ConnectionResponse;
-import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.MemberInfoResponse;
-import com.dateplan.dateplan.domain.member.dto.MemberInfoServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
-import com.dateplan.dateplan.domain.member.dto.ProfileImageURLResponse;
-import com.dateplan.dateplan.domain.member.dto.ProfileImageURLServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.ConnectionResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.response.ProfileImageURLResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
@@ -99,9 +99,8 @@ public class MemberController {
 	@GetMapping("/{member_id}/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode(
 		@PathVariable("member_id") Long memberId) {
-		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode(
-			memberId);
-		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
+		ConnectionServiceResponse response = coupleService.getConnectionCode(memberId);
+		return ApiResponse.ofSuccess(ConnectionResponse.from(response));
 	}
 
 	@PostMapping("/{member_id}/connect")

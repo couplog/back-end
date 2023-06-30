@@ -1,7 +1,7 @@
 package com.dateplan.dateplan.domain.member.service;
 
-import com.dateplan.dateplan.domain.member.dto.PresignedURLResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.s3.S3Client;

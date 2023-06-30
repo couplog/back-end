@@ -19,11 +19,11 @@ import static org.mockito.Mockito.times;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.PhoneServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.signup.SendSmsServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.request.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.request.PhoneAuthCodeServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.PhoneServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.SendSmsServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;

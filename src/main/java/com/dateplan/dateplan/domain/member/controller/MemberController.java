@@ -99,9 +99,8 @@ public class MemberController {
 	@GetMapping("/{member_id}/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode(
 		@PathVariable("member_id") Long memberId) {
-		ConnectionServiceResponse connectionServiceResponse = coupleService.getConnectionCode(
-			memberId);
-		return ApiResponse.ofSuccess(connectionServiceResponse.toConnectionResponse());
+		ConnectionServiceResponse response = coupleService.getConnectionCode(memberId);
+		return ApiResponse.ofSuccess(ConnectionResponse.from(response));
 	}
 
 	@PostMapping("/{member_id}/connect")

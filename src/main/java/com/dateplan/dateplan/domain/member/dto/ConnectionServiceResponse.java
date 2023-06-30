@@ -8,10 +8,4 @@ import lombok.Getter;
 public class ConnectionServiceResponse {
 
 	private String connectionCode;
-
-	public ConnectionResponse toConnectionResponse() {
-		return ConnectionResponse.builder()
-			.connectionCode(connectionCode)
-			.build();
-	}
 }

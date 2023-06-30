@@ -66,7 +66,7 @@ public class AuthController {
 		HttpHeaders responseHeaders = setHeaderTokens(response.getAuthToken());
 		return ResponseEntity.ok()
 			.headers(responseHeaders)
-			.body(ApiResponse.ofSuccess(response.toLoginResponse()));
+			.body(ApiResponse.ofSuccess(LoginResponse.from(response)));
 	}
 
 	@PostMapping("/refresh")

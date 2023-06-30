@@ -10,10 +10,4 @@ public class LoginServiceResponse {
 
 	private AuthToken authToken;
 	private Boolean isConnected;
-
-	public LoginResponse toLoginResponse() {
-		return LoginResponse.builder()
-			.isConnected(isConnected)
-			.build();
-	}
 }

@@ -8,4 +8,10 @@ import lombok.Getter;
 public class LoginResponse {
 
 	private Boolean isConnected;
+
+	public static LoginResponse from(LoginServiceResponse response) {
+		return LoginResponse.builder()
+			.isConnected(response.getIsConnected())
+			.build();
+	}
 }

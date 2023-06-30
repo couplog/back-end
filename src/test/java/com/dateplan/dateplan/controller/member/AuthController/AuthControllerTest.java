@@ -21,10 +21,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
-import com.dateplan.dateplan.domain.member.dto.AuthToken;
-import com.dateplan.dateplan.domain.member.dto.login.LoginRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.login.LoginServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.AuthToken;
+import com.dateplan.dateplan.domain.member.controller.dto.request.LoginRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.LoginServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.LoginServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneAuthCodeServiceRequest;
 import com.dateplan.dateplan.domain.member.dto.signup.PhoneRequest;

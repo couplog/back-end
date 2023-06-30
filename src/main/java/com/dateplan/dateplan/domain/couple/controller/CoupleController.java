@@ -1,10 +1,10 @@
 package com.dateplan.dateplan.domain.couple.controller;
 
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoResponse;
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateResponse;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.couple.controller.dto.response.CoupleInfoResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
+import com.dateplan.dateplan.domain.couple.controller.dto.request.FirstDateRequest;
+import com.dateplan.dateplan.domain.couple.controller.dto.response.FirstDateResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;

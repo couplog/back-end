@@ -26,13 +26,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleDatesServiceResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleEntry;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleServiceResponse;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateRequest;
-import com.dateplan.dateplan.domain.schedule.dto.ScheduleUpdateServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleEntry;
+import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
+import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;

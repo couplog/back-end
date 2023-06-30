@@ -2,12 +2,12 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
-import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
-import com.dateplan.dateplan.domain.member.dto.ConnectionServiceRequest;
-import com.dateplan.dateplan.domain.member.dto.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.dto.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;

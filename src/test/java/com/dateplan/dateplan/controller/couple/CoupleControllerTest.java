@@ -11,10 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
-import com.dateplan.dateplan.domain.couple.dto.CoupleInfoServiceResponse;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateRequest;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceRequest;
-import com.dateplan.dateplan.domain.couple.dto.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
+import com.dateplan.dateplan.domain.couple.controller.dto.request.FirstDateRequest;
+import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;

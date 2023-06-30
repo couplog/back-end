@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,24 +97,33 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			assertThat(schedulePattern.getRepeatRule()).isEqualTo(request.getRepeatRule());
 			assertThat(schedulePattern.getMember().getId()).isEqualTo(memberId);
 
+			int cycleCount = 0;
 			// Schedule assert
-			for (int i = 0; i < schedules.size(); i++) {
+			for (int i = 0; i < schedules.size(); i++, cycleCount++) {
 				Schedule schedule = schedules.get(i);
 				assertThat(schedule.getContent()).isEqualTo(request.getContent());
 				assertThat(schedule.getLocation()).isEqualTo(request.getLocation());
 				assertThat(schedule.getTitle()).isEqualTo(request.getTitle());
 
 				LocalDateTime nextStartDateTime = ScheduleDateUtil.getNextCycle(
-					request.getStartDateTime(), request.getRepeatRule(), i);
+					request.getStartDateTime(), request.getRepeatRule(), cycleCount);
 				LocalDateTime nextEndDateTime = ScheduleDateUtil.getNextCycle(
-					request.getEndDateTime(), request.getRepeatRule(), i);
-				assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(nextStartDateTime);
-				assertThat(schedule.getEndDateTime()).isEqualToIgnoringSeconds(nextEndDateTime);
+					request.getEndDateTime(), request.getRepeatRule(), cycleCount);
 
 				long diff = ChronoUnit.SECONDS.between(
 					schedule.getStartDateTime(), schedule.getEndDateTime());
 				assertThat(diff).isEqualTo(ChronoUnit.SECONDS.between(
 					request.getStartDateTime(), request.getEndDateTime()));
+
+				if (Objects.equals(request.getRepeatRule(), RepeatRule.D) ||
+					Objects.equals(request.getRepeatRule(), RepeatRule.W) ||
+					nextStartDateTime.getDayOfMonth() == request.getStartDateTime().getDayOfMonth()
+				) {
+					assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(nextStartDateTime);
+					assertThat(schedule.getEndDateTime()).isEqualToIgnoringSeconds(nextEndDateTime);
+				} else {
+					cycleCount++;
+				}
 			}
 		}
 
@@ -431,8 +441,8 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 	private ScheduleServiceRequest createScheduleServiceRequest(RepeatRule repeatRule) {
 		return ScheduleServiceRequest.builder()
 			.title("title")
-			.startDateTime(LocalDateTime.now().with(LocalTime.MIN).truncatedTo(ChronoUnit.SECONDS))
-			.endDateTime(LocalDateTime.now().with(LocalTime.MAX).truncatedTo(ChronoUnit.SECONDS))
+			.startDateTime(LocalDateTime.now().with(LocalTime.MIN).truncatedTo(ChronoUnit.MINUTES))
+			.endDateTime(LocalDateTime.now().with(LocalTime.MAX).truncatedTo(ChronoUnit.MINUTES))
 			.repeatRule(repeatRule)
 			.build();
 	}

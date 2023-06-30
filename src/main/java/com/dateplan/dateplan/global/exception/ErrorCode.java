@@ -45,6 +45,7 @@ public enum ErrorCode {
 	INVALID_DIFFERENCE_DATE_TIME(BAD_REQUEST, "C026"),
 	COUPLE_NOT_FOUND(NOT_FOUND, "C027"),
 	SCHEDULE_NOT_FOUND(NOT_FOUND, "C028"),
+	ANNIVERSARY_NOT_FOUND(NOT_FOUND, "C029"),
 
 	// SERVER
 	SERVER_ERROR(INTERNAL_SERVER_ERROR, "S001"),
@@ -125,6 +126,7 @@ public enum ErrorCode {
 		public static final String INVALID_ANNIVERSARY_TITLE = "기념일 제목은 2 - 15자로 입력해 주세요.";
 		public static final String INVALID_ANNIVERSARY_CONTENT = "기념일 내용은 100자 이하로 입력해 주세요.";
 		public static final String INVALID_ANNIVERSARY_REPEAT_RULE = "반복 규칙은 NONE, YEAR 로 입력해 주세요.";
+		public static final String ANNIVERSARY_NOT_FOUND = "존재하지 않는 기념일입니다.";
 
 		// SERVER
 		public static final String SERVER_ERROR = "서버 내부에 문제가 생겼습니다.";

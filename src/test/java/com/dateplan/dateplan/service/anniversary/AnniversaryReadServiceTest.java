@@ -5,17 +5,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryDatesServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.AnniversaryServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.anniversary.dto.ComingAnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
+import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
@@ -24,6 +24,7 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
+import com.dateplan.dateplan.global.exception.anniversary.AnniversaryNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
@@ -436,6 +437,84 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			// when & then
 			assertThatThrownBy(() -> anniversaryReadService.readComingAnniversaries(
 				member, targetCoupleId, null, 3))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("기념일 id 로 기념일 조회시")
+	class FindAnniversaryByIdOrElseThrow {
+
+		private static final String NEED_ANNIVERSARIES = "needAnniversaries";
+
+		private Anniversary savedAnniversary;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
+				Member member = createMember("01011112222", "nickname1", LocalDate.of(1999, 10, 10));
+				Member partner = createMember("01022223333", "nickname2", LocalDate.of(1999, 10, 10));
+
+				memberRepository.saveAll(List.of(member, partner));
+
+				Couple couple = createCouple(member, partner, LocalDate.of(2020, 10, 10));
+				coupleRepository.save(couple);
+
+				AnniversaryPattern anniversaryPattern = createAnniversaryPattern(couple,
+					LocalDate.of(2022, 12, 12));
+
+				savedAnniversary = createAnniversary("title", LocalDate.of(2020, 12, 12),
+					anniversaryPattern);
+
+				anniversaryRepository.save(savedAnniversary);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+
+			savedAnniversary = null;
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
+				anniversaryRepository.deleteAllInBatch();
+				anniversaryPatternRepository.deleteAllInBatch();
+				coupleRepository.deleteAllInBatch();
+				memberRepository.deleteAllInBatch();
+			}
+		}
+
+		@Tag(NEED_ANNIVERSARIES)
+		@DisplayName("존재하는 id 로 조회한다면 기념일을 반환한다.")
+		@Test
+		void withExistsId() {
+
+			// Given
+			Long targetId = savedAnniversary.getId();
+
+			// When
+			Anniversary findAnniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
+				targetId, false);
+
+			// Then
+			assertThat(findAnniversary)
+				.usingRecursiveComparison()
+				.ignoringFields("anniversaryPattern")
+				.isEqualTo(savedAnniversary);
+		}
+
+		@DisplayName("존재하지 않는 id 로 조회한다면, 예외를 발생시킨다.")
+		@Test
+		void withNotExistsId() {
+
+			// given
+			Long targetId = 1000L;
+
+			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
+
+			// when & then
+			assertThatThrownBy(() -> anniversaryReadService.findAnniversaryByIdOrElseThrow(targetId, false))
 				.isInstanceOf(expectedException.getClass())
 				.hasMessage(expectedException.getMessage());
 		}

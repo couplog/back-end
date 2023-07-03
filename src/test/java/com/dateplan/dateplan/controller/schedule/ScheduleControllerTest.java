@@ -26,13 +26,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
-import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleEntry;
 import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleRequest;
-import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleEntry;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -426,7 +426,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 			// Stubbing
 			given(scheduleReadService.readSchedules(
-				anyLong(), anyLong(), any(Member.class), any(), anyInt(), anyInt()))
+				anyLong(), any(Member.class), anyInt(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -458,7 +458,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleServiceResponse response = createScheduleServiceResponse();
 
 			// Stubbing
-			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
+			given(scheduleReadService.readSchedules(anyLong(), any(Member.class),
 				anyInt(), anyInt(), anyInt())).willReturn(response);
 
 			// When & Then
@@ -481,7 +481,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.READ);
-			given(scheduleReadService.readSchedules(anyLong(), anyLong(), any(Member.class),
+			given(scheduleReadService.readSchedules(anyLong(), any(Member.class),
 				anyInt(), anyInt(), anyInt())).willThrow(exception);
 
 			mockMvc.perform(get(REQUEST_URL, 1L)
@@ -501,7 +501,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 			// Stubbing
 			MemberNotConnectedException exception = new MemberNotConnectedException();
-			given(coupleReadService.getPartnerId(any(Member.class)))
+			given(scheduleReadService.readSchedules(
+				anyLong(), any(Member.class), anyInt(), anyInt(), anyInt()))
 				.willThrow(exception);
 
 			// When & Then
@@ -858,12 +859,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-					.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1)
-					.param("deleteRepeat", "true"))
+					delete(REQUEST_URL, 1, 1)
+						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isOk(),
 					jsonPath("$.success").value("true")
@@ -926,8 +927,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1)
-					.param("deleteRepeat", "true"))
+					delete(REQUEST_URL, 1, 1)
+						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isForbidden(),
 					jsonPath("$.success").value("false"),
@@ -948,8 +949,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 
 			// When & Then
 			mockMvc.perform(
-				delete(REQUEST_URL, 1, 1)
-					.param("deleteRepeat", "true"))
+					delete(REQUEST_URL, 1, 1)
+						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isNotFound(),
 					jsonPath("$.success").value("false"),

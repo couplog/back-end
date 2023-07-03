@@ -40,14 +40,14 @@ public class ScheduleReadService {
 
 	public ScheduleServiceResponse readSchedules(
 		Long requestId,
-		Long coupleId,
 		Member member,
 		Integer year,
 		Integer month,
 		Integer day
 	) {
-		validatePermission(requestId, member.getId(), coupleId);
-		List<Schedule> schedules = scheduleQueryRepository.findByDateBetween(member.getId(),
+		Long partnerId = coupleReadService.getPartnerId(member);
+		validatePermission(requestId, member.getId(), partnerId);
+		List<Schedule> schedules = scheduleQueryRepository.findByDateBetween(requestId,
 			year, month, day);
 		return ScheduleServiceResponse.from(schedules);
 	}

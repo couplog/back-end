@@ -11,15 +11,15 @@ import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleEntry;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -162,6 +162,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		private Member partner;
 		private Couple couple;
 		private final List<ScheduleEntry> schedules = new ArrayList<>();
+		private final List<ScheduleEntry> partnerSchedules = new ArrayList<>();
 
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
@@ -177,6 +178,14 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 				for (int i = 0; i < 5; i++) {
 					Schedule savedSchedule = createSchedule(LocalDate.now(), pattern);
 					schedules.add(
+						ScheduleEntry.from(scheduleRepository.save(savedSchedule)));
+				}
+
+				SchedulePattern partnerPattern = schedulePatternRepository.save(
+					createSchedulePattern(LocalDate.now(), LocalDate.now(), partner));
+				for (int i = 0; i < 5; i++) {
+					Schedule savedSchedule = createSchedule(LocalDate.now(), partnerPattern);
+					partnerSchedules.add(
 						ScheduleEntry.from(scheduleRepository.save(savedSchedule)));
 				}
 			}
@@ -197,9 +206,13 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		@Test
 		void successWithValidRequest() {
 
+			//Stubbing
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willReturn(partner.getId());
+
 			// Given
 			ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedules(
-				member.getId(), couple.getId(), member,
+				member.getId(), member,
 				LocalDate.now().getYear(),
 				LocalDate.now().getMonthValue(),
 				LocalDate.now().getDayOfMonth());
@@ -221,6 +234,42 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 				.isSortedAccordingTo(Comparator.naturalOrder());
 		}
 
+		@DisplayName("상대방의 id로 요청하면, 상대방의 일정이 조회된다")
+		@Test
+		void successWithPartnerId() {
+
+			//Stubbing
+			given(coupleReadService.getPartnerId(any(Member.class)))
+				.willReturn(partner.getId());
+
+			// Given
+			ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedules(
+				partner.getId(), member,
+				LocalDate.now().getYear(),
+				LocalDate.now().getMonthValue(),
+				LocalDate.now().getDayOfMonth());
+
+			// When & Then
+			for (int i = 0; i < scheduleServiceResponse.getSchedules().size(); i++) {
+				ScheduleEntry actual = scheduleServiceResponse.getSchedules().get(i);
+				assertThat(actual.getScheduleId()).isEqualTo(
+					partnerSchedules.get(i).getScheduleId());
+				assertThat(actual.getTitle()).isEqualTo(partnerSchedules.get(i).getTitle());
+				assertThat(actual.getContent()).isEqualTo(partnerSchedules.get(i).getContent());
+				assertThat(actual.getLocation()).isEqualTo(partnerSchedules.get(i).getLocation());
+				assertThat(actual.getStartDateTime()).isEqualTo(
+					partnerSchedules.get(i).getStartDateTime());
+				assertThat(actual.getEndDateTime()).isEqualTo(
+					partnerSchedules.get(i).getEndDateTime());
+				assertThat(actual.getRepeatRule()).isEqualTo(
+					partnerSchedules.get(i).getRepeatRule());
+			}
+
+			assertThat(scheduleServiceResponse.getSchedules())
+				.extracting(ScheduleEntry::getStartDateTime)
+				.isSortedAccordingTo(Comparator.naturalOrder());
+		}
+
 		@DisplayName("요청한 member_id가 회원 또는 연결된 회원의 id가 아니면 실패한다")
 		@Test
 		void failWithNoPermission() {
@@ -232,7 +281,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			assertThatThrownBy(
-				() -> scheduleReadService.readSchedules(partner.getId() + 100, couple.getId(),
+				() -> scheduleReadService.readSchedules(partner.getId() + 100,
 					member, now.getYear(), now.getMonthValue(), now.getDayOfMonth()))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());

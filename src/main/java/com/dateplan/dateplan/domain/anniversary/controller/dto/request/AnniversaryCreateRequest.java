@@ -28,7 +28,7 @@ public class AnniversaryCreateRequest {
 	@Size(min = 2, max = 15, message = INVALID_ANNIVERSARY_TITLE)
 	private String title;
 
-	@Size(max = 100, message = INVALID_ANNIVERSARY_CONTENT)
+	@Size(max = 80, message = INVALID_ANNIVERSARY_CONTENT)
 	private String content;
 
 	@NotNull(message = INVALID_ANNIVERSARY_REPEAT_RULE)

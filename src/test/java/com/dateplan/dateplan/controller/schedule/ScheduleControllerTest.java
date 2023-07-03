@@ -256,7 +256,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.title("title")
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().minusDays(1))
-				.location(createLengthString(101))
+				.location(createLengthString(81))
 				.content("content")
 				.repeatRule(RepeatRule.M)
 				.build();
@@ -785,7 +785,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.startDateTime(LocalDateTime.now())
 				.endDateTime(LocalDateTime.now().plusDays(5))
 				.location("location")
-				.content(createLengthString(101))
+				.content(createLengthString(81))
 				.build();
 
 			// Stub

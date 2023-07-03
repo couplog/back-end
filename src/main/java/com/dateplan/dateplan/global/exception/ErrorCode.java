@@ -102,7 +102,7 @@ public enum ErrorCode {
 		// 일정 관련
 		public static final String INVALID_SCHEDULE_TITLE = "제목은 필수이며, 1자 이상 15자 이하여야 합니다.";
 		public static final String INVALID_SCHEDULE_LOCATION = "일정 위치는 20자 이하여야 합니다.";
-		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 100자 이하여야 합니다.";
+		public static final String INVALID_SCHEDULE_CONTENT = "일정 내용은 80자 이하여야 합니다.";
 		public static final String INVALID_REPEAT_RULE = "일정 규칙은 'N', 'D', 'W', 'M', 'Y' 중 하나여야 합니다.";
 		public static final String INVALID_SCHEDULE_TIME = "일정 시작 시간과 종료 시간은 필수입니다.";
 		public static final String INVALID_DATE_TIME_RANGE = "일정 시작 시간은 일정 종료 시간 이전이어야 합니다.";
@@ -124,7 +124,7 @@ public enum ErrorCode {
 
 		// 기념일 관련
 		public static final String INVALID_ANNIVERSARY_TITLE = "기념일 제목은 2 - 15자로 입력해 주세요.";
-		public static final String INVALID_ANNIVERSARY_CONTENT = "기념일 내용은 100자 이하로 입력해 주세요.";
+		public static final String INVALID_ANNIVERSARY_CONTENT = "기념일 내용은 80자 이하로 입력해 주세요.";
 		public static final String INVALID_ANNIVERSARY_REPEAT_RULE = "반복 규칙은 NONE, YEAR 로 입력해 주세요.";
 		public static final String ANNIVERSARY_NOT_FOUND = "존재하지 않는 기념일입니다.";
 

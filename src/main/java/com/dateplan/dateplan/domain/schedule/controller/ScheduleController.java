@@ -1,15 +1,14 @@
 package com.dateplan.dateplan.domain.schedule.controller;
 
-import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleDatesResponse;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleRequest;
-import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleResponse;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.controller.dto.request.ScheduleUpdateRequest;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleDatesResponse;
+import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleResponse;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -31,7 +30,6 @@ public class ScheduleController {
 
 	private final ScheduleService scheduleService;
 	private final ScheduleReadService scheduleReadService;
-	private final CoupleReadService coupleReadService;
 
 	@PostMapping("/{member_id}/schedules")
 	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
@@ -60,9 +58,8 @@ public class ScheduleController {
 		@RequestParam(value = "day") Integer day
 	) {
 		final Member member = MemberThreadLocal.get();
-		Long coupleId = coupleReadService.getPartnerId(member);
-		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, coupleId,
-			member, year, month, day);
+		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, member, year,
+			month, day);
 		return ApiResponse.ofSuccess(ScheduleResponse.from(response));
 	}
 

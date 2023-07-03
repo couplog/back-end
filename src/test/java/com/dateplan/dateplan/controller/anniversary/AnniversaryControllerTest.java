@@ -146,7 +146,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.message").value(INVALID_ANNIVERSARY_TITLE));
 		}
 
-		@DisplayName("내용이 100자 이상이라면 에러 코드, 메시지를 응답한다.")
+		@DisplayName("내용이 81자 이상이라면 에러 코드, 메시지를 응답한다.")
 		@Test
 		void withInvalidContentLength() throws Exception {
 
@@ -154,7 +154,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			Long coupleId = 1L;
 			AnniversaryCreateRequest request = AnniversaryCreateRequest.builder()
 				.title("title")
-				.content("t".repeat(101))
+				.content("t".repeat(81))
 				.date(LocalDate.of(2020, 10, 10))
 				.repeatRule(AnniversaryRepeatRule.YEAR)
 				.build();
@@ -768,7 +768,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			Long coupleId = 1L;
 			Long anniversaryId = 1L;
 			AnniversaryModifyRequest request = createAnniversaryModifyRequest(
-				"title", "a".repeat(101), LocalDate.of(2020, 10, 10));
+				"title", "a".repeat(81), LocalDate.of(2020, 10, 10));
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL, coupleId, anniversaryId)

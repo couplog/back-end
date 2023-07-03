@@ -40,7 +40,7 @@ public class ScheduleRequest {
 	@Size(max = 20, message = INVALID_SCHEDULE_LOCATION)
 	private String location;
 
-	@Size(max = 100, message = INVALID_SCHEDULE_CONTENT)
+	@Size(max = 80, message = INVALID_SCHEDULE_CONTENT)
 	private String content;
 
 	@NotNull(message = INVALID_REPEAT_RULE)

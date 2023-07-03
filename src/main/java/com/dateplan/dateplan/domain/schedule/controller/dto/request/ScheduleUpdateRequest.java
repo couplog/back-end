@@ -39,7 +39,7 @@ public class ScheduleUpdateRequest {
 	@Size(max = 20, message = INVALID_SCHEDULE_LOCATION)
 	private String location;
 
-	@Size(max = 100, message = INVALID_SCHEDULE_CONTENT)
+	@Size(max = 80, message = INVALID_SCHEDULE_CONTENT)
 	private String content;
 
 	public ScheduleUpdateServiceRequest toScheduleUpdateServiceRequest() {

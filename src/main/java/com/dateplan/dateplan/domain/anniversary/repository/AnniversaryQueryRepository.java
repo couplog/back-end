@@ -26,7 +26,7 @@ public class AnniversaryQueryRepository {
 	private final JPAQueryFactory queryFactory;
 
 	public List<Anniversary> findAllByCoupleIdAndDateInfo(Long coupleId, Integer year,
-		Integer month, Integer day, boolean patternFetchJoinRequired) {
+		Integer month, Integer day, boolean patternFetchJoinRequired, boolean onlyRepeatStarted) {
 
 		if (coupleId == null) {
 			return List.of();
@@ -45,6 +45,11 @@ public class AnniversaryQueryRepository {
 			baseQuery
 				.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
 				.innerJoin(anniversaryPattern.couple, couple);
+		}
+
+		if (onlyRepeatStarted) {
+			baseQuery
+				.where(anniversaryPattern.repeatStartDate.eq(anniversary.date));
 		}
 
 		return baseQuery.fetch();

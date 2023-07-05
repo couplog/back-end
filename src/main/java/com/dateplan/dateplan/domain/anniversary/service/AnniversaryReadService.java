@@ -27,7 +27,7 @@ public class AnniversaryReadService {
 	private final AnniversaryQueryRepository anniversaryQueryRepository;
 
 	public AnniversaryListServiceResponse readAnniversaries(Member loginMember,
-		Long targetCoupleId, Integer year, Integer month, Integer day) {
+		Long targetCoupleId, Integer year, Integer month, Integer day, boolean onlyRepeatStarted) {
 
 		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
 			loginMember).getId();
@@ -37,7 +37,7 @@ public class AnniversaryReadService {
 		}
 
 		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
-			targetCoupleId, year, month, day, true);
+			targetCoupleId, year, month, day, true, onlyRepeatStarted);
 
 		return AnniversaryListServiceResponse.from(anniversaries);
 	}
@@ -69,7 +69,7 @@ public class AnniversaryReadService {
 		}
 
 		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
-			targetCoupleId, year, month, null, false);
+			targetCoupleId, year, month, null, false, false);
 
 		return AnniversaryDatesServiceResponse.from(anniversaries);
 	}

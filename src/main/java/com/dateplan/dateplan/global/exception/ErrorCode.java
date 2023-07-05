@@ -123,7 +123,7 @@ public enum ErrorCode {
 		public static final String PHONE_AUTH_LIMIT_OVER = "하루 전화번호 인증 횟수(5회)를 초과하였습니다. 24시간 이후에 다시 시도해 주세요.";
 
 		// 기념일 관련
-		public static final String INVALID_ANNIVERSARY_TITLE = "기념일 제목은 2 - 15자로 입력해 주세요.";
+		public static final String INVALID_ANNIVERSARY_TITLE = "기념일 제목은 2 - 10자로 입력해 주세요.";
 		public static final String INVALID_ANNIVERSARY_CONTENT = "기념일 내용은 80자 이하로 입력해 주세요.";
 		public static final String INVALID_ANNIVERSARY_REPEAT_RULE = "반복 규칙은 NONE, YEAR 로 입력해 주세요.";
 		public static final String ANNIVERSARY_NOT_FOUND = "존재하지 않는 기념일입니다.";

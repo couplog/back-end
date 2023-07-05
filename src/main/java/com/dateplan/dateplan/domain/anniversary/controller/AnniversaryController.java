@@ -51,15 +51,16 @@ public class AnniversaryController {
 	@GetMapping
 	public ApiResponse<AnniversaryListResponse> readAnniversaries(
 		@PathVariable("couple_id") Long coupleId,
-		@RequestParam("year") Integer year,
-		@RequestParam("month") Integer month,
-		@RequestParam("day") Integer day
+		@RequestParam(value = "year", required = false) Integer year,
+		@RequestParam(value = "month", required = false) Integer month,
+		@RequestParam(value = "day", required = false) Integer day,
+		@RequestParam(value = "onlyRepeatStarted", required = false) boolean onlyRepeatStarted
 	) {
 
 		Member loginMember = MemberThreadLocal.get();
 
 		AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
-			loginMember, coupleId, year, month, day);
+			loginMember, coupleId, year, month, day, onlyRepeatStarted);
 
 		return ApiResponse.ofSuccess(AnniversaryListResponse.from(serviceResponse));
 	}

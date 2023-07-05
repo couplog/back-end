@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -908,6 +909,115 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 					.content(om.writeValueAsString(request))
 					.contentType(MediaType.APPLICATION_JSON)
 					.characterEncoding(StandardCharsets.UTF_8))
+				.andExpect(
+					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+	}
+
+	@Nested
+	@DisplayName("기념일 삭제시")
+	class DeleteAnniversary {
+
+		private static final String REQUEST_URL = "/api/couples/{couple_id}/anniversary/{anniversary_id}";
+
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("대상 기념일이 현재 로그인 회원의 커플 기념일이고, 생일, 처음만난날 관련 기념일이 아니면 요청에 성공한다.")
+		@Test
+		void withLoginMembersCouplesAnniversaryAndNotRelatedBirthDayAndFirstDate()
+			throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Long anniversaryId = 1L;
+
+			// when & Then
+			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"));
+		}
+
+		@DisplayName("존재하지 않는 기념일 id 로 요청한다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNotExistsAnniversaryId() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Long anniversaryId = 1L;
+
+			// stub
+			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
+
+			willThrow(expectedException)
+				.given(anniversaryService)
+				.deleteAnniversary(any(Member.class), anyLong(),
+					anyLong());
+
+			// when & then
+			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
+				.andExpect(
+					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+
+		@DisplayName("해당 기념일에 삭제 권한이 없다면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNoPermissionForAnniversary() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Long anniversaryId = 1L;
+
+			// stub
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.DELETE);
+
+			willThrow(expectedException)
+				.given(anniversaryService)
+				.deleteAnniversary(any(Member.class), anyLong(),
+					anyLong());
+
+			// when & then
+			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
+				.andExpect(
+					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
+				.andExpect(jsonPath("$.success").value("false"))
+				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
+				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+
+		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
+		@Test
+		void withNotConnectedMember() throws Exception {
+
+			// given
+			Long coupleId = 1L;
+			Long anniversaryId = 1L;
+
+			// stub
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			willThrow(expectedException)
+				.given(anniversaryService)
+				.deleteAnniversary(any(Member.class), anyLong(),
+					anyLong());
+
+			// when & then
+			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
 				.andExpect(
 					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
 				.andExpect(jsonPath("$.success").value("false"))

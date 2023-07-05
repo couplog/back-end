@@ -97,7 +97,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 		}
 
 		@Tag(NEED_DATING)
-		@DisplayName("올바른 memberId를 요청하면 성공한다")
+		@DisplayName("올바른 coupleId를 요청하면 성공한다")
 		@Test
 		void successWithValidRequest() {
 
@@ -117,7 +117,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 		}
 
 		@Tag(NEED_DATING)
-		@DisplayName("올바른 memberId, 특정한 연도와 월을 요청하면 그에 해당하는 일정만 조회된다.")
+		@DisplayName("올바른 coupleId, 특정한 연도와 월을 요청하면 그에 해당하는 일정만 조회된다.")
 		@Test
 		void successWithValidRequestAndParam() {
 
@@ -146,7 +146,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 				.isSortedAccordingTo(LocalDate::compareTo);
 		}
 
-		@DisplayName("로그인한 회원과 요청한 memberId가 다르면 실패한다.")
+		@DisplayName("로그인한 회원이 연결된 커플의 id와 요청한 coupldId가 다르면 실패한다.")
 		@Test
 		void failWithNoPermission() {
 

@@ -331,7 +331,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			MemberThreadLocal.remove();
 		}
 
-		@DisplayName("올바른 member_id, year, month를 입력하면 성공한다.")
+		@DisplayName("올바른 couple_id, year, month를 입력하면 성공한다.")
 		@Test
 		void successWithValidRequest() throws Exception {
 
@@ -356,7 +356,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@DisplayName("현재 로그인한 회원이 연결된 커플의 couple_id와 요청의 couple_id가 다르면 실패한다.")
 		@Test
 		void failWithNoPermissionRequest() throws Exception {
 

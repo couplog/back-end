@@ -7,6 +7,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INV
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.INVALID_DATE_PATTERN;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -22,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryCreateRequest;
 import com.dateplan.dateplan.domain.anniversary.controller.dto.request.AnniversaryModifyRequest;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryModifyServiceRequest;
@@ -57,7 +59,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 public class AnniversaryControllerTest extends ControllerTestSupport {
 
@@ -457,7 +458,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// stub
 			given(
 				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
-					anyInt(), anyInt()))
+					anyInt(), anyInt(), anyBoolean()))
 				.willReturn(serviceResponse);
 
 			// when & then
@@ -475,6 +476,8 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 					serviceResponses.get(0).getContent()))
 				.andExpect(jsonPath("$.data.anniversaries[0].repeatRule").value(
 					serviceResponses.get(0).getRepeatRule().name()))
+				.andExpect(jsonPath("$.data.anniversaries[0].category").value(
+					serviceResponses.get(0).getCategory().name()))
 				.andExpect(jsonPath("$.data.anniversaries[0].date").value(
 					serviceResponses.get(0).getDate().toString()));
 		}
@@ -494,7 +497,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 
 			given(
 				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
-					anyInt(), anyInt()))
+					anyInt(), anyInt(), anyBoolean()))
 				.willThrow(expectedException);
 
 			// when & then
@@ -525,7 +528,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 
 			given(
 				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
-					anyInt(), anyInt()))
+					anyInt(), anyInt(), anyBoolean()))
 				.willThrow(expectedException);
 
 			// when & then
@@ -538,42 +541,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
 				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("조회 연도, 월, 일 중 하나라도 비어있다면 에러 코드, 메시지를 응답한다.")
-		@CsvSource({"year", "month", "day"})
-		@ParameterizedTest
-		void withEmptyYearOrMonthOrDay(String emptyProperty) throws Exception {
-
-			// given
-			Long coupleId = 1L;
-
-			Integer year = 2023;
-			Integer month = 1;
-			Integer day = 1;
-
-			// when & then
-
-			MockHttpServletRequestBuilder requestBuilder = get(REQUEST_URL,
-				coupleId);
-
-			switch (emptyProperty) {
-				case "year" -> requestBuilder.queryParam("month", String.valueOf(month))
-					.queryParam("day", String.valueOf(day));
-				case "month" -> requestBuilder.queryParam("year", String.valueOf(year))
-					.queryParam("day", String.valueOf(day));
-				case "day" -> requestBuilder.queryParam("year", String.valueOf(year))
-					.queryParam("month", String.valueOf(month));
-			}
-
-			mockMvc.perform(requestBuilder)
-				.andExpect(
-					status().is(ErrorCode.MISSING_REQUEST_PARAMETER.getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(ErrorCode.MISSING_REQUEST_PARAMETER.getCode()))
-				.andExpect(jsonPath("$.message").value(
-					String.format(DetailMessage.MISSING_REQUEST_PARAMETER, emptyProperty))
-				);
 		}
 	}
 
@@ -955,6 +922,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			.title("title")
 			.content("content")
 			.repeatRule(AnniversaryRepeatRule.YEAR)
+			.category(AnniversaryCategory.OTHER)
 			.date(LocalDate.of(2021, 1, 1))
 			.build();
 

@@ -227,12 +227,11 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 		}
 
 		@AfterEach
-		void tearDown(TestInfo testInfo) {
+		void tearDown() {
 
-			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
-				anniversaryRepository.deleteAllInBatch();
-				anniversaryPatternRepository.deleteAllInBatch();
-			}
+			anniversaryRepository.deleteAllInBatch();
+			anniversaryPatternRepository.deleteAllInBatch();
+
 			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
 		}
@@ -255,7 +254,7 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 
 			// when
 			AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
-				member, coupleId, year, month, day);
+				member, coupleId, year, month, day, false);
 
 			// then
 			List<AnniversaryServiceResponse> actualServiceResponseList = serviceResponse.getAnniversaries();
@@ -263,6 +262,46 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 				.filter(anniversary -> Objects.equals(anniversary.getDate(), date))
 				.map(AnniversaryServiceResponse::of)
 				.toList();
+
+			assertThat(actualServiceResponseList)
+				.usingRecursiveFieldByFieldElementComparator()
+				.containsExactlyElementsOf(expectedServiceResponseList);
+		}
+
+		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 같고, 반복 기념일은 시작일만 조회한다면 해당 기념일 목록을 시간 순으로 반환한다.")
+		@Test
+		void withSameValueLoginMemberCoupleIdAndTargetCoupleIdAndReadWithOnlyReadRepeatStarted() {
+
+			// given
+			Long coupleId = couple.getId();
+			LocalDate repeatStartDate = LocalDate.of(2020, 10, 10);
+			LocalDate repeatEndDate = LocalDate.of(2021, 10, 10);
+			AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
+				.couple(couple)
+				.repeatStartDate(repeatStartDate)
+				.repeatEndDate(repeatEndDate)
+				.repeatRule(AnniversaryRepeatRule.YEAR)
+				.build();
+
+			Anniversary anniversary1 = createAnniversary("title1", repeatStartDate,
+				anniversaryPattern);
+			Anniversary anniversary2 = createAnniversary("title2", repeatEndDate,
+				anniversaryPattern);
+
+			anniversaryRepository.saveAll(List.of(anniversary1, anniversary2));
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+
+			// when
+			AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
+				member, coupleId, null, null, null, true);
+
+			// then
+			List<AnniversaryServiceResponse> actualServiceResponseList = serviceResponse.getAnniversaries();
+			List<AnniversaryServiceResponse> expectedServiceResponseList = List.of(
+				AnniversaryServiceResponse.of(anniversary1));
 
 			assertThat(actualServiceResponseList)
 				.usingRecursiveFieldByFieldElementComparator()
@@ -454,8 +493,10 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 		void setUp(TestInfo testInfo) {
 
 			if (testInfo.getTags().contains(NEED_ANNIVERSARIES)) {
-				Member member = createMember("01011112222", "nickname1", LocalDate.of(1999, 10, 10));
-				Member partner = createMember("01022223333", "nickname2", LocalDate.of(1999, 10, 10));
+				Member member = createMember("01011112222", "nickname1",
+					LocalDate.of(1999, 10, 10));
+				Member partner = createMember("01022223333", "nickname2",
+					LocalDate.of(1999, 10, 10));
 
 				memberRepository.saveAll(List.of(member, partner));
 
@@ -514,7 +555,8 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
 
 			// when & then
-			assertThatThrownBy(() -> anniversaryReadService.findAnniversaryByIdOrElseThrow(targetId, false))
+			assertThatThrownBy(
+				() -> anniversaryReadService.findAnniversaryByIdOrElseThrow(targetId, false))
 				.isInstanceOf(expectedException.getClass())
 				.hasMessage(expectedException.getMessage());
 		}

@@ -1,12 +1,14 @@
 package com.dateplan.dateplan.domain.couple.controller;
 
-import com.dateplan.dateplan.domain.couple.controller.dto.response.CoupleInfoResponse;
-import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.controller.dto.request.FirstDateRequest;
+import com.dateplan.dateplan.domain.couple.controller.dto.response.CoupleInfoResponse;
 import com.dateplan.dateplan.domain.couple.controller.dto.response.FirstDateResponse;
-import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
+import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +37,19 @@ public class CoupleController {
 	@PutMapping("/{couple_id}/first-date")
 	public ApiResponse<Void> updateFirstDate(@PathVariable("couple_id") Long coupleId,
 		@Valid @RequestBody FirstDateRequest request) {
-		coupleService.updateFirstDate(coupleId, request.toFirstDateServiceRequest());
+
+		Member loginMember = MemberThreadLocal.get();
+
+		coupleService.updateFirstDate(loginMember, coupleId, request.toFirstDateServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 
 	@GetMapping("/me")
 	public ApiResponse<CoupleInfoResponse> getCoupleInfo() {
-		CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo();
+
+		Member loginMember = MemberThreadLocal.get();
+
+		CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo(loginMember);
 		return ApiResponse.ofSuccess(CoupleInfoResponse.from(response));
 	}
 }

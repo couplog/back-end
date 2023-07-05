@@ -3,14 +3,13 @@ package com.dateplan.dateplan.domain.schedule.service;
 import static com.dateplan.dateplan.global.util.ScheduleDateUtil.getNextCycle;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleJDBCRepository;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -35,13 +34,13 @@ public class ScheduleService {
 	private final ScheduleReadService scheduleReadService;
 	private final ScheduleRepository scheduleRepository;
 
-	public void createSchedule(Long memberId, ScheduleServiceRequest request) {
-		Member member = MemberThreadLocal.get();
-		if (!isSameMember(memberId, member.getId())) {
+	public void createSchedule(Member loginMember, Long memberId, ScheduleServiceRequest request) {
+
+		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.CREATE);
 		}
 
-		SchedulePattern schedulePattern = request.toSchedulePatternEntity(member);
+		SchedulePattern schedulePattern = request.toSchedulePatternEntity(loginMember);
 		schedulePatternRepository.save(schedulePattern);
 
 		List<Schedule> schedules = getSchedules(request, schedulePattern);
@@ -53,10 +52,10 @@ public class ScheduleService {
 		Long memberId,
 		Long scheduleId,
 		ScheduleUpdateServiceRequest request,
-		Member member,
+		Member loginMember,
 		Boolean updateRepeat
 	) {
-		if (!isSameMember(memberId, member.getId())) {
+		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
@@ -77,7 +76,8 @@ public class ScheduleService {
 			request.getEndDateTime());
 		List<Schedule> schedules = scheduleReadService.findBySchedulePatternId(
 			schedule.getSchedulePattern().getId());
-		scheduleJDBCRepository.processBatchUpdate(schedules, request.getTitle(), request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
+		scheduleJDBCRepository.processBatchUpdate(schedules, request.getTitle(),
+			request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
 	}
 
 	private void updateSingleSchedule(ScheduleUpdateServiceRequest request, Schedule schedule) {
@@ -90,8 +90,9 @@ public class ScheduleService {
 		);
 	}
 
-	public void deleteSchedule(Long memberId, Long scheduleId, Member member, Boolean deleteRepeat) {
-		if (!isSameMember(memberId, member.getId())) {
+	public void deleteSchedule(Long memberId, Long scheduleId, Member loginMember,
+		Boolean deleteRepeat) {
+		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);

@@ -1,10 +1,9 @@
 package com.dateplan.dateplan.domain.member.service;
 
-import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.MemberNotFoundException;
@@ -46,10 +45,9 @@ public class MemberReadService {
 			.orElseThrow(MemberNotFoundException::new);
 	}
 
-	public ProfileImageURLServiceResponse getProfileImageURL(Long targetMemberId,
+	public ProfileImageURLServiceResponse getProfileImageURL(Member loginMember,
+		Long targetMemberId,
 		Long loginMemberPartnerId) {
-
-		Member loginMember = MemberThreadLocal.get();
 
 		String profileImageURL;
 

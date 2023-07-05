@@ -2,15 +2,15 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
-import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
-import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
+import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
-import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -53,10 +53,10 @@ public class CoupleService {
 			.build();
 	}
 
-	public void updateFirstDate(Long coupleId, FirstDateServiceRequest request) {
-		final Member member = MemberThreadLocal.get();
+	public void updateFirstDate(Member loginMember, Long coupleId,
+		FirstDateServiceRequest request) {
 
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(loginMember);
 
 		if (!isSameCouple(coupleId, couple.getId())) {
 			throw new NoPermissionException(Resource.COUPLE, Operation.UPDATE);
@@ -65,8 +65,7 @@ public class CoupleService {
 		couple.updateFirstDate(request.getFirstDate());
 	}
 
-	public ConnectionServiceResponse getConnectionCode(Long memberId) {
-		final Member loginMember = MemberThreadLocal.get();
+	public ConnectionServiceResponse getConnectionCode(Member loginMember, Long memberId) {
 
 		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
@@ -94,9 +93,8 @@ public class CoupleService {
 			.build();
 	}
 
-	public CoupleConnectServiceResponse connectCouple(Long memberId,
+	public CoupleConnectServiceResponse connectCouple(Member loginMember, Long memberId,
 		ConnectionServiceRequest request) {
-		final Member loginMember = MemberThreadLocal.get();
 
 		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);

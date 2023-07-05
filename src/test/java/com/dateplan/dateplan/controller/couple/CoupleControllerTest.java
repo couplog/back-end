@@ -11,10 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
-import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.controller.dto.request.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
@@ -25,6 +28,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -125,6 +129,17 @@ public class CoupleControllerTest extends ControllerTestSupport {
 	@DisplayName("커플 처음 만난 날 수정 시")
 	class UpdateFirstDate {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/couples/{couple_id}/first-date";
 
 		@DisplayName("올바른 coupleId, request를 요청하면 성공한다")
@@ -137,7 +152,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(coupleService)
-				.updateFirstDate(anyLong(), any(FirstDateServiceRequest.class));
+				.updateFirstDate(any(Member.class), anyLong(), any(FirstDateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -177,7 +192,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new MemberNotConnectedException())
 				.given(coupleService)
-				.updateFirstDate(anyLong(), any(FirstDateServiceRequest.class));
+				.updateFirstDate(any(Member.class), anyLong(), any(FirstDateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -226,7 +241,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(exception)
 				.given(coupleService)
-				.updateFirstDate(anyLong(), any(FirstDateServiceRequest.class));
+				.updateFirstDate(any(Member.class), anyLong(), any(FirstDateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -246,6 +261,17 @@ public class CoupleControllerTest extends ControllerTestSupport {
 	@DisplayName("현재 연결되어 있는 커플 정보를 조회하려 할 때")
 	class GetCoupleInfo {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/couples/me";
 
 		@DisplayName("현재 커플에 연결되어 있다면, 성공한다")
@@ -256,12 +282,12 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			CoupleInfoServiceResponse response = createCoupleInfoServiceResponse();
 
 			// Stub
-			given(coupleReadService.getCoupleInfo())
+			given(coupleReadService.getCoupleInfo(any(Member.class)))
 				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(
-				get(REQUEST_URL))
+					get(REQUEST_URL))
 				.andExpect(status().isOk())
 				.andExpectAll(
 					jsonPath("$.success").value("true"),
@@ -276,7 +302,7 @@ public class CoupleControllerTest extends ControllerTestSupport {
 		void failWithNotConnected() throws Exception {
 
 			// Stub
-			given(coupleReadService.getCoupleInfo())
+			given(coupleReadService.getCoupleInfo(any(Member.class)))
 				.willThrow(new MemberNotConnectedException());
 
 			// When & Then
@@ -308,6 +334,18 @@ public class CoupleControllerTest extends ControllerTestSupport {
 			.coupleId(1L)
 			.partnerId(1L)
 			.firstDate(LocalDate.of(2010, 10, 10))
+			.build();
+	}
+
+	private Member createMember() {
+
+		return Member.builder()
+			.name("홍길동")
+			.nickname("nickname")
+			.phone("01012341234")
+			.password("password")
+			.gender(Gender.MALE)
+			.birthDay(LocalDate.of(1999, 10, 10))
 			.build();
 	}
 }

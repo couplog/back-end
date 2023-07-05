@@ -3,14 +3,13 @@ package com.dateplan.dateplan.service.couple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
+import com.dateplan.dateplan.domain.couple.service.dto.response.CoupleInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.couple.CoupleNotFoundException;
@@ -149,15 +148,14 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 	@DisplayName("현재 연결되어 있는 커플 정보를 조회하려 할 때")
 	class getCoupleInfo {
 
-		Member member1;
-		Member member2;
-		Couple couple;
+		private Member member1;
+		private Member member2;
+		private Couple couple;
 
 		@AfterEach
 		void tearDown() {
 			coupleRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
-			MemberThreadLocal.remove();
 		}
 
 		@BeforeEach
@@ -166,7 +164,6 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			member2 = createMember("01012345679", "nickname2");
 			memberRepository.saveAll(List.of(member1, member2));
 			couple = coupleRepository.save(createCouple(member1, member2));
-			MemberThreadLocal.set(member1);
 		}
 
 		@DisplayName("요청한 회원이 커플에 연결되어 있다면 성공한다")
@@ -174,7 +171,7 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 		void successWithConnected() {
 
 			// When
-			CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo();
+			CoupleInfoServiceResponse response = coupleReadService.getCoupleInfo(member1);
 
 			// Then
 			assertThat(response.getCoupleId()).isEqualTo(couple.getId());
@@ -189,10 +186,9 @@ public class CoupleReadServiceTest extends ServiceTestSupport {
 			// Given
 			Member notConnectedMember = memberRepository.save(
 				createMember("01011112222", "nickname3"));
-			MemberThreadLocal.set(notConnectedMember);
 
 			// When & Then
-			assertThatThrownBy(() -> coupleReadService.getCoupleInfo())
+			assertThatThrownBy(() -> coupleReadService.getCoupleInfo(notConnectedMember))
 				.isInstanceOf(MemberNotConnectedException.class)
 				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 		}

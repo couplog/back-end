@@ -77,6 +77,17 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 	@DisplayName("개인 일정을 생성할 때")
 	class CreateSchedule {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private final static String REQUEST_URL = "/api/members/{member_id}/schedules";
 
 		@DisplayName("올바른 멤버 id와, 일정 정보를 입력하면 성공한다.")
@@ -89,7 +100,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			mockMvc.perform(post(REQUEST_URL, 1L)
 					.content(om.writeValueAsString(request))
@@ -111,7 +122,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				Operation.READ);
 			willThrow(expectedException)
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -143,7 +154,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -174,7 +185,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -204,7 +215,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -234,7 +245,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -264,7 +275,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -292,7 +303,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -310,6 +321,17 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 	@DisplayName("일정 날짜 조회 시")
 	class ReadScheduleDates {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private final static String REQUEST_URL = "/api/members/{member_id}/schedules/dates";
 
 		@DisplayName("올바른 member_id, year, month를 입력하면 성공한다.")
@@ -322,7 +344,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.map(LocalDate::toString).toList();
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
+				anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -343,7 +366,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.CREATE);
-			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
+				anyInt()))
 				.willThrow(exception);
 
 			// When & Then
@@ -362,7 +386,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 		void failWithNotConnectedRequest() throws Exception {
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
+				anyInt()))
 				.willThrow(new MemberNotConnectedException());
 
 			// When & Then
@@ -385,7 +410,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
+			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
+				anyInt()))
 				.willReturn(response);
 
 			// When & Then

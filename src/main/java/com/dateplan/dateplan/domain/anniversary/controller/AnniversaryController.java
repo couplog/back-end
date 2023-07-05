@@ -43,7 +43,9 @@ public class AnniversaryController {
 	public ApiResponse<Void> createAnniversary(@PathVariable("couple_id") Long coupleId,
 		@RequestBody @Valid AnniversaryCreateRequest request) {
 
-		anniversaryService.createAnniversaries(MemberThreadLocal.get(), coupleId,
+		Member loginMember = MemberThreadLocal.get();
+
+		anniversaryService.createAnniversaries(loginMember, coupleId,
 			request.toServiceRequest());
 
 		return ApiResponse.ofSuccess();

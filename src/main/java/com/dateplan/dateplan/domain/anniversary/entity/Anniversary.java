@@ -31,7 +31,7 @@ public class Anniversary {
 	private Long id;
 
 	@NotNull
-	@Column(name = "title", columnDefinition = "VARCHAR(15)")
+	@Column(name = "title", columnDefinition = "VARCHAR(10)")
 	private String title;
 
 	@Column(name = "content", columnDefinition = "VARCHAR(80)")

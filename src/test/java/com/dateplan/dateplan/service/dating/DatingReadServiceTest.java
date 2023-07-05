@@ -62,23 +62,21 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 
 		private static final String NEED_DATING = "needDating";
 
-		Member member;
-		Member partner;
-		Couple couple;
-		List<LocalDate> savedDatingDates;
-		List<Dating> savedDatingList;
+		private Member member;
+		private Couple couple;
+		private List<LocalDate> savedDatingDates;
 
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
 			member = memberRepository.save(createMember("01012345678", "aaa"));
-			partner = memberRepository.save(createMember("01012345679", "bbb"));
+			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
 			couple = coupleRepository.save(createCouple(member, partner));
 			MemberThreadLocal.set(member);
 
 			if (testInfo.getTags().contains(NEED_DATING)) {
 				LocalDate now = LocalDate.now();
 				savedDatingDates = now.datesUntil(now.plusMonths(2)).toList();
-				savedDatingList = savedDatingDates.stream()
+				List<Dating> savedDatingList = savedDatingDates.stream()
 					.map(date -> createDating(date, couple))
 					.toList();
 				datingRepository.saveAll(savedDatingList);

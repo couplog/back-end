@@ -1,11 +1,14 @@
 package com.dateplan.dateplan.controller.dating;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingCreateRequest;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
+import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
@@ -29,11 +33,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.MediaType;
 
 public class DatingControllerTest extends ControllerTestSupport {
@@ -306,6 +315,116 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("데이트 일정 날짜 조회 시")
+	class ReadDatingDates {
+
+		private final static String REQUEST_URL = "/api/couples/{couple_id}/dating/dates";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("올바른 member_id, year, month를 입력하면 성공한다.")
+		@Test
+		void successWithValidRequest() throws Exception {
+
+			// Given
+			DatingDatesServiceResponse response = createDatingDatesServiceResponse();
+			List<String> expectedDates = response.getDatingDates().stream()
+				.map(LocalDate::toString).toList();
+
+			// Stubbing
+			given(
+				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.success").value("true"))
+				.andExpect(jsonPath("$.data.datingDates")
+					.value(containsInAnyOrder(expectedDates.toArray()))
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
+		@Test
+		void failWithNoPermissionRequest() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+			given(
+				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isForbidden())
+				.andExpectAll(
+					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
+		@Test
+		void failWithNotConnectedRequest() throws Exception {
+
+			// Stubbing
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			given(
+				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1L)
+					.param("year", String.valueOf(LocalDate.now().getYear()))
+					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
+				.andExpect(status().isBadRequest())
+				.andExpectAll(
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("year과 month에 올바르지 않은 값이 들어가면 실패한다.")
+		@ParameterizedTest
+		@CsvSource({"aaaa,12", "2019,aa"})
+		void failWithInvalidQueryParameter(String year, String month) throws Exception {
+			// Given
+			Map<String, String> requestMap = Map.of("year", year, "month", month);
+			DatingDatesServiceResponse response = createDatingDatesServiceResponse();
+
+			// Stubbing
+			given(
+				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(get(REQUEST_URL, 1)
+					.param("year", requestMap.get("year"))
+					.param("month", requestMap.get("month")))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Integer"))
+				);
+		}
+	}
+
 	private static Member createMember() {
 		return Member.builder()
 			.name("name")
@@ -333,5 +452,17 @@ public class DatingControllerTest extends ControllerTestSupport {
 			.endDateTime(endDateTime == null ?
 				LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.MINUTES) : endDateTime)
 			.build();
+	}
+
+	public DatingDatesServiceResponse createDatingDatesServiceResponse() {
+		return DatingDatesServiceResponse.builder()
+			.datingDates(createDatingDates())
+			.build();
+	}
+
+	private List<LocalDate> createDatingDates() {
+		return LocalDate.now().withDayOfMonth(1)
+			.datesUntil(LocalDate.now().withDayOfMonth(1).plusMonths(1))
+			.collect(Collectors.toList());
 	}
 }

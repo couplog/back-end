@@ -25,13 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
+import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
-import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
-import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -74,6 +74,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 연결 코드 조회 시")
 	class GetConnectionCode {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
 
 		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
@@ -85,7 +96,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				new NoPermissionException(Resource.MEMBER, Operation.READ);
 
 			//Stub
-			given(coupleService.getConnectionCode(anyLong()))
+			given(coupleService.getConnectionCode(any(Member.class), anyLong()))
 				.willThrow(exception);
 
 			// When & Then
@@ -108,7 +119,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			ConnectionServiceResponse response = createConnectionServiceResponse(connectionCode);
 
 			// Stub
-			given(coupleService.getConnectionCode(anyLong()))
+			given(coupleService.getConnectionCode(any(Member.class), anyLong()))
 				.willReturn(response);
 
 			// When & Then
@@ -127,6 +138,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 연결 시")
 	class ConnectCouple {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/connect";
 
 		@DisplayName("자신의 id가 아닌 다른 id를 요청하면 실패한다.")
@@ -138,7 +160,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 
 			//Stub
-			given(coupleService.getConnectionCode(anyLong()))
+			given(coupleService.getConnectionCode(any(Member.class), anyLong()))
 				.willThrow(exception);
 
 			// When & Then
@@ -163,7 +185,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willReturn(createCoupleConnectServiceResponse())
 				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+				.connectCouple(any(Member.class), anyLong(), any(ConnectionServiceRequest.class));
 			willDoNothing()
 				.given(anniversaryService)
 				.createAnniversariesForBirthDay(anyLong());
@@ -215,7 +237,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new InvalidConnectionCodeException())
 				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+				.connectCouple(any(Member.class), anyLong(), any(ConnectionServiceRequest.class));
 
 			mockMvc.perform(
 					post(REQUEST_URL, "1")
@@ -241,7 +263,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new AlreadyConnectedException())
 				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+				.connectCouple(any(Member.class), anyLong(), any(ConnectionServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -268,7 +290,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willThrow(new SelfConnectionNotAllowedException())
 				.given(coupleService)
-				.connectCouple(anyLong(), any(ConnectionServiceRequest.class));
+				.connectCouple(any(Member.class), anyLong(), any(ConnectionServiceRequest.class));
 
 			mockMvc.perform(
 					post(REQUEST_URL, "1")
@@ -314,6 +336,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("프로필 이미지 업로드를 위한 Presigned URL 요청시")
 	class GetPresignedURL {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image/presigned-url";
 
 		@DisplayName("S3 요청, 응답에 문제가 없다면 Presigned URL 을 응답한다.")
@@ -325,7 +358,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			PresignedURLResponse expectedResponse = createPresignedURLResponse(expectedURLStr);
 
 			// Stub
-			given(memberService.getPresignedURLForProfileImage(anyLong()))
+			given(memberService.getPresignedURLForProfileImage(any(Member.class), anyLong()))
 				.willReturn(expectedResponse);
 
 			// When & Then
@@ -342,7 +375,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			SdkClientException sdkClientException = new SdkClientException("message");
 			S3Exception expectedException = new S3Exception(S3_CREATE_PRESIGNED_URL_FAIL,
 				sdkClientException);
-			given(memberService.getPresignedURLForProfileImage(anyLong()))
+			given(memberService.getPresignedURLForProfileImage(any(Member.class), anyLong()))
 				.willThrow(expectedException);
 
 			// When & Then
@@ -362,7 +395,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
 				Operation.READ);
-			given(memberService.getPresignedURLForProfileImage(anyLong()))
+			given(memberService.getPresignedURLForProfileImage(any(Member.class), anyLong()))
 				.willThrow(expectedException);
 
 			// When & Then
@@ -380,6 +413,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("S3 내에 있는 프로필 사진 URL 을 DB 에 저장하려고 할 때")
 	class CheckAndSaveImage {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
 
 		@DisplayName("S3 내에 해당 유저의 프로필 이미지가 존재한다면, 요청에 성공한다.")
@@ -389,7 +433,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.checkAndSaveProfileImage(anyLong());
+				.checkAndSaveProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL, 1L))
@@ -404,7 +448,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			S3ImageNotFoundException expectedException = new S3ImageNotFoundException();
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveProfileImage(anyLong());
+				.checkAndSaveProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL, 1L))
@@ -425,7 +469,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				Operation.UPDATE);
 			willThrow(expectedException)
 				.given(memberService)
-				.checkAndSaveProfileImage(anyLong());
+				.checkAndSaveProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(put(REQUEST_URL, 1L))
@@ -442,6 +486,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("회원 프로필 이미지 삭제 요청시")
 	class DeleteProfileImage {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
 
 		@DisplayName("S3 요청, 응답에 문제가 없다면 요청에 성공한다.")
@@ -451,7 +506,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(memberService)
-				.deleteProfileImage(anyLong());
+				.deleteProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(delete(REQUEST_URL, 1L))
@@ -468,7 +523,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				sdkClientException);
 			willThrow(expectedException)
 				.given(memberService)
-				.deleteProfileImage(anyLong());
+				.deleteProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(delete(REQUEST_URL, 1L))
@@ -489,7 +544,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 				Operation.DELETE);
 			willThrow(expectedException)
 				.given(memberService)
-				.deleteProfileImage(anyLong());
+				.deleteProfileImage(any(Member.class), anyLong());
 
 			// When & Then
 			mockMvc.perform(delete(REQUEST_URL, 1L))
@@ -617,6 +672,17 @@ public class MemberControllerTest extends ControllerTestSupport {
 	@DisplayName("특정 회원의 프로필 이미지 조회 요청시")
 	class GetProfileImageURL {
 
+		@BeforeEach
+		void setUp() {
+			Member member = createMember();
+			MemberThreadLocal.set(member);
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
 		private static final String REQUEST_URL = "/api/members/{member_id}/profile/image";
 
 		@DisplayName("로그인한 회원 자신 혹은 연결된 회원의 프로필 이미지 조회 요청이면 성공한다.")
@@ -630,7 +696,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 			ProfileImageURLServiceResponse serviceResponse = createProfileImageURLServiceResponse();
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willReturn(partnerId);
-			given(memberReadService.getProfileImageURL(anyLong(), anyLong()))
+			given(memberReadService.getProfileImageURL(any(Member.class), anyLong(), anyLong()))
 				.willReturn(serviceResponse);
 
 			// When & Then
@@ -674,7 +740,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 
 			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
 				Operation.READ);
-			given(memberReadService.getProfileImageURL(anyLong(), anyLong()))
+			given(memberReadService.getProfileImageURL(any(Member.class), anyLong(), anyLong()))
 				.willThrow(expectedException);
 
 			// When & Then

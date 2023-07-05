@@ -4,12 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -235,13 +234,11 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			partner = createMember("01011112222", "nickname2", "imageURL2");
 			other = createMember("01022223333", "nickname3", "imageURL3");
 			memberRepository.saveAll(List.of(loginMember, partner, other));
-			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
 		void tearDown() {
 			memberRepository.deleteAllInBatch();
-			MemberThreadLocal.remove();
 		}
 
 		@DisplayName("자기 자신의 프로필 이미지를 조회한 경우, 프로필 이미지를 응답한다.")
@@ -254,6 +251,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 
 			// When
 			ProfileImageURLServiceResponse response = memberReadService.getProfileImageURL(
+				loginMember,
 				targetMemberId, partnerMemberId);
 
 			// Then
@@ -271,6 +269,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 
 			// When
 			ProfileImageURLServiceResponse response = memberReadService.getProfileImageURL(
+				loginMember,
 				targetMemberId, partnerMemberId);
 
 			// Then
@@ -285,10 +284,13 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			// Given
 			Long targetMemberId = other.getId();
 			Long partnerMemberId = partner.getId();
-			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER, Operation.READ);
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
 
 			// When & Then
-			assertThatThrownBy(() -> memberReadService.getProfileImageURL(targetMemberId, partnerMemberId))
+			assertThatThrownBy(
+				() -> memberReadService.getProfileImageURL(loginMember, targetMemberId,
+					partnerMemberId))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(expectedException.getMessage());
 		}
@@ -300,10 +302,13 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			// Given
 			Long targetMemberId = loginMember.getId() + 100;
 			Long partnerMemberId = partner.getId();
-			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER, Operation.READ);
+			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
 
 			// When & Then
-			assertThatThrownBy(() -> memberReadService.getProfileImageURL(targetMemberId, partnerMemberId))
+			assertThatThrownBy(
+				() -> memberReadService.getProfileImageURL(loginMember, targetMemberId,
+					partnerMemberId))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(expectedException.getMessage());
 		}
@@ -333,7 +338,7 @@ class MemberReadServiceTest extends ServiceTestSupport {
 			.build();
 	}
 
-	private Member createMember(String phone, String nickname, String profileImageURL){
+	private Member createMember(String phone, String nickname, String profileImageURL) {
 
 		Member member = createMember(phone, nickname);
 

@@ -5,14 +5,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
-import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
-import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleService;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
+import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -63,12 +62,10 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		@BeforeEach
 		void setUp() {
 			member = memberRepository.save(createMember("nickname"));
-			MemberThreadLocal.set(member);
 		}
 
 		@AfterEach
 		void tearDown() {
-			MemberThreadLocal.remove();
 			scheduleRepository.deleteAllInBatch();
 			schedulePatternRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
@@ -84,7 +81,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// When
-			scheduleService.createSchedule(memberId, request);
+			scheduleService.createSchedule(member, memberId, request);
 
 			// Then
 			SchedulePattern schedulePattern = schedulePatternRepository.findAll().get(0);
@@ -119,7 +116,8 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					Objects.equals(request.getRepeatRule(), RepeatRule.W) ||
 					nextStartDateTime.getDayOfMonth() == request.getStartDateTime().getDayOfMonth()
 				) {
-					assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(nextStartDateTime);
+					assertThat(schedule.getStartDateTime()).isEqualToIgnoringSeconds(
+						nextStartDateTime);
 					assertThat(schedule.getEndDateTime()).isEqualToIgnoringSeconds(nextEndDateTime);
 				} else {
 					cycleCount++;
@@ -142,7 +140,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// Then
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.CREATE);
-			assertThatThrownBy(() -> scheduleService.createSchedule(otherMemberId, request))
+			assertThatThrownBy(() -> scheduleService.createSchedule(member, otherMemberId, request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -160,7 +158,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
 			member = memberRepository.save(createMember("nickname"));
-			MemberThreadLocal.set(member);
 
 			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
 				SchedulePattern schedulePattern = schedulePatternRepository.save(
@@ -188,7 +185,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				scheduleRepository.deleteAllInBatch();
 				schedulePatternRepository.deleteAllInBatch();
 			}
-			MemberThreadLocal.remove();
 			memberRepository.deleteAllInBatch();
 		}
 
@@ -292,7 +288,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
 			member = memberRepository.save(createMember("nickname"));
-			MemberThreadLocal.set(member);
 
 			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
 				SchedulePattern schedulePattern = schedulePatternRepository.save(
@@ -320,7 +315,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				scheduleRepository.deleteAllInBatch();
 				schedulePatternRepository.deleteAllInBatch();
 			}
-			MemberThreadLocal.remove();
 			memberRepository.deleteAllInBatch();
 		}
 

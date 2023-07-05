@@ -20,7 +20,6 @@ import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
@@ -83,7 +82,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			member = memberRepository.save(createMember("01012345678", "aaa"));
 			partner = memberRepository.save(createMember("01012345679", "bbb"));
 			couple = coupleRepository.save(createCouple(member, partner));
-			MemberThreadLocal.set(member);
 
 			LocalDate now = LocalDate.now();
 
@@ -113,7 +111,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willReturn(partner.getId());
 
-			ScheduleDatesServiceResponse response = scheduleReadService.readScheduleDates(
+			ScheduleDatesServiceResponse response = scheduleReadService.readScheduleDates(member,
 				member.getId(), null, null);
 
 			List<LocalDate> actualDates = response.getScheduleDates();
@@ -127,7 +125,8 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		void failWithNoPermission() {
 
 			assertThatThrownBy(
-				() -> scheduleReadService.readScheduleDates(member.getId() + 100, null, null))
+				() -> scheduleReadService.readScheduleDates(member, member.getId() + 100, null,
+					null))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
 					Operation.READ.getName()));
@@ -144,7 +143,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 				.willThrow(new MemberNotConnectedException());
 
 			assertThatThrownBy(
-				() -> scheduleReadService.readScheduleDates(member.getId(), null, null))
+				() -> scheduleReadService.readScheduleDates(member, member.getId(), null, null))
 				.isInstanceOf(MemberNotConnectedException.class)
 				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
 

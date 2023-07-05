@@ -781,6 +781,204 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("기념일 삭제시")
+	class DeleteAnniversary {
+
+		private static final String NEED_ANNIVERSARY = "needAnniversary";
+
+		private Member member;
+		private Couple couple;
+		private List<Anniversary> savedAnniversaries;
+		private Anniversary firstDateAnniversary;
+		private Anniversary birthDayAnniversary;
+
+		@BeforeEach
+		void setUp(TestInfo testInfo) {
+
+			member = createMember("01011112222", "nickname1", LocalDate.of(2000, 1, 1));
+			Member partner = createMember("01022223333", "nickname2",
+				LocalDate.of(2000, 1, 1));
+			memberRepository.save(member);
+			memberRepository.save(partner);
+
+			couple = createCouple(member, partner,
+				LocalDate.of(2010, 1, 1));
+			coupleRepository.save(couple);
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARY)) {
+
+				LocalDate startDate = LocalDate.of(2040, 10, 10);
+
+				AnniversaryPattern anniversaryPattern = createAnniversaryPattern(couple,
+					startDate, AnniversaryRepeatRule.YEAR);
+
+				savedAnniversaries = createRepeatedAnniversaries(startDate,
+					"title", "content", anniversaryPattern);
+
+				anniversaryRepository.saveAll(savedAnniversaries);
+			}
+		}
+
+		@AfterEach
+		void tearDown(TestInfo testInfo) {
+
+			savedAnniversaries = null;
+
+			if (testInfo.getTags().contains(NEED_ANNIVERSARY)) {
+				anniversaryRepository.deleteAllInBatch();
+				anniversaryPatternRepository.deleteAllInBatch();
+			}
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("로그인한 회원의 커플이 소유한 기념일이라면, 해당 기념일 및 연관된 기념일 모두 삭제된다.")
+		@Test
+		void withLoginMembersCoupleHaveGivenAnniversary() {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(savedAnniversaries.get(0));
+
+			// when
+			anniversaryService.deleteAnniversary(member, couple.getId(), targetAnniversaryId);
+
+			// then
+			List<Anniversary> actualAnniversaries = anniversaryRepository.findAll().stream()
+				.filter(anniversary -> anniversary.getCategory().equals(AnniversaryCategory.OTHER))
+				.toList();
+
+			assertThat(actualAnniversaries)
+				.isEmpty();
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("로그인한 회원의 커플이 소유한 기념일이 아니라면, 예외를 발생시킨다.")
+		@Test
+		void withLoginMembersCoupleNotHaveGivenAnniversary() {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.DELETE);
+
+			// stub
+			Couple anotherCouple = createCouple(null, null, null);
+			ReflectionTestUtils.setField(anotherCouple, "id", 100L);
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(anotherCouple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(savedAnniversaries.get(0));
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.deleteAnniversary(member, couple.getId(), targetAnniversaryId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("주어진 커플 id 와 로그인한 회원의 커플 id 가 다르다면, 예외를 발생시킨다.")
+		@Test
+		void withDifferentCoupleId() {
+
+			// given
+			Long coupleId = 1000L;
+			Long targetAnniversaryId = 1000L;
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.DELETE);
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.deleteAnniversary(member, coupleId, targetAnniversaryId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("존재하지 않는 기념일 id 가 주어졌다면, 예외를 발생시킨다.")
+		@Test
+		void withNotExistsAnniversaryId() {
+
+			// given
+			Long targetAnniversaryId = 1000L;
+
+			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.deleteAnniversary(member, couple.getId(), targetAnniversaryId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("생일 및 처음만난 날 관련 기념일이라면, 예외를 발생시킨다.")
+		@EnumSource(value = AnniversaryCategory.class, mode = Mode.EXCLUDE, names = {"OTHER"})
+		@ParameterizedTest
+		void withFirstDateOrBirthDayAnniversary(AnniversaryCategory category) {
+
+			// given
+			Long targetAnniversaryId = savedAnniversaries.get(0).getId();
+
+			NoPermissionException expectedException = new NoPermissionException(
+				Resource.ANNIVERSARY, Operation.UPDATE);
+
+			// stub
+			Anniversary anniversary = savedAnniversaries.get(0);
+			ReflectionTestUtils.setField(anniversary, "category", category);
+
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willReturn(couple);
+			given(anniversaryReadService.findAnniversaryByIdOrElseThrow(anyLong(), anyBoolean()))
+				.willReturn(anniversary);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.deleteAnniversary(member, couple.getId(), targetAnniversaryId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+
+		@DisplayName("연결되지 않은 회원의 경우, 예외를 발생시킨다.")
+		@Test
+		void withNotConnectedMember() {
+
+			// given
+			Long targetAnniversaryId = 1000L;
+
+			MemberNotConnectedException expectedException = new MemberNotConnectedException();
+
+			// stub
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willThrow(expectedException);
+
+			// when & then
+			assertThatThrownBy(() ->
+				anniversaryService.deleteAnniversary(member, couple.getId(), targetAnniversaryId))
+				.isInstanceOf(expectedException.getClass())
+				.hasMessage(expectedException.getMessage());
+		}
+	}
+
 	private Member createMember(String phone, String nickname, LocalDate birth) {
 
 		return Member.builder()

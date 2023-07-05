@@ -9,6 +9,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -66,8 +67,8 @@ public class ScheduleQueryRepository {
 		if (month == null) {
 			return schedule.startDateTime.year().loe(year);
 		}
-		return schedule.startDateTime.year().loe(year)
-			.and(schedule.startDateTime.month().loe(month));
+		return schedule.startDateTime.loe(
+			YearMonth.of(year, month).atEndOfMonth().atTime(LocalTime.MAX));
 	}
 
 	private BooleanExpression endDateTimeGoe(Integer year, Integer month) {
@@ -80,7 +81,7 @@ public class ScheduleQueryRepository {
 		if (month == null) {
 			return schedule.endDateTime.year().goe(year);
 		}
-		return schedule.endDateTime.year().goe(year)
-			.and(schedule.endDateTime.month().goe(month));
+		return schedule.endDateTime.goe(
+			YearMonth.of(year,month).atEndOfMonth().atTime(LocalTime.MIN));
 	}
 }

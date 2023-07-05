@@ -12,9 +12,11 @@ import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class DatingService {
 
 	private final DatingRepository datingRepository;

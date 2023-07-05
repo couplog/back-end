@@ -104,6 +104,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			scheduleRepository.deleteAllInBatch();
 			schedulePatternRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
+			MemberThreadLocal.remove();
 		}
 
 		@DisplayName("올바른 memberId, year, month를 요청하면 성공한다")

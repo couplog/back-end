@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -105,6 +106,19 @@ public class AnniversaryController {
 
 		anniversaryService.modifyAnniversary(loginMember, coupleId, anniversaryId,
 			request.toServiceRequest());
+
+		return ApiResponse.ofSuccess();
+	}
+
+	@DeleteMapping("/{anniversary_id}")
+	public ApiResponse<Void> deleteAnniversary(
+		@PathVariable("couple_id") Long coupleId,
+		@PathVariable("anniversary_id") Long anniversaryId
+	) {
+
+		Member loginMember = MemberThreadLocal.get();
+
+		anniversaryService.deleteAnniversary(loginMember, coupleId, anniversaryId);
 
 		return ApiResponse.ofSuccess();
 	}

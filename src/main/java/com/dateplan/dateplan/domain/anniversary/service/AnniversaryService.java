@@ -220,5 +220,28 @@ public class AnniversaryService {
 			request.getContent(), request.getDate());
 	}
 
+	public void deleteAnniversary(Member loginMember, Long coupleId, Long anniversaryId) {
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(loginMember);
+
+		if (!Objects.equals(couple.getId(), coupleId)) {
+			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.DELETE);
+		}
+
+		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
+			anniversaryId, true);
+
+		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
+
+		Long anniversaryOwnerCoupleId = anniversaryPattern.getCouple().getId();
+
+		if (!Objects.equals(anniversaryOwnerCoupleId, coupleId) ||
+			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
+		) {
+			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
+		}
+
+		anniversaryRepository.deleteAllByAnniversaryPatternId(anniversaryPattern.getId());
+	}
 
 }

@@ -2,12 +2,11 @@ package com.dateplan.dateplan.domain.schedule.service;
 
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
-import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
+import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
@@ -53,13 +52,14 @@ public class ScheduleReadService {
 	}
 
 	public ScheduleDatesServiceResponse readScheduleDates(
+		Member loginMember,
 		Long requestId,
 		Integer year,
 		Integer month
 	) {
-		Member member = MemberThreadLocal.get();
-		Long partnerId = coupleReadService.getPartnerId(member);
-		validatePermission(requestId, member.getId(), partnerId);
+
+		Long partnerId = coupleReadService.getPartnerId(loginMember);
+		validatePermission(requestId, loginMember.getId(), partnerId);
 
 		List<Schedule> schedules = scheduleQueryRepository
 			.findByYearAndMonthOrderByDate(requestId, year, month);

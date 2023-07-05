@@ -1,12 +1,11 @@
 package com.dateplan.dateplan.domain.member.service;
 
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
-import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
+import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3Client;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
@@ -42,9 +41,7 @@ public class MemberService {
 		authService.deleteAuthenticationInfoInRedis(phone);
 	}
 
-	public PresignedURLResponse getPresignedURLForProfileImage(Long memberId) {
-
-		Member loginMember = MemberThreadLocal.get();
+	public PresignedURLResponse getPresignedURLForProfileImage(Member loginMember, Long memberId) {
 
 		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
@@ -58,9 +55,7 @@ public class MemberService {
 			.build();
 	}
 
-	public void checkAndSaveProfileImage(Long memberId) {
-
-		Member loginMember = MemberThreadLocal.get();
+	public void checkAndSaveProfileImage(Member loginMember, Long memberId) {
 
 		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
@@ -76,9 +71,7 @@ public class MemberService {
 		memberRepository.save(loginMember);
 	}
 
-	public void deleteProfileImage(Long memberId) {
-
-		Member loginMember = MemberThreadLocal.get();
+	public void deleteProfileImage(Member loginMember, Long memberId) {
 
 		if (!isSameMember(memberId, loginMember.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
@@ -90,7 +83,7 @@ public class MemberService {
 		memberRepository.save(loginMember);
 	}
 
-	private boolean isSameMember(Long memberId, Long loginMemberId){
+	private boolean isSameMember(Long memberId, Long loginMemberId) {
 
 		return Objects.equals(memberId, loginMemberId);
 	}

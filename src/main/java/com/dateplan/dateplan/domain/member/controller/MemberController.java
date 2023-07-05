@@ -5,16 +5,16 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.ConnectionResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.ProfileImageURLResponse;
-import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
+import com.dateplan.dateplan.domain.member.service.dto.response.ProfileImageURLServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -53,7 +53,9 @@ public class MemberController {
 	@GetMapping("/partner")
 	public ApiResponse<MemberInfoResponse> getPartnerMemberInfo() {
 
-		Long partnerId = coupleReadService.getPartnerId(MemberThreadLocal.get());
+		Member loginMember = MemberThreadLocal.get();
+
+		Long partnerId = coupleReadService.getPartnerId(loginMember);
 		MemberInfoServiceResponse serviceResponse = memberReadService.getMemberInfo(partnerId);
 
 		return ApiResponse.ofSuccess(serviceResponse.toResponse(true));
@@ -63,9 +65,12 @@ public class MemberController {
 	public ApiResponse<ProfileImageURLResponse> getProfileImageURL(
 		@PathVariable("member_id") Long memberId) {
 
-		Long partnerId = coupleReadService.getPartnerId(MemberThreadLocal.get());
+		Member loginMember = MemberThreadLocal.get();
+
+		Long partnerId = coupleReadService.getPartnerId(loginMember);
 
 		ProfileImageURLServiceResponse serviceResponse = memberReadService.getProfileImageURL(
+			loginMember,
 			memberId, partnerId);
 
 		return ApiResponse.ofSuccess(serviceResponse.toResponse());
@@ -75,7 +80,10 @@ public class MemberController {
 	public ApiResponse<PresignedURLResponse> getPresignedURL(
 		@PathVariable("member_id") Long memberId) {
 
-		PresignedURLResponse presingedURL = memberService.getPresignedURLForProfileImage(memberId);
+		Member loginMember = MemberThreadLocal.get();
+
+		PresignedURLResponse presingedURL = memberService.getPresignedURLForProfileImage(
+			loginMember, memberId);
 
 		return ApiResponse.ofSuccess(presingedURL);
 	}
@@ -83,7 +91,9 @@ public class MemberController {
 	@PutMapping("/{member_id}/profile/image")
 	public ApiResponse<Void> modifyProfileImage(@PathVariable("member_id") Long memberId) {
 
-		memberService.checkAndSaveProfileImage(memberId);
+		Member loginMember = MemberThreadLocal.get();
+
+		memberService.checkAndSaveProfileImage(loginMember, memberId);
 
 		return ApiResponse.ofSuccess();
 	}
@@ -91,7 +101,9 @@ public class MemberController {
 	@DeleteMapping("/{member_id}/profile/image")
 	public ApiResponse<Void> deleteProfileImage(@PathVariable("member_id") Long memberId) {
 
-		memberService.deleteProfileImage(memberId);
+		Member loginMember = MemberThreadLocal.get();
+
+		memberService.deleteProfileImage(loginMember, memberId);
 
 		return ApiResponse.ofSuccess();
 	}
@@ -99,15 +111,22 @@ public class MemberController {
 	@GetMapping("/{member_id}/connect")
 	public ApiResponse<ConnectionResponse> getConnectionCode(
 		@PathVariable("member_id") Long memberId) {
-		ConnectionServiceResponse response = coupleService.getConnectionCode(memberId);
+
+		Member loginMember = MemberThreadLocal.get();
+
+		ConnectionServiceResponse response = coupleService.getConnectionCode(loginMember, memberId);
 		return ApiResponse.ofSuccess(ConnectionResponse.from(response));
 	}
 
 	@PostMapping("/{member_id}/connect")
 	public ApiResponse<Void> connectCouple(@PathVariable("member_id") Long memberId,
 		@Valid @RequestBody ConnectionRequest request) {
-		CoupleConnectServiceResponse serviceResponse = coupleService.connectCouple(
+
+		Member loginMember = MemberThreadLocal.get();
+
+		CoupleConnectServiceResponse serviceResponse = coupleService.connectCouple(loginMember,
 			memberId, request.toConnectionServiceRequest());
+
 		anniversaryService.createAnniversariesForFirstDate(serviceResponse.getCoupleId());
 		anniversaryService.createAnniversariesForBirthDay(serviceResponse.getMember1Id());
 		anniversaryService.createAnniversariesForBirthDay(serviceResponse.getMember2Id());

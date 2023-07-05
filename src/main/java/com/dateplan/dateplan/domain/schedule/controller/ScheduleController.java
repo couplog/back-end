@@ -34,7 +34,10 @@ public class ScheduleController {
 	@PostMapping("/{member_id}/schedules")
 	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
 		@Valid @RequestBody ScheduleRequest request) {
-		scheduleService.createSchedule(memberId, request.toScheduleServiceRequest());
+
+		Member loginMember = MemberThreadLocal.get();
+
+		scheduleService.createSchedule(loginMember, memberId, request.toScheduleServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 
@@ -44,8 +47,11 @@ public class ScheduleController {
 		@RequestParam(value = "year", required = false) Integer year,
 		@RequestParam(value = "month", required = false) Integer month
 	) {
+
+		Member loginMember = MemberThreadLocal.get();
+
 		ScheduleDatesServiceResponse scheduleDatesServiceResponse = scheduleReadService
-			.readScheduleDates(memberId, year, month);
+			.readScheduleDates(loginMember, memberId, year, month);
 
 		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
 	}

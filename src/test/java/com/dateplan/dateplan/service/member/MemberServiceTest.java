@@ -20,14 +20,13 @@ import static org.mockito.Mockito.times;
 
 import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
-import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -239,12 +238,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void setUp() {
 			loginMember = createMember("nickname");
 			memberRepository.save(loginMember);
-			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
 		void tearDown() {
-			MemberThreadLocal.remove();
 			memberRepository.deleteAllInBatch();
 		}
 
@@ -262,6 +259,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			// When
 			PresignedURLResponse response = memberService.getPresignedURLForProfileImage(
+				loginMember,
 				targetMemberId);
 
 			// Then
@@ -286,7 +284,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willThrow(expectedException);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage(targetMemberId))
+			assertThatThrownBy(
+				() -> memberService.getPresignedURLForProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(S3Exception.class)
 				.hasMessage(S3_CREATE_PRESIGNED_URL_FAIL)
 				.hasCauseInstanceOf(SdkClientException.class);
@@ -306,7 +305,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 				Operation.READ);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.getPresignedURLForProfileImage(targetMemberId))
+			assertThatThrownBy(
+				() -> memberService.getPresignedURLForProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(expectedException.getMessage());
 
@@ -325,12 +325,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void setUp() {
 			loginMember = createMember("nickname1");
 			memberRepository.save(loginMember);
-			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
 		void tearDown() {
-			MemberThreadLocal.remove();
 			memberRepository.deleteAllInBatch();
 		}
 
@@ -350,7 +348,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.willReturn(expectedURL);
 
 			// When
-			memberService.checkAndSaveProfileImage(targetMemberId);
+			memberService.checkAndSaveProfileImage(loginMember, targetMemberId);
 
 			// Then
 			then(s3Client)
@@ -381,7 +379,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.throwIfImageNotFound(any(S3ImageType.class), anyString());
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage(targetMemberId))
+			assertThatThrownBy(
+				() -> memberService.checkAndSaveProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(S3ImageNotFoundException.class)
 				.hasMessage(S3_IMAGE_NOT_FOUND);
 
@@ -413,7 +412,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 				Operation.UPDATE);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.checkAndSaveProfileImage(targetMemberId))
+			assertThatThrownBy(
+				() -> memberService.checkAndSaveProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(expectedException.getMessage());
 
@@ -437,12 +437,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 		void setUp() {
 			loginMember = createMember("nickname1");
 			memberRepository.save(loginMember);
-			MemberThreadLocal.set(loginMember);
 		}
 
 		@AfterEach
 		void tearDown() {
-			MemberThreadLocal.remove();
 			memberRepository.deleteAllInBatch();
 		}
 
@@ -459,7 +457,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.deleteObject(any(S3ImageType.class), anyString());
 
 			// When
-			memberService.deleteProfileImage(targetMemberId);
+			memberService.deleteProfileImage(loginMember, targetMemberId);
 
 			// Then
 			then(s3Client)
@@ -489,7 +487,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.deleteObject(any(S3ImageType.class), anyString());
 
 			// When
-			assertThatThrownBy(() -> memberService.deleteProfileImage(targetMemberId))
+			assertThatThrownBy(() -> memberService.deleteProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(S3Exception.class)
 				.hasMessage(S3_DELETE_OBJECT_FAIL)
 				.hasCauseInstanceOf(SdkClientException.class);
@@ -519,7 +517,7 @@ public class MemberServiceTest extends ServiceTestSupport {
 				Operation.DELETE);
 
 			// When & Then
-			assertThatThrownBy(() -> memberService.deleteProfileImage(targetMemberId))
+			assertThatThrownBy(() -> memberService.deleteProfileImage(loginMember, targetMemberId))
 				.isInstanceOf(NoPermissionException.class)
 				.hasMessage(expectedException.getMessage());
 

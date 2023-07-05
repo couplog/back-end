@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.domain.anniversary.service.dto.response;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import java.time.LocalDate;
 import lombok.Builder;
@@ -14,6 +15,7 @@ public class AnniversaryServiceResponse {
 	private String title;
 	private String content;
 	private AnniversaryRepeatRule repeatRule;
+	private AnniversaryCategory category;
 	private LocalDate date;
 
 	public static AnniversaryServiceResponse of(Anniversary anniversary) {
@@ -23,6 +25,7 @@ public class AnniversaryServiceResponse {
 			.title(anniversary.getTitle())
 			.content(anniversary.getContent())
 			.repeatRule(anniversary.getAnniversaryPattern().getRepeatRule())
+			.category(anniversary.getCategory())
 			.date(anniversary.getDate())
 			.build();
 	}

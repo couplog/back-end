@@ -55,7 +55,7 @@ public class DatingQueryRepository {
 			return dating.endDateTime.year().goe(year);
 		}
 		return dating.endDateTime.goe(
-			YearMonth.of(year,month).atEndOfMonth().atTime(LocalTime.MIN));
+			YearMonth.of(year,month).atDay(1).atTime(LocalTime.MIN));
 	}
 
 	private BooleanExpression coupleIdEq(Long coupleId) {

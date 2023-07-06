@@ -82,6 +82,6 @@ public class ScheduleQueryRepository {
 			return schedule.endDateTime.year().goe(year);
 		}
 		return schedule.endDateTime.goe(
-			YearMonth.of(year,month).atEndOfMonth().atTime(LocalTime.MIN));
+			YearMonth.of(year,month).atDay(1).atTime(LocalTime.MIN));
 	}
 }

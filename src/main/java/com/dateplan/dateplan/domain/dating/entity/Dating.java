@@ -67,4 +67,18 @@ public class Dating {
 		this.endDateTime = endDateTime;
 		this.couple = couple;
 	}
+
+	public void updateDating(
+		String title,
+		String location,
+		String content,
+		LocalDateTime startDateTime,
+		LocalDateTime endDateTime
+	) {
+		this.title = title;
+		this.location = location;
+		this.content = content;
+		this.startDateTime = startDateTime;
+		this.endDateTime = endDateTime;
+	}
 }

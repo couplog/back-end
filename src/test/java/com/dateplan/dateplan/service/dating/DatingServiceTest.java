@@ -20,6 +20,7 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -232,6 +233,20 @@ public class DatingServiceTest extends ServiceTestSupport {
 
 			then(datingReadService)
 				.shouldHaveNoInteractions();
+		}
+
+		@Test
+		void 실패_요청에해당하는_데이트일정이존재하지않으면_예외를반환한다() {
+
+			// Given
+			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
+
+			// When & Then
+			DatingNotFoundException exception = new DatingNotFoundException();
+			assertThatThrownBy(() -> datingService.updateDating(member, couple.getId(),
+				savedDating.getId() + 100, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

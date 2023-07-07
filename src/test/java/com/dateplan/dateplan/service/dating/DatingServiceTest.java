@@ -2,11 +2,13 @@ package com.dateplan.dateplan.service.dating;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.then;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
+import com.dateplan.dateplan.domain.dating.service.DatingReadService;
 import com.dateplan.dateplan.domain.dating.service.DatingService;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
@@ -17,6 +19,7 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +33,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 
 public class DatingServiceTest extends ServiceTestSupport {
 
@@ -44,6 +48,9 @@ public class DatingServiceTest extends ServiceTestSupport {
 
 	@Autowired
 	private DatingService datingService;
+
+	@SpyBean
+	private DatingReadService datingReadService;
 
 	@Nested
 	@DisplayName("데이트 일정 생성 시")
@@ -131,6 +138,97 @@ public class DatingServiceTest extends ServiceTestSupport {
 			// When & Then
 			MemberNotConnectedException exception = new MemberNotConnectedException();
 			assertThatThrownBy(() -> datingService.createDating(member, 1L, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("데이트 일정 삭제 시")
+	class DeleteDating {
+
+		private Member member;
+		private Couple couple;
+		private Dating savedDating;
+
+		@BeforeEach
+		void setUp() {
+			member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
+
+			couple = coupleRepository.save(Couple.builder()
+				.member1(member)
+				.member2(partner)
+				.firstDate(LocalDate.now())
+				.build());
+
+			savedDating = datingRepository.save(Dating.builder()
+				.title("title")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now().plusHours(1))
+				.couple(couple)
+				.build()
+			);
+		}
+
+		@AfterEach
+		void tearDown() {
+			datingRepository.deleteAllInBatch();
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Test
+		void 성공_올바른coupleId와_존재하는데이트일정의Id를요청하면_해당데이트일정이삭제된다() {
+
+			// When
+			datingService.deleteDating(member, couple.getId(), savedDating.getId());
+
+			// When
+			assertThat(datingRepository.findById(savedDating.getId())).isEmpty();
+		}
+
+		@Test
+		void 실패_요청한coupldId와_회원이연결된커플의id가다르면_예외를반환한다() {
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.DELETE);
+			assertThatThrownBy(() ->
+				datingService.deleteDating(member, couple.getId() + 100, savedDating.getId()))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+
+			// Verify
+			then(datingReadService)
+				.shouldHaveNoInteractions();
+		}
+
+		@Test
+		void 실패_회원이_연결되어있지않으면_예외를반환한다() {
+
+			// Given
+			Member other = memberRepository.save(createMember("01011112222", "ccc"));
+
+			// When & Then
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			assertThatThrownBy(
+				() -> datingService.deleteDating(other, couple.getId(), savedDating.getId()))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+
+			// Verify
+			then(datingReadService)
+				.shouldHaveNoInteractions();
+		}
+
+		@Test
+		void 실패_존재하지않는_데이트일정id를요청하면_예외를반환한다() {
+
+			// When & Then
+			DatingNotFoundException exception = new DatingNotFoundException();
+			assertThatThrownBy(() ->
+				datingService.deleteDating(member, couple.getId(), savedDating.getId() + 100))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}

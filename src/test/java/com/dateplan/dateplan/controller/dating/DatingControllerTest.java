@@ -10,12 +10,15 @@ import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingCreateRequest;
+import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingUpdateRequest;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
+import com.dateplan.dateplan.domain.dating.service.dto.request.DatingUpdateServiceRequest;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
@@ -26,6 +29,7 @@ import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -425,6 +429,228 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("데이트 일정 수정 시")
+	class UpdateDating {
+
+		public static final String REQUEST_URL = "/api/couples/{couple_id}/dating/{dating_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@Test
+		void 성공_올바른커플id와_데이트id와_DTO를요청하면_성공한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value("true")
+				);
+		}
+
+		@Test
+		void 실패_제목이15자가넘어가면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest("1".repeat(16), null, null,
+				null, null);
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_SCHEDULE_TITLE)
+				);
+		}
+
+		@Test
+		void 실패_위치가_20자가넘어가면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, "1".repeat(21),
+				null, null);
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_SCHEDULE_LOCATION)
+				);
+		}
+
+		@Test
+		void 실패_내용이_80자가넘어가면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, "1".repeat(81), null,
+				null, null);
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_SCHEDULE_CONTENT)
+				);
+		}
+
+		@Test
+		void 실패_pathVariable에_올바른값이들어가지않으면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, "a", "b")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@Test
+		void 실패_요청한회원이연결된couple의id와_요청의coupleId가다르면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
+
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.UPDATE);
+			willThrow(exception)
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_요청에해당하는데이트일정이_존재하지않으면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
+
+			DatingNotFoundException exception = new DatingNotFoundException();
+			willThrow(exception)
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_종료시간이_시작시간보다앞서면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null,
+				LocalDateTime.now(), LocalDateTime.now().minusDays(1));
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			InvalidDateTimeRangeException exception = new InvalidDateTimeRangeException();
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_종료시간이_2049년12월31일이후이면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null,
+				null, LocalDateTime.of(2050, 1, 1, 0, 0));
+
+			willDoNothing()
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_CALENDER_TIME_RANGE)
+				);
+		}
+	}
+
 	private static Member createMember() {
 		return Member.builder()
 			.name("name")
@@ -464,5 +690,23 @@ public class DatingControllerTest extends ControllerTestSupport {
 		return LocalDate.now().withDayOfMonth(1)
 			.datesUntil(LocalDate.now().withDayOfMonth(1).plusMonths(1))
 			.collect(Collectors.toList());
+	}
+
+	private DatingUpdateRequest createDatingUpdateRequest(
+		String title,
+		String content,
+		String location,
+		LocalDateTime startDateTime,
+		LocalDateTime endDateTime
+	) {
+		return DatingUpdateRequest.builder()
+			.title(title == null ? "title" : title)
+			.content(content == null ? "content" : content)
+			.location(location == null ? "location" : location)
+			.startDateTime(startDateTime == null ?
+				LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES) : startDateTime)
+			.endDateTime(endDateTime == null ?
+				LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.MINUTES) : endDateTime)
+			.build();
 	}
 }

@@ -5,6 +5,7 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingQueryRepository;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
+import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -24,6 +25,23 @@ public class DatingReadService {
 
 	private final DatingQueryRepository datingQueryRepository;
 	private final CoupleReadService coupleReadService;
+
+	public DatingServiceResponse readDating(
+		Member member,
+		Long coupleId,
+		Integer year,
+		Integer month,
+		Integer day
+	) {
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+		if (isNotSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
+		}
+
+		List<Dating> datingList = datingQueryRepository
+			.findByDateBetween(coupleId, year, month, day);
+		return DatingServiceResponse.from(datingList);
+	}
 
 	public DatingDatesServiceResponse readDatingDates(
 		Member member,

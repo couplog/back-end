@@ -4,11 +4,13 @@ import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingQueryRepository;
+import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
+import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +26,12 @@ public class DatingReadService {
 
 	private final DatingQueryRepository datingQueryRepository;
 	private final CoupleReadService coupleReadService;
+	private final DatingRepository datingRepository;
+
+	public Dating findByDatingId(Long datingId) {
+		return datingRepository.findById(datingId)
+			.orElseThrow(DatingNotFoundException::new);
+	}
 
 	public DatingDatesServiceResponse readDatingDates(
 		Member member,

@@ -21,11 +21,12 @@ public class DatingService {
 
 	private final DatingRepository datingRepository;
 	private final CoupleReadService coupleReadService;
+	private final DatingReadService datingReadService;
 
 	public void createDating(Member member, Long coupleId, DatingCreateServiceRequest request) {
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
-		if (isNotSameCouple(coupleId, couple)) {
+		if (isNotSameCouple(coupleId, couple.getId())) {
 			throw new NoPermissionException(Resource.COUPLE, Operation.CREATE);
 		}
 
@@ -33,7 +34,18 @@ public class DatingService {
 		datingRepository.save(dating);
 	}
 
-	private boolean isNotSameCouple(Long coupleId, Couple couple) {
-		return !Objects.equals(couple.getId(), coupleId);
+	public void deleteDating(Member member, Long coupleId, Long datingId) {
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (isNotSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.DELETE);
+		}
+
+		Dating dating = datingReadService.findByDatingId(datingId);
+		datingRepository.delete(dating);
+	}
+
+	private boolean isNotSameCouple(Long requestId, Long coupleId) {
+		return !Objects.equals(requestId, coupleId);
 	}
 }

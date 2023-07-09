@@ -57,6 +57,17 @@ public class DatingService {
 		);
 	}
 
+	public void deleteDating(Member member, Long coupleId, Long datingId) {
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (isNotSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.DELETE);
+		}
+
+		Dating dating = datingReadService.findByDatingId(datingId);
+		datingRepository.delete(dating);
+	}
+
 	private boolean isNotSameCouple(Long requestId, Long coupleId) {
 		return !Objects.equals(requestId, coupleId);
 	}

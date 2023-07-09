@@ -14,6 +14,7 @@ import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -79,4 +80,13 @@ public class DatingController {
 		return ApiResponse.ofSuccess(DatingResponse.from(response));
 	}
 
+	@DeleteMapping("/{couple_id}/dating/{dating_id}")
+	public ApiResponse<Void> deleteDating(
+		@PathVariable("couple_id") Long coupleId,
+		@PathVariable("dating_id") Long datingId
+	) {
+		final Member member = MemberThreadLocal.get();
+		datingService.deleteDating(member, coupleId, datingId);
+		return ApiResponse.ofSuccess();
+	}
 }

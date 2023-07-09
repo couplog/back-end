@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -769,6 +770,92 @@ public class DatingControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
 					jsonPath("$.message").value(DetailMessage.INVALID_CALENDER_TIME_RANGE)
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("데이트 일정 삭제 시")
+	class DeleteDating {
+
+		private static final String REQUEST_URL = "/api/couples/{couple_id}/dating/{dating_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@Test
+		void 성공_올바른coupleId와_datingId를요청하면_데이트일정이삭제된다() throws Exception {
+
+			willDoNothing()
+				.given(datingService)
+				.deleteDating(any(Member.class), anyLong(), anyLong());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("success").value("true")
+				);
+		}
+
+		@Test
+		void 실패_pathVariable의타입이_올바르지않으면_예외를반환한다() throws Exception {
+
+			willDoNothing()
+				.given(datingService)
+				.deleteDating(any(Member.class), anyLong(), anyLong());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, "a", "b"))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("success").value("false"),
+					jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@Test
+		void 실패_요청의coupldId와_회원이연결된커플의Id가다르면_예외를반환한다() throws Exception {
+
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.DELETE);
+			willThrow(exception)
+				.given(datingService)
+				.deleteDating(any(Member.class), anyLong(), anyLong());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_요청한datingId에_해당하는데이트일정이없으면_예외를반환한다() throws Exception {
+
+			DatingNotFoundException exception = new DatingNotFoundException();
+			willThrow(exception)
+				.given(datingService)
+				.deleteDating(any(Member.class), anyLong(), anyLong());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}

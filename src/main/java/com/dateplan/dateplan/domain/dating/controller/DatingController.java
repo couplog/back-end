@@ -3,9 +3,11 @@ package com.dateplan.dateplan.domain.dating.controller;
 import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingCreateRequest;
 import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingUpdateRequest;
 import com.dateplan.dateplan.domain.dating.controller.dto.response.DatingDatesResponse;
+import com.dateplan.dateplan.domain.dating.controller.dto.response.DatingResponse;
 import com.dateplan.dateplan.domain.dating.service.DatingReadService;
 import com.dateplan.dateplan.domain.dating.service.DatingService;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
+import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
@@ -64,4 +66,17 @@ public class DatingController {
 			request.toDatingUpdateServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
+	@GetMapping("/{couple_id}/dating")
+	public ApiResponse<DatingResponse> readDating(
+		@PathVariable("couple_id") Long coupleId,
+		@RequestParam("year") Integer year,
+		@RequestParam("month") Integer month,
+		@RequestParam("day") Integer day
+	) {
+		final Member member = MemberThreadLocal.get();
+		DatingServiceResponse response = datingReadService.readDating(member, coupleId, year, month,
+			day);
+		return ApiResponse.ofSuccess(DatingResponse.from(response));
+	}
+
 }

@@ -15,8 +15,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.dating.controller.dto.request.DatingCreateRequest;
+import com.dateplan.dateplan.domain.dating.controller.dto.response.DatingEntry;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
+import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
@@ -36,6 +38,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -425,6 +428,125 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("데이트 일정 조회 시")
+	class ReadDating {
+
+		private static final String REQUEST_URL = "/api/couples/{couple_id}/dating";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@Test
+		void 성공_커플id와_올바른날짜를요청시_해당하는데이트일정들을조회한다() throws Exception {
+
+			// Given
+			DatingServiceResponse response = createDatingServiceResponse();
+			LocalDate now = LocalDate.now();
+
+			// Stubbing
+			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
+				anyInt()))
+				.willReturn(response);
+
+			// When & Then
+			DatingEntry datingEntry = response.getDatingList().get(0);
+			mockMvc.perform(
+					get(REQUEST_URL, 1)
+						.param("year", String.valueOf(now.getYear()))
+						.param("month", String.valueOf(now.getMonthValue()))
+						.param("day", String.valueOf(now.getDayOfMonth())))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value("true"),
+					jsonPath("$.data.datingList[0].datingId").value(datingEntry.getDatingId()),
+					jsonPath("$.data.datingList[0].title").value(datingEntry.getTitle()),
+					jsonPath("$.data.datingList[0].location").value(datingEntry.getLocation()),
+					jsonPath("$.data.datingList[0].content").value(datingEntry.getContent()),
+					jsonPath("$.data.datingList[0].startDateTime").value(
+						datingEntry.getStartDateTime().toString()),
+					jsonPath("$.data.datingList[0].endDateTime").value(
+						datingEntry.getEndDateTime().toString()));
+		}
+
+		@ParameterizedTest
+		@CsvSource({"aaaa,10,10", "2023,aa,10", "2023,10,aa"})
+		void 실패_요청파라미터에_올바르지않은값이들어가면_예외를반환한다(String year, String month, String day)
+			throws Exception {
+
+			// Given
+			DatingServiceResponse response = createDatingServiceResponse();
+
+			// Stubbing
+			given(datingReadService.readDating
+				(any(Member.class), anyLong(), anyInt(), anyInt(), anyInt())).willReturn(response);
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL, 1)
+						.param("year", year)
+						.param("month", month)
+						.param("day", day))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Integer")));
+		}
+
+		@Test
+		void 실패_로그인한회원의coupleId와_요청의coupleId가다르면_예외를반환한다() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
+				anyInt()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL, 1)
+						.param("year", "2020")
+						.param("month", "10")
+						.param("day", "10"))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage()));
+		}
+
+		@Test
+		void 실패_회원이_연결되어있지않으면_예외를_반환한다() throws Exception {
+
+			// Stubbing
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
+				anyInt()))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(
+					get(REQUEST_URL, 1)
+						.param("year", "2020")
+						.param("month", "10")
+						.param("day", "10"))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage()));
+		}
+	}
+
 	private static Member createMember() {
 		return Member.builder()
 			.name("name")
@@ -464,5 +586,22 @@ public class DatingControllerTest extends ControllerTestSupport {
 		return LocalDate.now().withDayOfMonth(1)
 			.datesUntil(LocalDate.now().withDayOfMonth(1).plusMonths(1))
 			.collect(Collectors.toList());
+	}
+
+	private DatingServiceResponse createDatingServiceResponse() {
+		return DatingServiceResponse.builder()
+			.datingList(createDatingEntries())
+			.build();
+	}
+
+	private List<DatingEntry> createDatingEntries() {
+		return IntStream.rangeClosed(1, 5)
+			.mapToObj(i -> DatingEntry.builder()
+				.datingId((long) i)
+				.title("title")
+				.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
+				.endDateTime(LocalDateTime.now().plusDays(5).truncatedTo(ChronoUnit.SECONDS))
+				.build())
+			.toList();
 	}
 }

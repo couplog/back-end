@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -66,5 +65,19 @@ public class Dating {
 		this.startDateTime = startDateTime;
 		this.endDateTime = endDateTime;
 		this.couple = couple;
+	}
+
+	public void updateDating(
+		String title,
+		String location,
+		String content,
+		LocalDateTime startDateTime,
+		LocalDateTime endDateTime
+	) {
+		this.title = title;
+		this.location = location;
+		this.content = content;
+		this.startDateTime = startDateTime;
+		this.endDateTime = endDateTime;
 	}
 }

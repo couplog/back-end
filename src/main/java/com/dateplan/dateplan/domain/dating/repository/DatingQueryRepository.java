@@ -6,6 +6,7 @@ import static com.dateplan.dateplan.domain.dating.entity.QDating.dating;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
@@ -17,6 +18,22 @@ import org.springframework.stereotype.Repository;
 public class DatingQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
+
+	public List<Dating> findByDateBetween(Long coupleId, Integer year, Integer month, Integer day) {
+		return queryFactory
+			.selectFrom(dating)
+			.join(dating.couple, couple)
+			.where(coupleIdEq(coupleId)
+				.and(dateBetween(year, month, day)))
+			.orderBy(dating.startDateTime.asc())
+			.fetch();
+	}
+
+	private BooleanExpression dateBetween(Integer year, Integer month, Integer day) {
+		LocalDate requestDate = LocalDate.of(year, month, day);
+		return dating.startDateTime.loe(requestDate.atTime(LocalTime.MAX))
+			.and(dating.endDateTime.goe(requestDate.atTime(LocalTime.MIN)));
+	}
 
 	public List<Dating> findByYearAndMonthOrderByDate(Long coupleId, Integer year, Integer month) {
 		return queryFactory
@@ -55,7 +72,7 @@ public class DatingQueryRepository {
 			return dating.endDateTime.year().goe(year);
 		}
 		return dating.endDateTime.goe(
-			YearMonth.of(year,month).atDay(1).atTime(LocalTime.MIN));
+			YearMonth.of(year, month).atDay(1).atTime(LocalTime.MIN));
 	}
 
 	private BooleanExpression coupleIdEq(Long coupleId) {

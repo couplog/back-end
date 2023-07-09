@@ -9,11 +9,13 @@ import static org.mockito.BDDMockito.then;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
+import com.dateplan.dateplan.domain.dating.controller.dto.response.DatingEntry;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingQueryRepository;
 import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.dating.service.DatingReadService;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
+import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
@@ -25,6 +27,7 @@ import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException
 import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -185,6 +188,113 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 			// Verify
 			then(queryRepository)
 				.shouldHaveNoInteractions();
+		}
+	}
+
+	@Nested
+	@DisplayName("데이트 일정을 조회할 때")
+	class ReadDating {
+
+		private Member member;
+		private Couple couple;
+
+		@BeforeEach
+		void setUp() {
+			member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
+
+			couple = coupleRepository.save(
+				Couple.builder()
+					.member1(member)
+					.member2(partner)
+					.firstDate(LocalDate.now())
+					.build()
+			);
+		}
+
+		@AfterEach
+		void tearDown() {
+			datingRepository.deleteAllInBatch();
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Test
+		void 성공_member와coupleId와날짜를_입력하면_해당하는일정이조회되고_시작일오름차순으로정렬된다() {
+
+			// Given
+			Dating yesterday = Dating.builder()
+				.title("yesterday")
+				.couple(couple)
+				.startDateTime(LocalDateTime.now().minusDays(2).truncatedTo(ChronoUnit.SECONDS))
+				.endDateTime(LocalDateTime.now().minusDays(1).truncatedTo(ChronoUnit.SECONDS))
+				.build();
+			Dating today = Dating.builder()
+				.title("today")
+				.couple(couple)
+				.startDateTime(LocalDateTime.now().minusDays(1).truncatedTo(ChronoUnit.SECONDS))
+				.endDateTime(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.SECONDS))
+				.build();
+			Dating tomorrow = Dating.builder()
+				.title("tomorrow")
+				.couple(couple)
+				.startDateTime(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.SECONDS))
+				.endDateTime(LocalDateTime.now().plusDays(2).truncatedTo(ChronoUnit.SECONDS))
+				.build();
+			datingRepository.saveAll(List.of(
+				yesterday,
+				today,
+				tomorrow
+			));
+
+			// Stubbing
+			given(coupleReadService.findCoupleByMemberOrElseThrow(member))
+				.willReturn(couple);
+
+			// When
+			LocalDate now = LocalDate.now();
+			DatingServiceResponse response = datingReadService.readDating(member,
+				couple.getId(), now.getYear(), now.getMonthValue(), now.getDayOfMonth());
+
+			// Then
+			DatingEntry datingEntryResponse = response.getDatingList().get(0);
+			assertThat(response.getDatingList()).hasSize(1);
+			assertThat(datingEntryResponse.getTitle()).isEqualTo(today.getTitle());
+			assertThat(datingEntryResponse.getLocation()).isEqualTo(today.getLocation());
+			assertThat(datingEntryResponse.getContent()).isEqualTo(today.getContent());
+			assertThat(datingEntryResponse.getStartDateTime()).isEqualTo(today.getStartDateTime());
+			assertThat(datingEntryResponse.getEndDateTime()).isEqualTo(today.getEndDateTime());
+		}
+
+		@Test
+		void 실패_회원이_커플에연결되어있지않으면_예외를반환한다() {
+
+			// Stubbing
+			MemberNotConnectedException exception = new MemberNotConnectedException();
+			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
+				.willThrow(exception);
+
+			// When & Then
+			assertThatThrownBy(
+				() -> datingReadService.readDating(member, couple.getId() + 100, 2010, 10, 10))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@Test
+		void 실패_요청한coupleId와_회원이연결된커플의id가다르면_예외를반환한다() {
+
+			// Stubbing
+			given(coupleReadService.findCoupleByMemberOrElseThrow(member))
+				.willReturn(couple);
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
+				Operation.READ);
+			assertThatThrownBy(
+				() -> datingReadService.readDating(member, couple.getId() + 100, 2010, 10, 10))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

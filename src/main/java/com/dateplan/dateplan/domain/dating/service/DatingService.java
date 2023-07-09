@@ -5,6 +5,7 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
+import com.dateplan.dateplan.domain.dating.service.dto.request.DatingUpdateServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -32,6 +33,28 @@ public class DatingService {
 
 		Dating dating = request.toDatingEntity(couple);
 		datingRepository.save(dating);
+	}
+
+	public void updateDating(
+		Member member,
+		Long coupleId,
+		Long datingId,
+		DatingUpdateServiceRequest request
+	) {
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (isNotSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.UPDATE);
+		}
+
+		Dating dating = datingReadService.findByDatingId(datingId);
+		dating.updateDating(
+			request.getTitle(),
+			request.getLocation(),
+			request.getContent(),
+			request.getStartDateTime(),
+			request.getEndDateTime()
+		);
 	}
 
 	public void deleteDating(Member member, Long coupleId, Long datingId) {

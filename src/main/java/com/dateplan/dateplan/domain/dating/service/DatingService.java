@@ -5,6 +5,7 @@ import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.dating.service.dto.request.DatingCreateServiceRequest;
+import com.dateplan.dateplan.domain.dating.service.dto.request.DatingUpdateServiceRequest;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -21,11 +22,12 @@ public class DatingService {
 
 	private final DatingRepository datingRepository;
 	private final CoupleReadService coupleReadService;
+	private final DatingReadService datingReadService;
 
 	public void createDating(Member member, Long coupleId, DatingCreateServiceRequest request) {
 		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
 
-		if (isNotSameCouple(coupleId, couple)) {
+		if (isNotSameCouple(coupleId, couple.getId())) {
 			throw new NoPermissionException(Resource.COUPLE, Operation.CREATE);
 		}
 
@@ -33,7 +35,29 @@ public class DatingService {
 		datingRepository.save(dating);
 	}
 
-	private boolean isNotSameCouple(Long coupleId, Couple couple) {
-		return !Objects.equals(couple.getId(), coupleId);
+	public void updateDating(
+		Member member,
+		Long coupleId,
+		Long datingId,
+		DatingUpdateServiceRequest request
+	) {
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+
+		if (isNotSameCouple(coupleId, couple.getId())) {
+			throw new NoPermissionException(Resource.COUPLE, Operation.UPDATE);
+		}
+
+		Dating dating = datingReadService.findByDatingId(datingId);
+		dating.updateDating(
+			request.getTitle(),
+			request.getLocation(),
+			request.getContent(),
+			request.getStartDateTime(),
+			request.getEndDateTime()
+		);
+	}
+
+	private boolean isNotSameCouple(Long requestId, Long coupleId) {
+		return !Objects.equals(requestId, coupleId);
 	}
 }

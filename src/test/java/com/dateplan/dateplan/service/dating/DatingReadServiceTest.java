@@ -22,8 +22,10 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
+import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -186,11 +188,55 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 		}
 	}
 
+	@Nested
+	@DisplayName("데이트 일정 id로 데이트 조회 시")
+	class FindByDatingId {
+
+		private Dating savedDating;
+
+		@BeforeEach
+		void setUp() {
+			Member member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
+			Couple couple = coupleRepository.save(createCouple(member, partner));
+			savedDating = datingRepository.save(createDating(LocalDate.now(), couple));
+		}
+
+		@AfterEach
+		void tearDown() {
+			datingRepository.deleteAllInBatch();
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Test
+		void 성공_존재하는id를입력하면_요청에해당하는데이트일정을반환한다() {
+
+			Dating findDating = datingReadService.findByDatingId(savedDating.getId());
+
+			assertThat(findDating.getId()).isEqualTo(savedDating.getId());
+			assertThat(findDating.getTitle()).isEqualTo(savedDating.getTitle());
+			assertThat(findDating.getLocation()).isEqualTo(savedDating.getLocation());
+			assertThat(findDating.getContent()).isEqualTo(savedDating.getContent());
+			assertThat(findDating.getStartDateTime()).isEqualTo(savedDating.getStartDateTime());
+			assertThat(findDating.getEndDateTime()).isEqualTo(savedDating.getEndDateTime());
+			assertThat(findDating.getCouple().getId()).isEqualTo(savedDating.getCouple().getId());
+		}
+
+		@Test
+		void 실패_요청에해당하는_데이트일정이존재하지않는다면_예외를반환한다() {
+
+			DatingNotFoundException exception = new DatingNotFoundException();
+			assertThatThrownBy(() -> datingReadService.findByDatingId(savedDating.getId() + 100))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
 
 	private Dating createDating(LocalDate date, Couple couple) {
 		return Dating.builder()
-			.startDateTime(date.atTime(0, 0))
-			.endDateTime(date.atTime(23, 59))
+			.startDateTime(date.atTime(0, 0).truncatedTo(ChronoUnit.SECONDS))
+			.endDateTime(date.atTime(23, 59).truncatedTo(ChronoUnit.SECONDS))
 			.title("title")
 			.couple(couple)
 			.build();

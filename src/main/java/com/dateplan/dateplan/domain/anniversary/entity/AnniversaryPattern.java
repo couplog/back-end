@@ -84,4 +84,17 @@ public class AnniversaryPattern {
 			.repeatRule(repeatRule)
 			.build();
 	}
+
+	public void updateDates(long dayDiff) {
+
+		AnniversaryRepeatRule repeatRule = this.repeatRule;
+
+		if (repeatRule != AnniversaryRepeatRule.HUNDRED_DAYS) {
+			this.repeatStartDate = this.repeatStartDate.plusDays(dayDiff);
+
+			if(repeatRule == AnniversaryRepeatRule.NONE){
+				this.repeatEndDate = this.repeatStartDate;
+			}
+		}
+	}
 }

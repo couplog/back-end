@@ -74,7 +74,7 @@ public class ScheduleController {
 		@PathVariable("member_id") Long memberId,
 		@PathVariable("schedule_id") Long scheduleId,
 		@Valid @RequestBody ScheduleUpdateRequest request,
-		@RequestParam(value = "updateRepeat", required = false) Boolean updateRepeat
+		@RequestParam(value = "updateRepeat", defaultValue = "false") Boolean updateRepeat
 	) {
 		Member member = MemberThreadLocal.get();
 		scheduleService.updateSchedule(

@@ -860,6 +860,31 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					jsonPath("$.message").value(containsString("updateRepeat"))
 				);
 		}
+
+		@Test
+		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() throws Exception {
+
+			ScheduleUpdateRequest request = createScheduleUpdateRequest();
+
+			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
+				Operation.UPDATE);
+			willThrow(exception)
+				.given(scheduleService)
+				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
 	}
 
 	@Nested
@@ -979,6 +1004,25 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() throws Exception {
+
+			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
+				Operation.DELETE);
+			willThrow(exception)
+				.given(scheduleService)
+				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isForbidden(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())

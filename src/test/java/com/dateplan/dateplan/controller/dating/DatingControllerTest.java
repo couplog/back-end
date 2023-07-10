@@ -772,6 +772,30 @@ public class DatingControllerTest extends ControllerTestSupport {
 					jsonPath("$.message").value(DetailMessage.INVALID_CALENDER_TIME_RANGE)
 				);
 		}
+
+		@Test
+		void 실패_요청한coupleId와_조회한데이트일정의coupldId가다르면_예외를반환한다() throws Exception {
+			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
+
+			NoPermissionException exception = new NoPermissionException(Resource.DATING,
+				Operation.UPDATE);
+			willThrow(exception)
+				.given(datingService)
+				.updateDating(any(Member.class), anyLong(), anyLong(),
+					any(DatingUpdateServiceRequest.class));
+
+			mockMvc.perform(
+					put(REQUEST_URL, 1, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
 	}
 
 	@Nested
@@ -853,6 +877,25 @@ public class DatingControllerTest extends ControllerTestSupport {
 					delete(REQUEST_URL, 1, 1))
 				.andExpectAll(
 					status().isNotFound(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@Test
+		void 실패_요청한coupleId와_조회한데이트일정의coupldId가다르면_예외를반환한다() throws Exception {
+
+			NoPermissionException exception = new NoPermissionException(Resource.DATING,
+				Operation.DELETE);
+			willThrow(exception)
+				.given(datingService)
+				.deleteDating(any(Member.class), anyLong(), anyLong());
+
+			mockMvc.perform(
+					delete(REQUEST_URL, 1, 1))
+				.andExpectAll(
+					status().isForbidden(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())

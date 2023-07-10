@@ -59,6 +59,12 @@ public class ScheduleService {
 			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+
+		if (isNotScheduleOwner(loginMember.getId(),
+			schedule.getSchedulePattern().getMember().getId())) {
+			throw new NoPermissionException(Resource.SCHEDULE, Operation.UPDATE);
+		}
+
 		if (updateRepeat) {
 			updateRepeatSchedules(request, schedule);
 			return;
@@ -96,6 +102,12 @@ public class ScheduleService {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
 		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
+
+		if (isNotScheduleOwner(loginMember.getId(),
+			schedule.getSchedulePattern().getMember().getId())) {
+			throw new NoPermissionException(Resource.SCHEDULE, Operation.DELETE);
+		}
+
 		if (deleteRepeat) {
 			deleteRepeatSchedule(schedule);
 			return;
@@ -159,5 +171,9 @@ public class ScheduleService {
 	private boolean isSameMember(Long memberId, Long loginMemberId) {
 
 		return Objects.equals(memberId, loginMemberId);
+	}
+
+	private boolean isNotScheduleOwner(Long memberId, Long scheduleOwnerId) {
+		return !Objects.equals(memberId, scheduleOwnerId);
 	}
 }

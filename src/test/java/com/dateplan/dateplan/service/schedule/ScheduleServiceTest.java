@@ -274,6 +274,44 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				.hasMessage(exception.getMessage());
 
 		}
+
+		@Tag(NEED_SCHEDULE)
+		@Test
+		void 실패_요청한memberId와_조회한개인일정의coupleId가다르면_예외를반환한다() {
+			Member otherMember = memberRepository.save(Member.builder()
+				.phone("01011112222")
+				.name("name")
+				.nickname("ccc")
+				.gender(Gender.MALE)
+				.birthDay(LocalDate.now())
+				.password("password")
+				.build());
+
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(otherMember)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now())
+					.repeatRule(RepeatRule.N)
+					.build());
+			Schedule otherSchedule = scheduleRepository.save(Schedule.builder()
+				.title("otherDating")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now())
+				.schedulePattern(schedulePattern)
+				.build());
+
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+
+			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
+				Operation.UPDATE);
+
+			assertThatThrownBy(() ->
+				scheduleService.updateSchedule(member.getId(), otherSchedule.getId(), request,
+					member, false))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
 	}
 
 	@Nested
@@ -395,6 +433,44 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					assertThat(scheduleRepository.findById(iterSchedule.getId())).isEmpty();
 				}
 			);
+		}
+
+		@Tag(NEED_SCHEDULE)
+		@Test
+		void 실패_요청한memberId와_조회한개인일정의coupleId가다르면_예외를반환한다() {
+			Member otherMember = memberRepository.save(Member.builder()
+				.phone("01011112222")
+				.name("name")
+				.nickname("ccc")
+				.gender(Gender.MALE)
+				.birthDay(LocalDate.now())
+				.password("password")
+				.build());
+
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(otherMember)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now())
+					.repeatRule(RepeatRule.N)
+					.build());
+			Schedule otherSchedule = scheduleRepository.save(Schedule.builder()
+				.title("otherDating")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now())
+				.schedulePattern(schedulePattern)
+				.build());
+
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+
+			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
+				Operation.DELETE);
+
+			assertThatThrownBy(() ->
+				scheduleService.deleteSchedule(member.getId(), otherSchedule.getId(), member,
+					false))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

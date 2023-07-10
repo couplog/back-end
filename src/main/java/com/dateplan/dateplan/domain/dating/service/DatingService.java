@@ -48,6 +48,11 @@ public class DatingService {
 		}
 
 		Dating dating = datingReadService.findByDatingId(datingId);
+
+		if (isNotDatingOwner(couple.getId(), dating.getCouple().getId())) {
+			throw new NoPermissionException(Resource.DATING, Operation.UPDATE);
+		}
+
 		dating.updateDating(
 			request.getTitle(),
 			request.getLocation(),
@@ -65,10 +70,19 @@ public class DatingService {
 		}
 
 		Dating dating = datingReadService.findByDatingId(datingId);
+
+		if (isNotDatingOwner(couple.getId(), dating.getCouple().getId())) {
+			throw new NoPermissionException(Resource.DATING, Operation.DELETE);
+		}
+
 		datingRepository.delete(dating);
 	}
 
 	private boolean isNotSameCouple(Long requestId, Long coupleId) {
 		return !Objects.equals(requestId, coupleId);
+	}
+
+	private boolean isNotDatingOwner(Long coupleId, Long datingOwnerId) {
+		return !Objects.equals(coupleId, datingOwnerId);
 	}
 }

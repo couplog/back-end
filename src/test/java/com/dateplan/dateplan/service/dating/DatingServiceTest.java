@@ -233,6 +233,33 @@ public class DatingServiceTest extends ServiceTestSupport {
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
+
+		@Test
+		void 실패_요청한coupleId와_조회한데이트일정의coupleId가다르면_예외를반환한다() {
+			Member otherMember1 = memberRepository.save(createMember("01012345670", "ccc"));
+			Member otherMember2 = memberRepository.save(createMember("01012345671", "ddd"));
+
+			Couple other = coupleRepository.save(Couple.builder()
+				.member1(otherMember1)
+				.member2(otherMember2)
+				.firstDate(LocalDate.now())
+				.build());
+
+			Dating otherDating = datingRepository.save(Dating.builder()
+				.title("otherDating")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now())
+				.couple(other)
+				.build());
+
+			NoPermissionException exception = new NoPermissionException(Resource.DATING,
+				Operation.DELETE);
+
+			assertThatThrownBy(() ->
+				datingService.deleteDating(member, couple.getId(), otherDating.getId()))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
 	}
 
 	@Nested
@@ -336,6 +363,36 @@ public class DatingServiceTest extends ServiceTestSupport {
 			DatingNotFoundException exception = new DatingNotFoundException();
 			assertThatThrownBy(() -> datingService.updateDating(member, couple.getId(),
 				savedDating.getId() + 100, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+
+		@Test
+		void 실패_요청한coupleId와_조회한데이트일정의coupleId가다르면_예외를반환한다() {
+			Member otherMember1 = memberRepository.save(createMember("01012345670", "ccc"));
+			Member otherMember2 = memberRepository.save(createMember("01012345671", "ddd"));
+
+			Couple other = coupleRepository.save(Couple.builder()
+				.member1(otherMember1)
+				.member2(otherMember2)
+				.firstDate(LocalDate.now())
+				.build());
+
+			Dating otherDating = datingRepository.save(Dating.builder()
+				.title("otherDating")
+				.startDateTime(LocalDateTime.now())
+				.endDateTime(LocalDateTime.now())
+				.couple(other)
+				.build());
+
+			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
+
+			NoPermissionException exception = new NoPermissionException(Resource.DATING,
+				Operation.UPDATE);
+
+			assertThatThrownBy(() ->
+				datingService.updateDating(member, couple.getId(), otherDating.getId(),
+					request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}

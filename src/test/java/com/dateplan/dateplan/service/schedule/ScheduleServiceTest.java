@@ -277,7 +277,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 		@Tag(NEED_SCHEDULE)
 		@Test
-		void 실패_요청한memberId와_조회한개인일정의coupleId가다르면_예외를반환한다() {
+		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() {
 			Member otherMember = memberRepository.save(Member.builder()
 				.phone("01011112222")
 				.name("name")
@@ -437,7 +437,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 		@Tag(NEED_SCHEDULE)
 		@Test
-		void 실패_요청한memberId와_조회한개인일정의coupleId가다르면_예외를반환한다() {
+		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() {
 			Member otherMember = memberRepository.save(Member.builder()
 				.phone("01011112222")
 				.name("name")

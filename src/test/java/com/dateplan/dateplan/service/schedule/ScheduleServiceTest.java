@@ -211,6 +211,32 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		}
 
 		@Tag(NEED_SCHEDULE)
+		@DisplayName("[성공] 단일 일정 수정 시, 새로운 SchedulePattern이 만들어진다.")
+		@Test
+		void should_createNewSchedulePattern_When_singleUpdate() {
+			// Given
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+			Schedule schedule = schedules.get(0);
+
+			// When
+			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
+				false);
+
+			// Then
+			Long newSchedulePatternId = schedule.getSchedulePattern().getId() + 1;
+			SchedulePattern newSchedulePattern = schedulePatternRepository.findById(
+				newSchedulePatternId).get();
+
+			assertThat(newSchedulePattern.getRepeatStartDate()).isEqualTo(
+				request.getStartDateTime().toLocalDate());
+			assertThat(newSchedulePattern.getRepeatEndDate()).isEqualTo(
+				request.getEndDateTime().toLocalDate());
+			assertThat(newSchedulePattern.getRepeatRule()).isEqualTo(
+				RepeatRule.N);
+
+		}
+
+		@Tag(NEED_SCHEDULE)
 		@DisplayName("반복 일정 수정하는 요청 시, 요청의 내용으로 모든 일정이 수정된다.")
 		@Test
 		void successWithRepeatUpdateRequest() {

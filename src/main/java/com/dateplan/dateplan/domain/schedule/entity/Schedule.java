@@ -71,6 +71,20 @@ public class Schedule {
 		String content,
 		String location,
 		LocalDateTime startDateTime,
+		LocalDateTime endDateTime
+	) {
+		this.title = title;
+		this.content = content;
+		this.location = location;
+		this.startDateTime = startDateTime;
+		this.endDateTime = endDateTime;
+	}
+
+	public void updateSchedule(
+		String title,
+		String content,
+		String location,
+		LocalDateTime startDateTime,
 		LocalDateTime endDateTime,
 		SchedulePattern schedulePattern
 	) {

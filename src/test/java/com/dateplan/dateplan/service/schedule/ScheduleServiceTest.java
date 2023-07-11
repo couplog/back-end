@@ -156,39 +156,34 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 		List<Schedule> schedules;
 
 		@BeforeEach
-		void setUp(TestInfo testInfo) {
+		void setUp() {
 			member = memberRepository.save(createMember("nickname"));
 
-			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
-				SchedulePattern schedulePattern = schedulePatternRepository.save(
-					SchedulePattern.builder()
-						.member(member)
-						.repeatRule(RepeatRule.N)
-						.repeatStartDate(LocalDate.now())
-						.repeatEndDate(DateConstants.CALENDER_END_DATE)
-						.build()
-				);
-				schedules = List.of(
-					createSchedule(schedulePattern),
-					createSchedule(schedulePattern),
-					createSchedule(schedulePattern),
-					createSchedule(schedulePattern),
-					createSchedule(schedulePattern)
-				);
-				scheduleRepository.saveAll(schedules);
-			}
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(member)
+					.repeatRule(RepeatRule.D)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(DateConstants.CALENDER_END_DATE)
+					.build()
+			);
+			schedules = List.of(
+				createSchedule(schedulePattern),
+				createSchedule(schedulePattern),
+				createSchedule(schedulePattern),
+				createSchedule(schedulePattern),
+				createSchedule(schedulePattern)
+			);
+			scheduleRepository.saveAll(schedules);
 		}
 
 		@AfterEach
-		void tearDown(TestInfo testInfo) {
-			if (testInfo.getTags().contains(NEED_SCHEDULE)) {
-				scheduleRepository.deleteAllInBatch();
-				schedulePatternRepository.deleteAllInBatch();
-			}
+		void tearDown() {
+			scheduleRepository.deleteAllInBatch();
+			schedulePatternRepository.deleteAllInBatch();
 			memberRepository.deleteAllInBatch();
 		}
 
-		@Tag(NEED_SCHEDULE)
 		@DisplayName("단일 일정 수정하는 요청 시, 요청의 내용으로 해당 일정이 수정된다.")
 		@Test
 		void successWithSingleUpdateRequest() {
@@ -210,8 +205,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			assertThat(updatedSchedule.getEndDateTime()).isEqualTo(request.getEndDateTime());
 		}
 
-		@Tag(NEED_SCHEDULE)
-		@DisplayName("[성공] 단일 일정 수정 시, 새로운 SchedulePattern이 만들어진다.")
+		@DisplayName("[성공] 일정 단일 수정 중 반복 일정이 여러개 존재할 경우, 새로운 SchedulePattern이 만들어진다.")
 		@Test
 		void should_createNewSchedulePattern_When_singleUpdate() {
 			// Given
@@ -236,7 +230,75 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 		}
 
-		@Tag(NEED_SCHEDULE)
+		@DisplayName("[성공] 일정 단일 수정 중 반복 일정이 여러개 존재하며 수정된 일정이 원래 일정 패턴에 영향을 끼칠 경우, 원래 일정 패턴이 수정된다")
+		@Test
+		void should_modifyOriginSchedulePattern_When_ScheduleAffectOriginSchedulePattern() {
+
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.repeatRule(RepeatRule.D)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now().plusDays(1))
+					.member(member)
+					.build()
+			);
+			List<Schedule> schedules = scheduleRepository.saveAll(List.of(
+					Schedule.builder()
+						.title("title1")
+						.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+						.endDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+						.schedulePattern(schedulePattern)
+						.build(),
+					Schedule.builder()
+						.title("title2")
+						.startDateTime(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.MINUTES))
+						.endDateTime(LocalDateTime.now().plusDays(1).truncatedTo(ChronoUnit.MINUTES))
+						.schedulePattern(schedulePattern)
+						.build()
+				)
+			);
+
+			scheduleService.updateSchedule(member.getId(), schedules.get(0).getId(), request,
+				member, false);
+
+			SchedulePattern newSchedulePattern = schedulePatternRepository.findById(
+				schedulePattern.getId()).get();
+
+			assertThat(newSchedulePattern.getRepeatStartDate()).isEqualTo(
+				schedules.get(1).getStartDateTime().toLocalDate());
+			assertThat(newSchedulePattern.getRepeatEndDate()).isEqualTo(
+				schedules.get(1).getStartDateTime().toLocalDate());
+		}
+
+		@DisplayName("[성공] 일정 단일 수정 중 반복 일정이 하나만 존재할 경우, 새로운 일정 패턴을 생성하지 않는다")
+		@Test
+		void should_doesNotCreateSchedulePattern_When_onlyOneRepeatScheduleExist() {
+			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now())
+					.repeatRule(RepeatRule.D)
+					.member(member)
+					.build()
+			);
+			Schedule schedule = scheduleRepository.save(
+				Schedule.builder()
+					.title("title")
+					.startDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+					.endDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+					.schedulePattern(schedulePattern)
+					.build()
+			);
+
+			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
+				false);
+
+			assertThat(schedule.getSchedulePattern().getId()).isEqualTo(schedulePattern.getId());
+		}
+
 		@DisplayName("반복 일정 수정하는 요청 시, 요청의 내용으로 모든 일정이 수정된다.")
 		@Test
 		void successWithRepeatUpdateRequest() {
@@ -301,7 +363,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 		}
 
-		@Tag(NEED_SCHEDULE)
 		@Test
 		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() {
 			Member otherMember = memberRepository.save(Member.builder()

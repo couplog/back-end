@@ -71,12 +71,14 @@ public class Schedule {
 		String content,
 		String location,
 		LocalDateTime startDateTime,
-		LocalDateTime endDateTime
+		LocalDateTime endDateTime,
+		SchedulePattern schedulePattern
 	) {
 		this.title = title;
 		this.content = content;
 		this.location = location;
 		this.startDateTime = startDateTime;
 		this.endDateTime = endDateTime;
+		this.schedulePattern = schedulePattern;
 	}
 }

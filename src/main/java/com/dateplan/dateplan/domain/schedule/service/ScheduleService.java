@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
@@ -72,10 +73,7 @@ public class ScheduleService {
 		updateSingleSchedule(request, schedule, loginMember);
 	}
 
-	private void updateRepeatSchedules(
-		ScheduleUpdateServiceRequest request,
-		Schedule schedule
-	) {
+	private void updateRepeatSchedules(ScheduleUpdateServiceRequest request, Schedule schedule) {
 		long startTimeDiff = ChronoUnit.MINUTES.between(schedule.getStartDateTime(),
 			request.getStartDateTime());
 		long endTimeDiff = ChronoUnit.MINUTES.between(schedule.getEndDateTime(),
@@ -91,6 +89,11 @@ public class ScheduleService {
 		Schedule schedule,
 		Member member
 	) {
+		if (checkSingleScheduleAndUpdate(request, schedule)) {
+			return;
+		}
+
+		SchedulePattern originalSchedulePattern = schedule.getSchedulePattern();
 		SchedulePattern newSchedulePattern = schedulePatternRepository.save(
 			request.toSchedulePattern(member));
 		schedule.updateSchedule(
@@ -100,6 +103,24 @@ public class ScheduleService {
 			request.getStartDateTime(),
 			request.getEndDateTime(),
 			newSchedulePattern
+		);
+
+		List<Schedule> originSchedules = scheduleReadService.findBySchedulePatternId(
+			originalSchedulePattern.getId());
+
+		if (originSchedules.isEmpty()) {
+			schedulePatternRepository.delete(originalSchedulePattern);
+			return;
+		}
+
+		Schedule minStartTimeSchedule = originSchedules.stream()
+			.min(Comparator.comparing(Schedule::getStartDateTime)).get();
+		Schedule maxStartTimeSchedule = originSchedules.stream()
+			.max(Comparator.comparing(Schedule::getStartDateTime)).get();
+
+		originalSchedulePattern.updateDateTime(
+			minStartTimeSchedule.getStartDateTime(),
+			maxStartTimeSchedule.getStartDateTime()
 		);
 	}
 
@@ -182,5 +203,22 @@ public class ScheduleService {
 
 	private boolean isNotScheduleOwner(Long memberId, Long scheduleOwnerId) {
 		return !Objects.equals(memberId, scheduleOwnerId);
+	}
+
+	private boolean checkSingleScheduleAndUpdate(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule
+	) {
+		if (schedule.getSchedulePattern().getRepeatRule().equals(RepeatRule.N)) {
+			schedule.updateSchedule(
+				request.getTitle(),
+				request.getContent(),
+				request.getLocation(),
+				request.getStartDateTime(),
+				request.getEndDateTime()
+			);
+			return true;
+		}
+		return false;
 	}
 }

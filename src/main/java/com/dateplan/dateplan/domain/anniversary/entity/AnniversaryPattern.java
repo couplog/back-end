@@ -34,11 +34,11 @@ public class AnniversaryPattern {
 	private Long id;
 
 	@NotNull
-	@Column(name = "repeat_start_date", columnDefinition = "DATE", updatable = false)
+	@Column(name = "repeat_start_date", columnDefinition = "DATE")
 	private LocalDate repeatStartDate;
 
 	@NotNull
-	@Column(name = "repeat_end_date", columnDefinition = "DATE default '2049-12-31'", updatable = false)
+	@Column(name = "repeat_end_date", columnDefinition = "DATE default '2049-12-31'")
 	private LocalDate repeatEndDate;
 
 	@NotNull
@@ -87,12 +87,12 @@ public class AnniversaryPattern {
 
 	public void updateDates(long dayDiff) {
 
-		AnniversaryRepeatRule repeatRule = this.repeatRule;
+		AnniversaryRepeatRule rule = this.repeatRule;
 
-		if (repeatRule != AnniversaryRepeatRule.HUNDRED_DAYS) {
+		if (rule != AnniversaryRepeatRule.HUNDRED_DAYS) {
 			this.repeatStartDate = this.repeatStartDate.plusDays(dayDiff);
 
-			if(repeatRule == AnniversaryRepeatRule.NONE){
+			if(rule == AnniversaryRepeatRule.NONE){
 				this.repeatEndDate = this.repeatStartDate;
 			}
 		}

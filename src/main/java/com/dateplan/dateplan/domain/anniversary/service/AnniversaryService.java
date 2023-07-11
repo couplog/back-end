@@ -19,6 +19,7 @@ import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -207,17 +208,22 @@ public class AnniversaryService {
 
 		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
 			anniversaryId, true);
-
-		Long anniversaryOwnerCoupleId = anniversary.getAnniversaryPattern().getCouple().getId();
+		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
+		Long anniversaryOwnerCoupleId = anniversaryPattern.getCouple().getId();
 
 		if (!Objects.equals(anniversaryOwnerCoupleId, coupleId) ||
-			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
+			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER) ||
+			!Objects.equals(anniversary.getDate(), anniversaryPattern.getRepeatStartDate())
 		) {
 			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
 		}
 
 		anniversaryQueryRepository.updateAllRepeatedAnniversary(anniversaryId, request.getTitle(),
 			request.getContent(), request.getDate());
+
+		long dayDiff = ChronoUnit.DAYS.between(anniversary.getDate(), request.getDate());
+		anniversaryPattern.updateDates(dayDiff);
+		anniversaryPatternRepository.save(anniversaryPattern);
 	}
 
 	public void deleteAnniversary(Member loginMember, Long coupleId, Long anniversaryId) {

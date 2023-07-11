@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -45,6 +46,17 @@ public class ScheduleQueryRepository {
 				.and(endDateTimeGoe(year, month)))
 			.orderBy(schedule.startDateTime.asc())
 			.fetch();
+	}
+
+	public Optional<Schedule> findById(Long scheduleId) {
+		return Optional.ofNullable(
+			queryFactory
+				.selectFrom(schedule)
+				.join(schedule.schedulePattern, schedulePattern)
+				.fetchJoin()
+				.where(schedule.id.eq(scheduleId))
+				.fetchOne()
+		);
 	}
 
 	private BooleanExpression dateBetween(Integer year, Integer month, Integer day) {
@@ -82,6 +94,6 @@ public class ScheduleQueryRepository {
 			return schedule.endDateTime.year().goe(year);
 		}
 		return schedule.endDateTime.goe(
-			YearMonth.of(year,month).atDay(1).atTime(LocalTime.MIN));
+			YearMonth.of(year, month).atDay(1).atTime(LocalTime.MIN));
 	}
 }

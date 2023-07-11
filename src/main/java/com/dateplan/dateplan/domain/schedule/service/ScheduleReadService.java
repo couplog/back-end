@@ -33,7 +33,7 @@ public class ScheduleReadService {
 	}
 
 	public Schedule findScheduleByIdOrElseThrow(Long id) {
-		return scheduleRepository.findById(id)
+		return scheduleQueryRepository.findById(id)
 			.orElseThrow(ScheduleNotFoundException::new);
 	}
 

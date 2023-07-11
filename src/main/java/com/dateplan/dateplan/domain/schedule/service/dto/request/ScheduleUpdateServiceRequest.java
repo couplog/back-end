@@ -1,5 +1,8 @@
 package com.dateplan.dateplan.domain.schedule.service.dto.request;
 
+import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
+import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
 import java.time.LocalDateTime;
 import lombok.Builder;
@@ -32,6 +35,15 @@ public class ScheduleUpdateServiceRequest {
 		this.location = location;
 		this.content = content;
 		throwIfInvalidDateTimeRange();
+	}
+
+	public SchedulePattern toSchedulePattern(Member member) {
+		return SchedulePattern.builder()
+			.repeatStartDate(startDateTime.toLocalDate())
+			.repeatEndDate(endDateTime.toLocalDate())
+			.repeatRule(RepeatRule.N)
+			.member(member)
+			.build();
 	}
 
 	private void throwIfInvalidDateTimeRange() {

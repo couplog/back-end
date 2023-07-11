@@ -69,7 +69,7 @@ public class ScheduleService {
 			updateRepeatSchedules(request, schedule);
 			return;
 		}
-		updateSingleSchedule(request, schedule);
+		updateSingleSchedule(request, schedule, loginMember);
 	}
 
 	private void updateRepeatSchedules(
@@ -86,13 +86,20 @@ public class ScheduleService {
 			request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
 	}
 
-	private void updateSingleSchedule(ScheduleUpdateServiceRequest request, Schedule schedule) {
+	private void updateSingleSchedule(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule,
+		Member member
+	) {
+		SchedulePattern newSchedulePattern = schedulePatternRepository.save(
+			request.toSchedulePattern(member));
 		schedule.updateSchedule(
 			request.getTitle(),
 			request.getContent(),
 			request.getLocation(),
 			request.getStartDateTime(),
-			request.getEndDateTime()
+			request.getEndDateTime(),
+			newSchedulePattern
 		);
 	}
 

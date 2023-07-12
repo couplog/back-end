@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
@@ -228,6 +229,7 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 				.repeatStartDate(repeatStartDate)
 				.repeatEndDate(repeatEndDate)
 				.repeatRule(AnniversaryRepeatRule.YEAR)
+				.category(AnniversaryCategory.OTHER)
 				.build();
 
 			Anniversary anniversary1 = createAnniversary("title1", repeatStartDate,
@@ -425,7 +427,11 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 	private Anniversary createAnniversary(String title, LocalDate date,
 		AnniversaryPattern anniversaryPattern) {
 
-		return Anniversary.ofOther(title, null, date, anniversaryPattern);
+		return Anniversary.builder()
+			.title(title)
+			.date(date)
+			.anniversaryPattern(anniversaryPattern)
+			.build();
 	}
 
 	private AnniversaryPattern createAnniversaryPattern(Couple couple, LocalDate date) {
@@ -435,6 +441,7 @@ public class AnniversaryReadServiceTest extends ServiceTestSupport {
 			.repeatStartDate(date)
 			.repeatEndDate(date)
 			.repeatRule(AnniversaryRepeatRule.NONE)
+			.category(AnniversaryCategory.OTHER)
 			.build();
 	}
 

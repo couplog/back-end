@@ -40,7 +40,7 @@ public class ScheduleUpdateServiceRequest {
 	public SchedulePattern toSchedulePattern(Member member) {
 		return SchedulePattern.builder()
 			.repeatStartDate(startDateTime.toLocalDate())
-			.repeatEndDate(endDateTime.toLocalDate())
+			.repeatEndDate(startDateTime.toLocalDate())
 			.repeatRule(RepeatRule.N)
 			.member(member)
 			.build();

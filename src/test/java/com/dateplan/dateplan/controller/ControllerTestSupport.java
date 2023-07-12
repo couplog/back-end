@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.controller;
 
 import com.dateplan.dateplan.domain.anniversary.controller.AnniversaryController;
+import com.dateplan.dateplan.domain.anniversary.interceptor.AnniversaryAuthInterceptor;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.controller.CoupleController;
@@ -55,6 +56,9 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected AuthInterceptor authInterceptor;
+
+	@MockBean
+	protected AnniversaryAuthInterceptor anniversaryAuthInterceptor;
 
 	@MockBean
 	protected CoupleService coupleService;

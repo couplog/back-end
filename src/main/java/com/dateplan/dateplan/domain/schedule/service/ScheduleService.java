@@ -18,9 +18,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,23 +105,20 @@ public class ScheduleService {
 			newSchedulePattern
 		);
 
-		List<Schedule> originSchedules = scheduleReadService.findBySchedulePatternId(
-			originalSchedulePattern.getId());
-
-		if (originSchedules.isEmpty()) {
+		if (!scheduleReadService.existsBySchedulePatternId(originalSchedulePattern.getId())) {
 			schedulePatternRepository.delete(originalSchedulePattern);
 			return;
 		}
 
-		Schedule minStartTimeSchedule = originSchedules.stream()
-			.min(Comparator.comparing(Schedule::getStartDateTime)).get();
-		Schedule maxStartTimeSchedule = originSchedules.stream()
-			.max(Comparator.comparing(Schedule::getStartDateTime)).get();
-
-		originalSchedulePattern.updateDateTime(
-			minStartTimeSchedule.getStartDateTime(),
-			maxStartTimeSchedule.getStartDateTime()
-		);
+		Optional<LocalDateTime> minStart = scheduleReadService.findMinStartDateTimeBySchedulePatternId(
+			originalSchedulePattern.getId());
+		Optional<LocalDateTime> maxStart = scheduleReadService.findMaxStartDateTimeBySchedulePatternId(
+			originalSchedulePattern.getId());
+		if (minStart.isEmpty() || maxStart.isEmpty()) {
+			schedulePatternRepository.delete(originalSchedulePattern);
+			return;
+		}
+		originalSchedulePattern.updateDateTime(minStart.get(), maxStart.get());
 	}
 
 	public void deleteSchedule(Long memberId, Long scheduleId, Member loginMember,
@@ -217,6 +214,8 @@ public class ScheduleService {
 				request.getStartDateTime(),
 				request.getEndDateTime()
 			);
+			schedule.getSchedulePattern()
+				.updateDateTime(request.getStartDateTime(), request.getEndDateTime());
 			return true;
 		}
 		return false;

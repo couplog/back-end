@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,13 +70,10 @@ public class ScheduleService {
 			updateRepeatSchedules(request, schedule);
 			return;
 		}
-		updateSingleSchedule(request, schedule);
+		updateSingleSchedule(request, schedule, loginMember);
 	}
 
-	private void updateRepeatSchedules(
-		ScheduleUpdateServiceRequest request,
-		Schedule schedule
-	) {
+	private void updateRepeatSchedules(ScheduleUpdateServiceRequest request, Schedule schedule) {
 		long startTimeDiff = ChronoUnit.MINUTES.between(schedule.getStartDateTime(),
 			request.getStartDateTime());
 		long endTimeDiff = ChronoUnit.MINUTES.between(schedule.getEndDateTime(),
@@ -86,14 +84,36 @@ public class ScheduleService {
 			request.getLocation(), request.getContent(), startTimeDiff, endTimeDiff);
 	}
 
-	private void updateSingleSchedule(ScheduleUpdateServiceRequest request, Schedule schedule) {
+	private void updateSingleSchedule(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule,
+		Member member
+	) {
+		if (checkSingleScheduleAndUpdate(request, schedule)) {
+			return;
+		}
+
+		SchedulePattern originalSchedulePattern = schedule.getSchedulePattern();
+		SchedulePattern newSchedulePattern = schedulePatternRepository.save(
+			request.toSchedulePattern(member));
 		schedule.updateSchedule(
 			request.getTitle(),
 			request.getContent(),
 			request.getLocation(),
 			request.getStartDateTime(),
-			request.getEndDateTime()
+			request.getEndDateTime(),
+			newSchedulePattern
 		);
+
+		Optional<LocalDateTime> minStart = scheduleReadService.findMinStartDateTimeBySchedulePatternId(
+			originalSchedulePattern.getId());
+		Optional<LocalDateTime> maxStart = scheduleReadService.findMaxStartDateTimeBySchedulePatternId(
+			originalSchedulePattern.getId());
+		if (minStart.isEmpty() || maxStart.isEmpty()) {
+			schedulePatternRepository.delete(originalSchedulePattern);
+			return;
+		}
+		originalSchedulePattern.updateDateTime(minStart.get(), maxStart.get());
 	}
 
 	public void deleteSchedule(Long memberId, Long scheduleId, Member loginMember,
@@ -175,5 +195,24 @@ public class ScheduleService {
 
 	private boolean isNotScheduleOwner(Long memberId, Long scheduleOwnerId) {
 		return !Objects.equals(memberId, scheduleOwnerId);
+	}
+
+	private boolean checkSingleScheduleAndUpdate(
+		ScheduleUpdateServiceRequest request,
+		Schedule schedule
+	) {
+		if (schedule.getSchedulePattern().getRepeatRule().equals(RepeatRule.N)) {
+			schedule.updateSchedule(
+				request.getTitle(),
+				request.getContent(),
+				request.getLocation(),
+				request.getStartDateTime(),
+				request.getEndDateTime()
+			);
+			schedule.getSchedulePattern()
+				.updateDateTime(request.getStartDateTime(), request.getEndDateTime());
+			return true;
+		}
+		return false;
 	}
 }

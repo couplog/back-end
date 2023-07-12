@@ -15,6 +15,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -63,4 +64,8 @@ public class SchedulePattern {
 		this.member = member;
 	}
 
+	public void updateDateTime(LocalDateTime minStartDateTime, LocalDateTime maxEndDateTime) {
+		this.repeatStartDate = minStartDateTime.toLocalDate();
+		this.repeatEndDate = maxEndDateTime.toLocalDate();
+	}
 }

@@ -105,11 +105,6 @@ public class ScheduleService {
 			newSchedulePattern
 		);
 
-		if (!scheduleReadService.existsBySchedulePatternId(originalSchedulePattern.getId())) {
-			schedulePatternRepository.delete(originalSchedulePattern);
-			return;
-		}
-
 		Optional<LocalDateTime> minStart = scheduleReadService.findMinStartDateTimeBySchedulePatternId(
 			originalSchedulePattern.getId());
 		Optional<LocalDateTime> maxStart = scheduleReadService.findMaxStartDateTimeBySchedulePatternId(

@@ -42,10 +42,6 @@ public class ScheduleReadService {
 		return scheduleRepository.findBySchedulePatternId(schedulePatternId);
 	}
 
-	public boolean existsBySchedulePatternId(Long schedulePatternId) {
-		return scheduleRepository.existsBySchedulePatternId(schedulePatternId);
-	}
-
 	public Schedule findScheduleByIdOrElseThrow(Long id) {
 		return scheduleQueryRepository.findById(id)
 			.orElseThrow(ScheduleNotFoundException::new);

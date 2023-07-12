@@ -10,8 +10,6 @@ import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.dto.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -43,10 +41,7 @@ public class AnniversaryController {
 	public ApiResponse<Void> createAnniversary(@PathVariable("couple_id") Long coupleId,
 		@RequestBody @Valid AnniversaryCreateRequest request) {
 
-		Member loginMember = MemberThreadLocal.get();
-
-		anniversaryService.createAnniversaries(loginMember, coupleId,
-			request.toServiceRequest());
+		anniversaryService.createAnniversaries(coupleId, request.toServiceRequest());
 
 		return ApiResponse.ofSuccess();
 	}
@@ -60,10 +55,8 @@ public class AnniversaryController {
 		@RequestParam(value = "onlyRepeatStarted", required = false) boolean onlyRepeatStarted
 	) {
 
-		Member loginMember = MemberThreadLocal.get();
-
 		AnniversaryListServiceResponse serviceResponse = anniversaryReadService.readAnniversaries(
-			loginMember, coupleId, year, month, day, onlyRepeatStarted);
+			coupleId, year, month, day, onlyRepeatStarted);
 
 		return ApiResponse.ofSuccess(AnniversaryListResponse.from(serviceResponse));
 	}
@@ -74,10 +67,8 @@ public class AnniversaryController {
 		@RequestParam("year") Integer year,
 		@RequestParam("month") Integer month) {
 
-		Member loginMember = MemberThreadLocal.get();
-
 		AnniversaryDatesServiceResponse serviceResponse = anniversaryReadService.readAnniversaryDates(
-			loginMember, coupleId, year, month);
+			coupleId, year, month);
 
 		return ApiResponse.ofSuccess(AnniversaryDatesResponse.from(serviceResponse));
 	}
@@ -89,38 +80,29 @@ public class AnniversaryController {
 		@DateTimeFormat(iso = ISO.DATE) LocalDate startDate
 	) {
 
-		Member loginMember = MemberThreadLocal.get();
-
 		ComingAnniversaryListServiceResponse serviceResponse = anniversaryReadService.readComingAnniversaries(
-			loginMember, coupleId, startDate, size);
+			coupleId, startDate, size);
 
 		return ApiResponse.ofSuccess(ComingAnniversaryListResponse.from(serviceResponse));
 	}
 
 	@PutMapping("/{anniversary_id}")
 	public ApiResponse<Void> modifyAnniversary(
-		@PathVariable("couple_id") Long coupleId,
 		@PathVariable("anniversary_id") Long anniversaryId,
 		@RequestBody @Valid AnniversaryModifyRequest request
 	) {
 
-		Member loginMember = MemberThreadLocal.get();
-
-		anniversaryService.modifyAnniversary(loginMember, coupleId, anniversaryId,
-			request.toServiceRequest());
+		anniversaryService.modifyAnniversary(anniversaryId, request.toServiceRequest());
 
 		return ApiResponse.ofSuccess();
 	}
 
 	@DeleteMapping("/{anniversary_id}")
 	public ApiResponse<Void> deleteAnniversary(
-		@PathVariable("couple_id") Long coupleId,
 		@PathVariable("anniversary_id") Long anniversaryId
 	) {
 
-		Member loginMember = MemberThreadLocal.get();
-
-		anniversaryService.deleteAnniversary(loginMember, coupleId, anniversaryId);
+		anniversaryService.deleteAnniversary(anniversaryId);
 
 		return ApiResponse.ofSuccess();
 	}

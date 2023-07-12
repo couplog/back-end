@@ -12,8 +12,10 @@ import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,8 +30,20 @@ public class ScheduleReadService {
 	private final CoupleReadService coupleReadService;
 	private final ScheduleRepository scheduleRepository;
 
+	public Optional<LocalDateTime> findMinStartDateTimeBySchedulePatternId(Long schedulePatternId) {
+		return scheduleQueryRepository.findMinStartDateTimeBySchedulePatternId(schedulePatternId);
+	}
+
+	public Optional<LocalDateTime> findMaxStartDateTimeBySchedulePatternId(Long schedulePatternId) {
+		return scheduleQueryRepository.findMaxStartDateTimeBySchedulePatternId(schedulePatternId);
+	}
+
 	public List<Schedule> findBySchedulePatternId(Long schedulePatternId) {
 		return scheduleRepository.findBySchedulePatternId(schedulePatternId);
+	}
+
+	public boolean existsBySchedulePatternId(Long schedulePatternId) {
+		return scheduleRepository.existsBySchedulePatternId(schedulePatternId);
 	}
 
 	public Schedule findScheduleByIdOrElseThrow(Long id) {

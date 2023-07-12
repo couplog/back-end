@@ -60,8 +60,12 @@ public class AnniversaryService {
 		return switch (anniversaryPattern.getRepeatRule()) {
 
 			case NONE -> List.of(
-				Anniversary.ofOther(request.getTitle(), request.getContent(), request.getDate(),
-					anniversaryPattern));
+				Anniversary.builder()
+					.title(request.getTitle())
+					.content(request.getContent())
+					.date(request.getDate())
+					.anniversaryPattern(anniversaryPattern)
+					.build());
 
 			case YEAR -> {
 				LocalDate date = request.getDate();
@@ -73,12 +77,13 @@ public class AnniversaryService {
 						years -> date.plusYears(years)
 							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 						years -> years + 1)
-					.mapToObj(years -> Anniversary.ofOther(
-						title,
-						content,
-						date.plusYears(years),
-						anniversaryPattern
-					))
+					.mapToObj(years ->
+						Anniversary.builder()
+							.title(title)
+							.content(content)
+							.date(date.plusYears(years))
+							.anniversaryPattern(anniversaryPattern)
+							.build())
 					.toList();
 			}
 			case HUNDRED_DAYS -> List.of();
@@ -111,11 +116,12 @@ public class AnniversaryService {
 				years -> birthDay.plusYears(years)
 					.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 				years -> years + 1)
-			.mapToObj(years -> Anniversary.ofBirthDay(
-				member.getName() + " 님의 생일",
-				birthDay.plusYears(years),
-				anniversaryPattern
-			))
+			.mapToObj(years ->
+				Anniversary.builder()
+					.title(member.getName() + " 님의 생일")
+					.date(birthDay.plusYears(years))
+					.anniversaryPattern(anniversaryPattern)
+					.build())
 			.toList();
 	}
 
@@ -130,7 +136,11 @@ public class AnniversaryService {
 
 		anniversaryPatternRepository.save(anniversaryPattern);
 
-		Anniversary anniversary = Anniversary.ofFirstDate("처음 만난 날", firstDate, anniversaryPattern);
+		Anniversary anniversary = Anniversary.builder()
+			.title("처음 만난 날")
+			.date(firstDate)
+			.anniversaryPattern(anniversaryPattern)
+			.build();
 		anniversaryRepository.save(anniversary);
 
 		createAndSaveAnniversariesForFirstDate(couple, AnniversaryRepeatRule.HUNDRED_DAYS);
@@ -169,12 +179,12 @@ public class AnniversaryService {
 						days -> anniversaryDate.plusDays(days)
 							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 						days -> days + 100)
-					.mapToObj(days -> Anniversary.ofFirstDate(
-						"만난지 " + days + "일",
-						anniversaryDate.plusDays(days),
-						anniversaryPattern
-					))
-					.toList();
+					.mapToObj(days -> Anniversary.builder()
+						.title("만난지 " + days + "일")
+						.date(anniversaryDate.plusDays(days))
+						.anniversaryPattern(anniversaryPattern)
+						.build()
+					).toList();
 			}
 
 			case YEAR -> IntStream.iterate(
@@ -182,26 +192,26 @@ public class AnniversaryService {
 					years -> firstDate.plusYears(years)
 						.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 					years -> years + 1)
-				.mapToObj(years -> Anniversary.ofFirstDate(
-					"만난지 " + years + "주년",
-					firstDate.plusYears(years),
-					anniversaryPattern
-				))
-				.toList();
+				.mapToObj(years -> Anniversary.builder()
+					.title("만난지 " + years + "주년")
+					.date(firstDate.plusYears(years))
+					.anniversaryPattern(anniversaryPattern)
+					.build()
+				).toList();
 
 			case NONE -> List.of();
 		};
 	}
 
-	public void modifyAnniversary(Long anniversaryId, AnniversaryModifyServiceRequest request) {
+	public void modifyAnniversary(Long anniversaryId, AnniversaryModifyServiceRequest request,
+		boolean isInternalCall) {
 
 		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
 			anniversaryId, true);
 		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
 
-		if (!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER) ||
-			!Objects.equals(anniversary.getDate(), anniversaryPattern.getRepeatStartDate())
-		) {
+		if (!isInternalCall && !Objects.equals(anniversaryPattern.getCategory(),
+			AnniversaryCategory.OTHER)) {
 			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
 		}
 
@@ -220,7 +230,7 @@ public class AnniversaryService {
 
 		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
 
-		if (!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
+		if (!Objects.equals(anniversaryPattern.getCategory(), AnniversaryCategory.OTHER)
 		) {
 			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
 		}

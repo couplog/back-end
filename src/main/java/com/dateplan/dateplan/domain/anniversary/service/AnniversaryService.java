@@ -223,6 +223,11 @@ public class AnniversaryService {
 		anniversaryPatternRepository.save(anniversaryPattern);
 	}
 
+	public void modifyAnniversaryForFirstDate(Long coupleId, LocalDate changedDate){
+
+		anniversaryQueryRepository.updateAllRepeatedAnniversaryForFirstDate(coupleId, changedDate);
+	}
+
 	public void deleteAnniversary(Long anniversaryId) {
 
 		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(

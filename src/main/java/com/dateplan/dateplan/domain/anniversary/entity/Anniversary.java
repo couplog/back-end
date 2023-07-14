@@ -52,4 +52,27 @@ public class Anniversary {
 		this.date = date;
 		this.anniversaryPattern = anniversaryPattern;
 	}
+
+	public static Anniversary ofFirstDate(AnniversaryPattern anniversaryPattern,
+		LocalDate firstDate, Integer timeDifference) {
+
+		AnniversaryBuilder anniversaryBuilder = Anniversary.builder()
+			.anniversaryPattern(anniversaryPattern);
+
+		AnniversaryRepeatRule repeatRule = anniversaryPattern.getRepeatRule();
+
+		switch (repeatRule) {
+			case NONE -> anniversaryBuilder
+				.title("처음만난날")
+				.date(firstDate);
+			case YEAR -> anniversaryBuilder
+				.title("만난지 " + timeDifference + "주년")
+				.date(firstDate.plusYears(timeDifference));
+			case HUNDRED_DAYS -> anniversaryBuilder
+				.title("만난지 " + timeDifference + "일")
+				.date(firstDate.plusDays(timeDifference));
+		}
+
+		return anniversaryBuilder.build();
+	}
 }

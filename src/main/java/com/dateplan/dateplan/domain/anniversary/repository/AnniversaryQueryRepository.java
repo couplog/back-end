@@ -6,8 +6,9 @@ import static com.dateplan.dateplan.domain.couple.entity.QCouple.couple;
 
 import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
-import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.DatePath;
 import com.querydsl.core.types.dsl.DateTemplate;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -92,8 +93,6 @@ public class AnniversaryQueryRepository {
 		LocalDate date) {
 
 		Anniversary findAnniversary = queryFactory.selectFrom(anniversary)
-			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
-			.fetchJoin()
 			.where(anniversary.id.eq(anniversaryId))
 			.fetchFirst();
 
@@ -141,40 +140,48 @@ public class AnniversaryQueryRepository {
 	@Transactional
 	public void updateAllRepeatedAnniversaryForFirstDate(Long coupleId, LocalDate changedDate) {
 
-		Anniversary findAnniversary = queryFactory.selectFrom(anniversary)
-			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
-			.where(anniversaryPattern.couple.id.eq(coupleId),
-				anniversaryPattern.category.eq(AnniversaryCategory.FIRST_DATE),
-				anniversaryPattern.repeatRule.eq(AnniversaryRepeatRule.NONE))
-			.fetchFirst();
-
-		long dayDiff = ChronoUnit.DAYS.between(findAnniversary.getDate(), changedDate);
-
-		DateTemplate<LocalDate> dateTemplateForAnniversary = Expressions.dateTemplate(
-			LocalDate.class, ADD_DATE_FUNCTION, anniversary.date,
-			Expressions.asNumber(dayDiff));
-
-		DateTemplate<LocalDate> dateTemplateForAnniversaryPattern = Expressions.dateTemplate(
-			LocalDate.class, ADD_DATE_FUNCTION, anniversaryPattern.repeatStartDate,
-			Expressions.asNumber(dayDiff));
-
-		List<Long> firstDateAnniversaryIds = queryFactory.select(anniversary.id)
-			.from(anniversary)
-			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
+		List<AnniversaryPattern> anniversaryPatterns = queryFactory.selectFrom(anniversaryPattern)
 			.where(anniversaryPattern.couple.id.eq(coupleId),
 				anniversaryPattern.category.eq(AnniversaryCategory.FIRST_DATE))
 			.fetch();
 
+		List<Long> anniversaryPatternIds = anniversaryPatterns.stream()
+			.map(AnniversaryPattern::getId)
+			.toList();
+
+		LocalDate beforeChangedFirstDate = anniversaryPatterns.get(0).getRepeatStartDate();
+
+		long dayDiff = ChronoUnit.DAYS.between(beforeChangedFirstDate, changedDate);
+
+		DateTemplate<LocalDate> dateTemplateForAnniversary = createDateTemplateForAnniversary(
+			anniversary.date, ADD_DATE_FUNCTION, dayDiff);
+
+		DateTemplate<LocalDate> dateTemplateForAnniversaryPatternRepeatStartDate = createDateTemplateForAnniversary(
+			anniversaryPattern.repeatStartDate, ADD_DATE_FUNCTION, dayDiff
+		);
+
+		DateTemplate<LocalDate> dateTemplateForAnniversaryPatternRepeatEndDate = createDateTemplateForAnniversary(
+			anniversaryPattern.repeatEndDate, ADD_DATE_FUNCTION, dayDiff
+		);
+
 		JPAUpdateClause anniversaryUpdateQuery = queryFactory.update(anniversary)
 			.set(anniversary.date, dateTemplateForAnniversary)
-			.where(anniversary.id.in(firstDateAnniversaryIds));
+			.where(anniversary.anniversaryPattern.id.in(anniversaryPatternIds));
 
-		JPAUpdateClause anniversaryPatternUpdateQuery = queryFactory.update(anniversaryPattern)
-			.set(anniversaryPattern.repeatStartDate, dateTemplateForAnniversaryPattern)
-			.where(anniversaryPattern.category.eq(AnniversaryCategory.FIRST_DATE));
+		JPAUpdateClause anniversaryPatternStartDateUpdateQuery = queryFactory.update(
+				anniversaryPattern)
+			.set(anniversaryPattern.repeatStartDate,
+				dateTemplateForAnniversaryPatternRepeatStartDate)
+			.where(anniversaryPattern.id.in(anniversaryPatternIds));
+
+		JPAUpdateClause anniversaryPatternEndDateUpdateQuery = queryFactory.update(
+				anniversaryPattern)
+			.set(anniversaryPattern.repeatEndDate, dateTemplateForAnniversaryPatternRepeatEndDate)
+			.where(anniversaryPattern.id.in(anniversaryPatternIds));
 
 		anniversaryUpdateQuery.execute();
-		anniversaryPatternUpdateQuery.execute();
+		anniversaryPatternStartDateUpdateQuery.execute();
+		anniversaryPatternEndDateUpdateQuery.execute();
 	}
 
 	public boolean existsByIdAndCoupleId(Long anniversaryId, Long coupleId) {
@@ -226,5 +233,12 @@ public class AnniversaryQueryRepository {
 	private BooleanExpression coupleIdEq(Long coupleId) {
 
 		return couple.id.eq(coupleId);
+	}
+
+	private DateTemplate<LocalDate> createDateTemplateForAnniversary(DatePath<LocalDate> datePath,
+		String template, long dayDiff) {
+
+		return Expressions.dateTemplate(
+			LocalDate.class, template, datePath, Expressions.asNumber(dayDiff));
 	}
 }

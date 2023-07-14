@@ -40,6 +40,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
@@ -326,7 +327,7 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 
 			assertThat(firstDateAnniversary)
 				.hasSize(1)
-				.allMatch(anniversary -> anniversary.getTitle().contains("처음 만난 날"))
+				.allMatch(anniversary -> anniversary.getTitle().contains("처음만난날"))
 				.extracting(
 					Anniversary::getContent,
 					Anniversary::getDate,
@@ -510,7 +511,7 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 	}
 
 	@Nested
-	@DisplayName("기념일 수정시")
+	@DisplayName("일반 기념일 수정시")
 	class ModifyAnniversary {
 
 		private static final String NEED_ANNIVERSARY = "needAnniversary";
@@ -668,10 +669,12 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 					assertThat(actualAnniversary.getDate()).isEqualTo(modifiedDate);
 				});
 
-			AnniversaryPattern findAnniversaryPattern = anniversaryPatternRepository.findById(anniversaryPattern.getId()).get();
+			AnniversaryPattern findAnniversaryPattern = anniversaryPatternRepository.findById(
+				anniversaryPattern.getId()).get();
 			assertThat(findAnniversaryPattern)
 				.satisfies(actualAnniversaryPattern -> {
-					assertThat(actualAnniversaryPattern.getRepeatStartDate()).isEqualTo(modifiedDate);
+					assertThat(actualAnniversaryPattern.getRepeatStartDate()).isEqualTo(
+						modifiedDate);
 					assertThat(actualAnniversaryPattern.getRepeatEndDate()).isEqualTo(modifiedDate);
 				});
 		}
@@ -730,6 +733,89 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 				anniversaryService.modifyAnniversary(targetAnniversaryId, serviceRequest, false))
 				.isInstanceOf(expectedException.getClass())
 				.hasMessage(expectedException.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("처음만난날 관련 기념일 수정시")
+	class ModifyAnniversaryForFirstDate {
+
+		private static final String NEED_ANNIVERSARY = "needAnniversary";
+
+		private Couple couple;
+		private LocalDate firstDate;
+
+		@BeforeEach
+		void setUp() {
+
+			Member member = createMember("01011112222", "nickname1", LocalDate.of(2000, 1, 1));
+			Member partner = createMember("01022223333", "nickname2", LocalDate.of(2000, 1, 1));
+			memberRepository.saveAll(List.of(member, partner));
+
+			firstDate = LocalDate.of(2010, 10, 10);
+
+			couple = createCouple(member, partner, firstDate);
+			coupleRepository.save(couple);
+
+			AnniversaryPattern firstDatePattern = AnniversaryPattern.ofFirstDate(couple,
+				firstDate, AnniversaryRepeatRule.NONE);
+			AnniversaryPattern hundredDaysRepeatedPattern = AnniversaryPattern.ofFirstDate(couple,
+				firstDate, AnniversaryRepeatRule.HUNDRED_DAYS);
+			AnniversaryPattern yearRepeatedPattern = AnniversaryPattern.ofFirstDate(couple,
+				firstDate, AnniversaryRepeatRule.YEAR);
+
+			anniversaryPatternRepository.saveAll(
+				List.of(firstDatePattern, hundredDaysRepeatedPattern, yearRepeatedPattern));
+
+			List<Anniversary> firstDateAnniversaries = createRepeatedAnniversariesForFirstDate(
+				firstDatePattern, firstDate);
+			List<Anniversary> hundredDaysRepeatedAnniversaries = createRepeatedAnniversariesForFirstDate(
+				hundredDaysRepeatedPattern, firstDate);
+			List<Anniversary> yearRepeatedAnniversaries = createRepeatedAnniversariesForFirstDate(
+				yearRepeatedPattern, firstDate);
+
+			anniversaryJDBCRepository.saveAll(firstDateAnniversaries);
+			anniversaryJDBCRepository.saveAll(hundredDaysRepeatedAnniversaries);
+			anniversaryJDBCRepository.saveAll(yearRepeatedAnniversaries);
+		}
+
+		@AfterEach
+		void tearDown() {
+
+			couple = null;
+			firstDate = null;
+
+			anniversaryRepository.deleteAllInBatch();
+			anniversaryPatternRepository.deleteAllInBatch();
+
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@Tag(NEED_ANNIVERSARY)
+		@DisplayName("로그인한 회원의 커플이 소유한 기념일이고 1년 반복일 때, 해당 기념일 및 연관된 기념일 모두 수정되고, 기념일 패턴도 함께 수정된다.")
+		@Test
+		void withLoginMembersCoupleHaveGivenYearRepeatedAnniversary() {
+
+			// given
+			int dayDiff = 20;
+			LocalDate modifiedDate = firstDate.plusDays(dayDiff);
+
+			// when
+			anniversaryService.modifyAnniversaryForFirstDate(couple.getId(), modifiedDate);
+
+			// then
+			List<AnniversaryPattern> changedPatterns = anniversaryPatternRepository.findAll();
+
+			assertThat(changedPatterns)
+				.isNotEmpty()
+				.allMatch(anniversaryPattern -> Objects.equals(
+					anniversaryPattern.getRepeatStartDate(), modifiedDate))
+				.filteredOn(anniversaryPattern -> Objects.equals(anniversaryPattern.getRepeatRule(),
+					AnniversaryRepeatRule.NONE))
+				.allMatch(anniversaryPattern -> Objects.equals(
+					anniversaryPattern.getRepeatEndDate(), modifiedDate
+				));
 		}
 	}
 
@@ -801,7 +887,8 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 
 			// then
 			List<Anniversary> actualAnniversaries = anniversaryRepository.findAll().stream()
-				.filter(anniversary -> anniversary.getAnniversaryPattern().getCategory().equals(AnniversaryCategory.OTHER))
+				.filter(anniversary -> anniversary.getAnniversaryPattern().getCategory()
+					.equals(AnniversaryCategory.OTHER))
 				.toList();
 
 			assertThat(actualAnniversaries)
@@ -921,7 +1008,7 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 			).toList();
 	}
 
-	public AnniversaryModifyServiceRequest createAnniversaryModifyServiceRequest(String title,
+	private AnniversaryModifyServiceRequest createAnniversaryModifyServiceRequest(String title,
 		String content, LocalDate date) {
 
 		return AnniversaryModifyServiceRequest.builder()
@@ -929,5 +1016,35 @@ public class AnniversaryServiceTest extends ServiceTestSupport {
 			.content(content)
 			.date(date)
 			.build();
+	}
+
+	private List<Anniversary> createRepeatedAnniversariesForFirstDate(
+		AnniversaryPattern anniversaryPattern, LocalDate firstDate) {
+
+		return switch (anniversaryPattern.getRepeatRule()) {
+
+			case HUNDRED_DAYS -> {
+				LocalDate anniversaryDate = firstDate.minusDays(1);
+
+				yield IntStream.iterate(
+						100,
+						days -> anniversaryDate.plusDays(days)
+							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+						days -> days + 100)
+					.mapToObj(
+						days -> Anniversary.ofFirstDate(anniversaryPattern, anniversaryDate, days)
+					).toList();
+			}
+
+			case YEAR -> IntStream.iterate(
+					1,
+					years -> firstDate.plusYears(years)
+						.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
+					years -> years + 1)
+				.mapToObj(days -> Anniversary.ofFirstDate(anniversaryPattern, firstDate, days)
+				).toList();
+
+			case NONE -> List.of(Anniversary.ofFirstDate(anniversaryPattern, firstDate, 0));
+		};
 	}
 }

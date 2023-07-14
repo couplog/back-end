@@ -45,7 +45,7 @@ public class CalenderReadService {
 		ScheduleDatesServiceResponse partnerScheduleDates = scheduleReadService.readScheduleDates(
 			member, partnerId, year, month);
 		AnniversaryDatesServiceResponse anniversaryDates = anniversaryReadService.readAnniversaryDates(
-			member, coupleId, year, month);
+			coupleId, year, month);
 		return CalenderDateServiceResponse.of(datingDates, myScheduleDates, partnerScheduleDates,
 			anniversaryDates);
 	}

@@ -53,7 +53,8 @@ public class Anniversary {
 		this.anniversaryPattern = anniversaryPattern;
 	}
 
-	public static Anniversary of(AnniversaryPattern anniversaryPattern, String title, String content, LocalDate date){
+	public static Anniversary of(AnniversaryPattern anniversaryPattern, String title,
+		String content, LocalDate date) {
 
 		return Anniversary.builder()
 			.title(title)

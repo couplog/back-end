@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.domain.couple.controller;
 
+import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.controller.dto.request.FirstDateRequest;
 import com.dateplan.dateplan.domain.couple.controller.dto.response.CoupleInfoResponse;
 import com.dateplan.dateplan.domain.couple.controller.dto.response.FirstDateResponse;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/couples")
 public class CoupleController {
 
+	private final AnniversaryService anniversaryService;
 	private final CoupleService coupleService;
 	private final CoupleReadService coupleReadService;
 
@@ -41,6 +43,8 @@ public class CoupleController {
 		Member loginMember = MemberThreadLocal.get();
 
 		coupleService.updateFirstDate(loginMember, coupleId, request.toFirstDateServiceRequest());
+		anniversaryService.modifyAnniversaryForFirstDate(coupleId, request.getFirstDate());
+
 		return ApiResponse.ofSuccess();
 	}
 

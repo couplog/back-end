@@ -47,17 +47,24 @@ public class AnniversaryPattern {
 	private AnniversaryRepeatRule repeatRule;
 
 	@NotNull
+	@Enumerated(EnumType.STRING)
+	@Column(name = "category", columnDefinition = "VARCHAR(20)", updatable = false)
+	private AnniversaryCategory category;
+
+	@NotNull
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "couple_id")
 	private Couple couple;
 
 	@Builder
 	public AnniversaryPattern(LocalDate repeatStartDate, LocalDate repeatEndDate,
+		AnniversaryCategory category,
 		AnniversaryRepeatRule repeatRule, Couple couple) {
 
 		this.repeatStartDate = repeatStartDate;
 		this.repeatEndDate = repeatEndDate == null ? CALENDER_END_DATE : repeatEndDate;
 		this.repeatRule = repeatRule;
+		this.category = category;
 		this.couple = couple;
 	}
 
@@ -68,6 +75,7 @@ public class AnniversaryPattern {
 			.repeatStartDate(birthDay)
 			.repeatEndDate(CALENDER_END_DATE)
 			.repeatRule(AnniversaryRepeatRule.YEAR)
+			.category(AnniversaryCategory.BIRTH)
 			.build();
 	}
 
@@ -82,6 +90,7 @@ public class AnniversaryPattern {
 			.repeatStartDate(firstDate)
 			.repeatEndDate(repeatEndDate)
 			.repeatRule(repeatRule)
+			.category(AnniversaryCategory.FIRST_DATE)
 			.build();
 	}
 
@@ -92,7 +101,7 @@ public class AnniversaryPattern {
 		if (rule != AnniversaryRepeatRule.HUNDRED_DAYS) {
 			this.repeatStartDate = this.repeatStartDate.plusDays(dayDiff);
 
-			if(rule == AnniversaryRepeatRule.NONE){
+			if (rule == AnniversaryRepeatRule.NONE) {
 				this.repeatEndDate = this.repeatStartDate;
 			}
 		}

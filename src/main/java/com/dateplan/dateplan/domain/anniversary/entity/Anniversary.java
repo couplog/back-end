@@ -53,6 +53,26 @@ public class Anniversary {
 		this.anniversaryPattern = anniversaryPattern;
 	}
 
+	public static Anniversary of(AnniversaryPattern anniversaryPattern, String title, String content, LocalDate date){
+
+		return Anniversary.builder()
+			.title(title)
+			.content(content)
+			.date(date)
+			.anniversaryPattern(anniversaryPattern)
+			.build();
+	}
+
+	public static Anniversary ofBirthDay(AnniversaryPattern anniversaryPattern, LocalDate birthDay,
+		String memberName) {
+
+		return Anniversary.builder()
+			.title(memberName + " 님의 생일")
+			.date(birthDay)
+			.anniversaryPattern(anniversaryPattern)
+			.build();
+	}
+
 	public static Anniversary ofFirstDate(AnniversaryPattern anniversaryPattern,
 		LocalDate firstDate, Integer timeDifference) {
 

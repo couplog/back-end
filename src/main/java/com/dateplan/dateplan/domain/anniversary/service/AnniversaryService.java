@@ -60,12 +60,8 @@ public class AnniversaryService {
 		return switch (anniversaryPattern.getRepeatRule()) {
 
 			case NONE -> List.of(
-				Anniversary.builder()
-					.title(request.getTitle())
-					.content(request.getContent())
-					.date(request.getDate())
-					.anniversaryPattern(anniversaryPattern)
-					.build());
+				Anniversary.of(anniversaryPattern, request.getTitle(), request.getContent(),
+					request.getDate()));
 
 			case YEAR -> {
 				LocalDate date = request.getDate();
@@ -78,12 +74,7 @@ public class AnniversaryService {
 							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 						years -> years + 1)
 					.mapToObj(years ->
-						Anniversary.builder()
-							.title(title)
-							.content(content)
-							.date(date.plusYears(years))
-							.anniversaryPattern(anniversaryPattern)
-							.build())
+						Anniversary.of(anniversaryPattern, title, content, date.plusYears(years)))
 					.toList();
 			}
 			case HUNDRED_DAYS -> List.of();
@@ -117,11 +108,7 @@ public class AnniversaryService {
 					.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 				years -> years + 1)
 			.mapToObj(years ->
-				Anniversary.builder()
-					.title(member.getName() + " 님의 생일")
-					.date(birthDay.plusYears(years))
-					.anniversaryPattern(anniversaryPattern)
-					.build())
+				Anniversary.ofBirthDay(anniversaryPattern, birthDay, member.getName()))
 			.toList();
 	}
 
@@ -164,7 +151,8 @@ public class AnniversaryService {
 						days -> anniversaryDate.plusDays(days)
 							.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 						days -> days + 100)
-					.mapToObj(days -> Anniversary.ofFirstDate(anniversaryPattern, anniversaryDate, days)
+					.mapToObj(
+						days -> Anniversary.ofFirstDate(anniversaryPattern, anniversaryDate, days)
 					).toList();
 			}
 

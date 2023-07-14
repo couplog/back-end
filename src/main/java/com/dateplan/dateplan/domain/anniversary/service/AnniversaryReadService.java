@@ -5,15 +5,9 @@ import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepos
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniversaryListServiceResponse;
-import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
-import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.anniversary.AnniversaryNotFoundException;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,18 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AnniversaryReadService {
 
-	private final CoupleReadService coupleReadService;
 	private final AnniversaryQueryRepository anniversaryQueryRepository;
 
-	public AnniversaryListServiceResponse readAnniversaries(Member loginMember,
-		Long targetCoupleId, Integer year, Integer month, Integer day, boolean onlyRepeatStarted) {
-
-		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
-			loginMember).getId();
-
-		if (!Objects.equals(loginMemberCoupleId, targetCoupleId)) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
+	public AnniversaryListServiceResponse readAnniversaries(Long targetCoupleId, Integer year,
+		Integer month, Integer day, boolean onlyRepeatStarted) {
 
 		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
 			targetCoupleId, year, month, day, true, onlyRepeatStarted);
@@ -42,15 +28,8 @@ public class AnniversaryReadService {
 		return AnniversaryListServiceResponse.from(anniversaries);
 	}
 
-	public ComingAnniversaryListServiceResponse readComingAnniversaries(Member loginMember,
-		Long targetCoupleId, LocalDate startDate, Integer size) {
-
-		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
-			loginMember).getId();
-
-		if (!Objects.equals(loginMemberCoupleId, targetCoupleId)) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
+	public ComingAnniversaryListServiceResponse readComingAnniversaries(Long targetCoupleId,
+		LocalDate startDate, Integer size) {
 
 		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllComingAnniversariesByCoupleId(
 			startDate, targetCoupleId, size);
@@ -58,15 +37,8 @@ public class AnniversaryReadService {
 		return ComingAnniversaryListServiceResponse.from(anniversaries);
 	}
 
-	public AnniversaryDatesServiceResponse readAnniversaryDates(Member loginMember,
-		Long targetCoupleId, Integer year, Integer month) {
-
-		Long loginMemberCoupleId = coupleReadService.findCoupleByMemberOrElseThrow(
-			loginMember).getId();
-
-		if (!Objects.equals(loginMemberCoupleId, targetCoupleId)) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
+	public AnniversaryDatesServiceResponse readAnniversaryDates(Long targetCoupleId, Integer year,
+		Integer month) {
 
 		List<Anniversary> anniversaries = anniversaryQueryRepository.findAllByCoupleIdAndDateInfo(
 			targetCoupleId, year, month, null, false, false);
@@ -74,7 +46,8 @@ public class AnniversaryReadService {
 		return AnniversaryDatesServiceResponse.from(anniversaries);
 	}
 
-	public Anniversary findAnniversaryByIdOrElseThrow(Long anniversaryId, boolean patternFetchJoinRequired) {
+	public Anniversary findAnniversaryByIdOrElseThrow(Long anniversaryId,
+		boolean patternFetchJoinRequired) {
 
 		return anniversaryQueryRepository.findById(anniversaryId, patternFetchJoinRequired)
 			.orElseThrow(AnniversaryNotFoundException::new);

@@ -3,8 +3,10 @@ package com.dateplan.dateplan.controller.couple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -162,6 +164,8 @@ public class CoupleControllerTest extends ControllerTestSupport {
 						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"));
+
+			then(anniversaryService).should(times(1)).modifyAnniversaryForFirstDate(anyLong(), any(LocalDate.class));
 		}
 
 		@DisplayName("Long 타입이 아닌 couple-id를 적으면 실패한다.")

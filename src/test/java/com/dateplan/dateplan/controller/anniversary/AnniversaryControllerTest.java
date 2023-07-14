@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -27,7 +26,6 @@ import com.dateplan.dateplan.domain.anniversary.controller.dto.request.Anniversa
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryCreateServiceRequest;
-import com.dateplan.dateplan.domain.anniversary.service.dto.request.AnniversaryModifyServiceRequest;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryDatesServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryListServiceResponse;
 import com.dateplan.dateplan.domain.anniversary.service.dto.response.AnniversaryServiceResponse;
@@ -36,13 +34,8 @@ import com.dateplan.dateplan.domain.anniversary.service.dto.response.ComingAnniv
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.anniversary.AnniversaryNotFoundException;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
-import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
@@ -64,10 +57,13 @@ import org.springframework.http.MediaType;
 public class AnniversaryControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
-	void setUp() {
+	void setUp() throws Exception {
 		given(
 			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
 				any(Object.class)))
+			.willReturn(true);
+
+		given(anniversaryAuthInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class), any()))
 			.willReturn(true);
 	}
 
@@ -104,8 +100,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -134,8 +129,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -164,8 +158,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -192,8 +185,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -219,8 +211,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -244,8 +235,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
+				.createAnniversaries(anyLong(), any(AnniversaryCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, coupleId)
@@ -256,69 +246,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_CALENDER_TIME_RANGE));
-		}
-
-		@DisplayName("현재 로그인한 회원이 요청한 couple id 의 couple 내에 존재하지 않는다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withMemberNotInCouple() throws Exception {
-
-			// Given
-			Long coupleId = 1L;
-			AnniversaryCreateRequest request = AnniversaryCreateRequest.builder()
-				.title("title")
-				.content("content")
-				.date(LocalDate.of(2020, 10, 10))
-				.repeatRule(AnniversaryRepeatRule.YEAR)
-				.build();
-
-			// Stub
-			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
-				Operation.CREATE);
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(post(REQUEST_URL, coupleId)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// Given
-			Long coupleId = 1L;
-			AnniversaryCreateRequest request = AnniversaryCreateRequest.builder()
-				.title("title")
-				.content("content")
-				.date(LocalDate.of(2020, 10, 10))
-				.repeatRule(AnniversaryRepeatRule.YEAR)
-				.build();
-
-			// Stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.createAnniversaries(any(Member.class), anyLong(),
-					any(AnniversaryCreateServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(post(REQUEST_URL, coupleId)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 	}
 
@@ -354,8 +281,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 
 			// stub
 			given(
-				anniversaryReadService.readAnniversaryDates(any(Member.class), anyLong(), anyInt(),
-					anyInt()))
+				anniversaryReadService.readAnniversaryDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(serviceResponse);
 
 			// when & then
@@ -366,63 +292,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("true"))
 				.andExpect(jsonPath("$.data.anniversaryDates[0]").value(
 					anniversaryDates.get(0).toString()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Integer year = 2023;
-			Integer month = 1;
-
-			// stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-
-			given(
-				anniversaryReadService.readAnniversaryDates(any(Member.class), anyLong(), anyInt(),
-					anyInt()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId)
-					.queryParam("year", String.valueOf(year))
-					.queryParam("month", String.valueOf(month)))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withDifferentValueLoginMemberCoupleIdAndTargetCoupleId() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Integer year = 2023;
-			Integer month = 1;
-
-			// stub
-			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-
-			given(
-				anniversaryReadService.readAnniversaryDates(any(Member.class), anyLong(), anyInt(),
-					anyInt()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId)
-					.queryParam("year", String.valueOf(year))
-					.queryParam("month", String.valueOf(month)))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 	}
 
@@ -458,7 +327,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 
 			// stub
 			given(
-				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
+				anniversaryReadService.readAnniversaries(anyLong(), anyInt(),
 					anyInt(), anyInt(), anyBoolean()))
 				.willReturn(serviceResponse);
 
@@ -481,67 +350,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 					serviceResponses.get(0).getCategory().name()))
 				.andExpect(jsonPath("$.data.anniversaries[0].date").value(
 					serviceResponses.get(0).getDate().toString()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Integer year = 2023;
-			Integer month = 1;
-			Integer day = 1;
-
-			// stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-
-			given(
-				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
-					anyInt(), anyInt(), anyBoolean()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId)
-					.queryParam("year", String.valueOf(year))
-					.queryParam("month", String.valueOf(month))
-					.queryParam("day", String.valueOf(day)))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withDifferentValueLoginMemberCoupleIdAndTargetCoupleId() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Integer year = 2023;
-			Integer month = 1;
-			Integer day = 1;
-
-			// stub
-			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-
-			given(
-				anniversaryReadService.readAnniversaries(any(Member.class), anyLong(), anyInt(),
-					anyInt(), anyInt(), anyBoolean()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId)
-					.queryParam("year", String.valueOf(year))
-					.queryParam("month", String.valueOf(month))
-					.queryParam("day", String.valueOf(day)))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 	}
 
@@ -574,9 +382,7 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 
 			// stub
 			given(
-				anniversaryReadService.readComingAnniversaries(any(Member.class), anyLong(),
-					nullable(LocalDate.class),
-					anyInt()))
+				anniversaryReadService.readComingAnniversaries(anyLong(), nullable(LocalDate.class), anyInt()))
 				.willReturn(serviceResponse);
 
 			// when & then
@@ -591,57 +397,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 					serviceResponses.get(0).getContent()))
 				.andExpect(jsonPath("$.data.anniversaries[0].date").value(
 					serviceResponses.get(0).getDate().toString()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-
-			// stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-
-			given(
-				anniversaryReadService.readComingAnniversaries(any(Member.class), anyLong(),
-					nullable(LocalDate.class),
-					anyInt()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("대상 커플의 id 와 현재 로그인 회원의 커플 id 가 다르다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withDifferentValueLoginMemberCoupleIdAndTargetCoupleId() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-
-			// stub
-			NoPermissionException expectedException = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-
-			given(
-				anniversaryReadService.readComingAnniversaries(any(Member.class), anyLong(),
-					nullable(LocalDate.class),
-					anyInt()))
-				.willThrow(expectedException);
-
-			// when & then
-			mockMvc.perform(get(REQUEST_URL, coupleId))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 
 		@DisplayName("잘못된 형식의 날짜를 입력하면 에러 코드, 메시지를 응답한다.")
@@ -791,97 +546,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()))
 				.andExpect(jsonPath("$.message").value(INVALID_CALENDER_TIME_RANGE));
 		}
-
-		@DisplayName("존재하지 않는 기념일 id 로 요청한다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotExistsAnniversaryId() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-			AnniversaryModifyRequest request = createAnniversaryModifyRequest(
-				"title", "content", LocalDate.of(2020, 1, 1));
-
-			// stub
-			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.modifyAnniversary(any(Member.class), anyLong(),
-					anyLong(), any(AnniversaryModifyServiceRequest.class));
-
-			// when & then
-			mockMvc.perform(put(REQUEST_URL, coupleId, anniversaryId)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("해당 기념일에 수정 권한이 없다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNoPermissionForAnniversary() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-			AnniversaryModifyRequest request = createAnniversaryModifyRequest(
-				"title", "content", LocalDate.of(2020, 1, 1));
-
-			// stub
-			NoPermissionException expectedException = new NoPermissionException(
-				Resource.ANNIVERSARY, Operation.UPDATE);
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.modifyAnniversary(any(Member.class), anyLong(),
-					anyLong(), any(AnniversaryModifyServiceRequest.class));
-
-			// when & then
-			mockMvc.perform(put(REQUEST_URL, coupleId, anniversaryId)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-			AnniversaryModifyRequest request = createAnniversaryModifyRequest(
-				"title", "content", LocalDate.of(2020, 1, 1));
-
-			// stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.modifyAnniversary(any(Member.class), anyLong(),
-					anyLong(), any(AnniversaryModifyServiceRequest.class));
-
-			// when & then
-			mockMvc.perform(put(REQUEST_URL, coupleId, anniversaryId)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
 	}
 
 	@Nested
@@ -914,82 +578,6 @@ public class AnniversaryControllerTest extends ControllerTestSupport {
 			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"));
-		}
-
-		@DisplayName("존재하지 않는 기념일 id 로 요청한다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotExistsAnniversaryId() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-
-			// stub
-			AnniversaryNotFoundException expectedException = new AnniversaryNotFoundException();
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.deleteAnniversary(any(Member.class), anyLong(),
-					anyLong());
-
-			// when & then
-			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("해당 기념일에 삭제 권한이 없다면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNoPermissionForAnniversary() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-
-			// stub
-			NoPermissionException expectedException = new NoPermissionException(
-				Resource.ANNIVERSARY, Operation.DELETE);
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.deleteAnniversary(any(Member.class), anyLong(),
-					anyLong());
-
-			// when & then
-			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
-		}
-
-		@DisplayName("연결되지 않은 회원의 요청이라면 에러 코드, 메시지를 응답한다.")
-		@Test
-		void withNotConnectedMember() throws Exception {
-
-			// given
-			Long coupleId = 1L;
-			Long anniversaryId = 1L;
-
-			// stub
-			MemberNotConnectedException expectedException = new MemberNotConnectedException();
-
-			willThrow(expectedException)
-				.given(anniversaryService)
-				.deleteAnniversary(any(Member.class), anyLong(),
-					anyLong());
-
-			// when & then
-			mockMvc.perform(delete(REQUEST_URL, coupleId, anniversaryId))
-				.andExpect(
-					status().is(expectedException.getErrorCode().getHttpStatusCode().value()))
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 	}
 

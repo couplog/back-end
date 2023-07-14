@@ -40,14 +40,10 @@ public class AnniversaryService {
 	private final AnniversaryJDBCRepository anniversaryJDBCRepository;
 	private final AnniversaryQueryRepository anniversaryQueryRepository;
 
-	public void createAnniversaries(Member member, Long coupleId,
+	public void createAnniversaries(Long coupleId,
 		AnniversaryCreateServiceRequest request) {
 
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
-
-		if (!Objects.equals(couple.getId(), coupleId)) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.CREATE);
-		}
+		Couple couple = coupleReadService.findCoupleByIdOrElseThrow(coupleId);
 
 		AnniversaryPattern anniversaryPattern = request.toAnniversaryPattern(couple);
 		anniversaryPatternRepository.save(anniversaryPattern);
@@ -197,22 +193,13 @@ public class AnniversaryService {
 		};
 	}
 
-	public void modifyAnniversary(Member loginMember, Long coupleId, Long anniversaryId,
-		AnniversaryModifyServiceRequest request) {
-
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(loginMember);
-
-		if (!Objects.equals(couple.getId(), coupleId)) {
-			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
-		}
+	public void modifyAnniversary(Long anniversaryId, AnniversaryModifyServiceRequest request) {
 
 		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
 			anniversaryId, true);
 		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
-		Long anniversaryOwnerCoupleId = anniversaryPattern.getCouple().getId();
 
-		if (!Objects.equals(anniversaryOwnerCoupleId, coupleId) ||
-			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER) ||
+		if (!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER) ||
 			!Objects.equals(anniversary.getDate(), anniversaryPattern.getRepeatStartDate())
 		) {
 			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
@@ -226,23 +213,14 @@ public class AnniversaryService {
 		anniversaryPatternRepository.save(anniversaryPattern);
 	}
 
-	public void deleteAnniversary(Member loginMember, Long coupleId, Long anniversaryId) {
-
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(loginMember);
-
-		if (!Objects.equals(couple.getId(), coupleId)) {
-			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.DELETE);
-		}
+	public void deleteAnniversary(Long anniversaryId) {
 
 		Anniversary anniversary = anniversaryReadService.findAnniversaryByIdOrElseThrow(
 			anniversaryId, true);
 
 		AnniversaryPattern anniversaryPattern = anniversary.getAnniversaryPattern();
 
-		Long anniversaryOwnerCoupleId = anniversaryPattern.getCouple().getId();
-
-		if (!Objects.equals(anniversaryOwnerCoupleId, coupleId) ||
-			!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
+		if (!Objects.equals(anniversary.getCategory(), AnniversaryCategory.OTHER)
 		) {
 			throw new NoPermissionException(Resource.ANNIVERSARY, Operation.UPDATE);
 		}

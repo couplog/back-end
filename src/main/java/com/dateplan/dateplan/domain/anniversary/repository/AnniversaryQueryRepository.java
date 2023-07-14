@@ -131,6 +131,16 @@ public class AnniversaryQueryRepository {
 		baseQuery.execute();
 	}
 
+	public boolean existsByIdAndCoupleId(Long anniversaryId, Long coupleId) {
+
+		Anniversary findAnniversary = queryFactory.selectFrom(anniversary)
+			.innerJoin(anniversary.anniversaryPattern, anniversaryPattern)
+			.where(anniversary.id.eq(anniversaryId), anniversaryPattern.couple.id.eq(coupleId))
+			.fetchFirst();
+
+		return findAnniversary != null;
+	}
+
 	private BooleanExpression startDateGoe(LocalDate startDate) {
 
 		if (startDate == null) {

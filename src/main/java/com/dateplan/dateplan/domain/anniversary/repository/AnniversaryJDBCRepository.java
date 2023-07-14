@@ -18,8 +18,8 @@ public class AnniversaryJDBCRepository {
 	@Transactional
 	public void saveAll(List<Anniversary> anniversaries){
 
-		String sql = "INSERT INTO anniversary (title, content, date, category, anniversary_pattern_id) "
-			+ "VALUES (?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO anniversary (title, content, date, anniversary_pattern_id) "
+			+ "VALUES (?, ?, ?, ?)";
 
 		jdbcTemplate.batchUpdate(sql,
 			anniversaries,
@@ -28,8 +28,7 @@ public class AnniversaryJDBCRepository {
 				ps.setString(1, anniversary.getTitle());
 				ps.setString(2, anniversary.getContent());
 				ps.setDate(3, Date.valueOf(anniversary.getDate()));
-				ps.setString(4, anniversary.getCategory().name());
-				ps.setLong(5, anniversary.getAnniversaryPattern().getId());
+				ps.setLong(4, anniversary.getAnniversaryPattern().getId());
 			});
 	}
 }

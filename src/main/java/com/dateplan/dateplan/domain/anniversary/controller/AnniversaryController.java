@@ -92,7 +92,7 @@ public class AnniversaryController {
 		@RequestBody @Valid AnniversaryModifyRequest request
 	) {
 
-		anniversaryService.modifyAnniversary(anniversaryId, request.toServiceRequest());
+		anniversaryService.modifyAnniversary(anniversaryId, request.toServiceRequest(), false);
 
 		return ApiResponse.ofSuccess();
 	}

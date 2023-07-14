@@ -3,6 +3,7 @@ package com.dateplan.dateplan.domain.anniversary.service.dto.request;
 import static com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule.NONE;
 import static com.dateplan.dateplan.global.constant.DateConstants.CALENDER_END_DATE;
 
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
 import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
@@ -36,6 +37,7 @@ public class AnniversaryCreateServiceRequest {
 			.repeatStartDate(date)
 			.repeatEndDate(repeatEndDate)
 			.repeatRule(repeatRule)
+			.category(AnniversaryCategory.OTHER)
 			.build();
 	}
 

@@ -143,14 +143,14 @@ public class CalenderReadServiceTest extends ServiceTestSupport {
 					.repeatStartDate(LocalDate.now())
 					.repeatEndDate(LocalDate.now())
 					.repeatRule(AnniversaryRepeatRule.NONE)
+					.category(AnniversaryCategory.OTHER)
 					.build()
 			);
 			anniversaryRepository.save(
 				Anniversary.builder()
-					.title("anniversary")
+					.title("기념일")
 					.anniversaryPattern(anniversaryPattern)
 					.date(LocalDate.now())
-					.category(AnniversaryCategory.OTHER)
 					.build()
 			);
 

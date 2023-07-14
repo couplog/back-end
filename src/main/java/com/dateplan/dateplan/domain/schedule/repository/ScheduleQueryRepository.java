@@ -8,9 +8,11 @@ import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -19,6 +21,24 @@ import org.springframework.stereotype.Repository;
 public class ScheduleQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
+
+	public Optional<LocalDateTime> findMinStartDateTimeBySchedulePatternId(Long schedulePatternId) {
+		return Optional.ofNullable(queryFactory
+			.select(schedule.startDateTime.min())
+			.from(schedule)
+			.join(schedule.schedulePattern, schedulePattern)
+			.where(schedule.schedulePattern.id.eq(schedulePatternId))
+			.fetchOne());
+	}
+
+	public Optional<LocalDateTime> findMaxStartDateTimeBySchedulePatternId(Long schedulePatternId) {
+		return Optional.ofNullable(queryFactory
+			.select(schedule.startDateTime.max())
+			.from(schedule)
+			.join(schedule.schedulePattern, schedulePattern)
+			.where(schedule.schedulePattern.id.eq(schedulePatternId))
+			.fetchOne());
+	}
 
 	public List<Schedule> findByDateBetween(Long memberId, Integer year, Integer month,
 		Integer day) {
@@ -45,6 +65,17 @@ public class ScheduleQueryRepository {
 				.and(endDateTimeGoe(year, month)))
 			.orderBy(schedule.startDateTime.asc())
 			.fetch();
+	}
+
+	public Optional<Schedule> findById(Long scheduleId) {
+		return Optional.ofNullable(
+			queryFactory
+				.selectFrom(schedule)
+				.join(schedule.schedulePattern, schedulePattern)
+				.fetchJoin()
+				.where(schedule.id.eq(scheduleId))
+				.fetchOne()
+		);
 	}
 
 	private BooleanExpression dateBetween(Integer year, Integer month, Integer day) {
@@ -82,6 +113,6 @@ public class ScheduleQueryRepository {
 			return schedule.endDateTime.year().goe(year);
 		}
 		return schedule.endDateTime.goe(
-			YearMonth.of(year,month).atDay(1).atTime(LocalTime.MIN));
+			YearMonth.of(year, month).atDay(1).atTime(LocalTime.MIN));
 	}
 }

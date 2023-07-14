@@ -108,7 +108,7 @@ public class AnniversaryService {
 					.isBefore(DateConstants.NEXT_DAY_FROM_CALENDER_END_DATE),
 				years -> years + 1)
 			.mapToObj(years ->
-				Anniversary.ofBirthDay(anniversaryPattern, birthDay, member.getName()))
+				Anniversary.ofBirthDay(anniversaryPattern, birthDay.plusYears(years), member.getName()))
 			.toList();
 	}
 

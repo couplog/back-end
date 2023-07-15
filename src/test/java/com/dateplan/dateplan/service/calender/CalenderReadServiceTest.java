@@ -89,7 +89,7 @@ public class CalenderReadServiceTest extends ServiceTestSupport {
 			memberRepository.deleteAllInBatch();
 		}
 
-		@DisplayName("[성공] 올바른 memberId, coupleId, year, month를 입력하면 "
+		@DisplayName("[성공] 올바른 memberId, year, month를 입력하면 "
 			+ "yearMonth의 각 날짜에 존재하는 일정들이 dating, my, partner, anniversary 순으로 조회된다")
 		@Test
 		void should_returnExistScheduleByDatesOrderBy_When_validRequest() {
@@ -155,7 +155,7 @@ public class CalenderReadServiceTest extends ServiceTestSupport {
 			);
 
 			CalenderDateServiceResponse response = calenderReadService.readCalenderDates(
-				member, member.getId(), couple.getId(), LocalDate.now()
+				member, member.getId(), LocalDate.now()
 					.getYear(), LocalDate.now().getMonthValue());
 
 			assertThat(response.getSchedules().get(0).getDate()).isEqualTo(LocalDate.now());
@@ -176,21 +176,7 @@ public class CalenderReadServiceTest extends ServiceTestSupport {
 				Operation.READ);
 			assertThatThrownBy(
 				() -> calenderReadService.readCalenderDates(member, member.getId() + 1,
-					couple.getId(), LocalDate.now()
-						.getYear(), LocalDate.now().getMonthValue()))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
-
-		@DisplayName("[실패] 요청한 coupleId와 현재 회원이 연결된 커플의 id가 다르면 실패한다")
-		@Test
-		void should_throwNoPermissionException_When_mismatchCoupleId() {
-
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			assertThatThrownBy(
-				() -> calenderReadService.readCalenderDates(member, member.getId(),
-					couple.getId() + 1, LocalDate.now()
+					LocalDate.now()
 						.getYear(), LocalDate.now().getMonthValue()))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());

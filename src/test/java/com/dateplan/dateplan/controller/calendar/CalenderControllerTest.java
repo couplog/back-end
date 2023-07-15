@@ -57,7 +57,7 @@ public class CalenderControllerTest extends ControllerTestSupport {
 			MemberThreadLocal.remove();
 		}
 
-		@DisplayName("[성공] 올바른 member_id, coupleId, year, month를 입력하면 해당 연월에 존재하는 일정들이 반환된다.")
+		@DisplayName("[성공] 올바른 member_id, year, month를 입력하면 해당 연월에 존재하는 일정들이 반환된다.")
 		@Test
 		void should_returnSchedules_When_validRequest() throws Exception {
 
@@ -80,13 +80,12 @@ public class CalenderControllerTest extends ControllerTestSupport {
 				.build();
 
 			// Stubbing
-			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(), anyLong(),
+			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(),
 				anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("coupleId", "1")
 					.param("year", String.valueOf(7))
 					.param("month", String.valueOf(13)))
 				.andExpect(status().isOk())
@@ -106,13 +105,12 @@ public class CalenderControllerTest extends ControllerTestSupport {
 			// Stubbing
 			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
 				Operation.READ);
-			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(), anyLong(),
+			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(),
 				anyInt(), anyInt()))
 				.willThrow(exception);
 
 			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("coupleId", "1")
 					.param("year", String.valueOf(LocalDate.now().getYear()))
 					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
 				.andExpect(status().isForbidden())
@@ -121,32 +119,10 @@ public class CalenderControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.message").value(exception.getMessage()));
 		}
 
-		@DisplayName("[실패] 현재 로그인한 회원이 연결된 커플의 id와 요청의 coupleId가 다르면 실패한다.")
-		@Test
-		void should_throwNoPermissionException_When_mismatchCoupleId() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(), anyLong(),
-				anyInt(), anyInt()))
-				.willThrow(exception);
-
-			// When & Then
-			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("coupleId", "1")
-					.param("year", String.valueOf(LocalDate.now().getYear()))
-					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(exception.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(exception.getMessage()));
-		}
-
-		@DisplayName("[실패] coupleId, year 또는 month 올바르지 않은 값이 들어가면 실패한다.")
+		@DisplayName("[실패] year 또는 month 올바르지 않은 값이 들어가면 실패한다.")
 		@ParameterizedTest
-		@CsvSource({"aa,2023,7", "1,aa,7", "1,2023,aa"})
-		void failWithInvalidQueryParameter(String coupleId, String year, String month) throws Exception {
+		@CsvSource({"aa,7", "2023,aa"})
+		void failWithInvalidQueryParameter(String year, String month) throws Exception {
 
 			CalenderDateServiceResponse response = CalenderDateServiceResponse.builder()
 				.schedules(List.of(
@@ -166,13 +142,12 @@ public class CalenderControllerTest extends ControllerTestSupport {
 				.build();
 
 			// Stubbing
-			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(), anyLong(),
+			given(calenderReadService.readCalenderDates(any(Member.class), anyLong(),
 				anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
-					.param("coupleId", coupleId)
 					.param("year", year)
 					.param("month", month))
 				.andExpectAll(

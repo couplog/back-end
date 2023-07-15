@@ -23,13 +23,12 @@ public class CalenderController {
 	@GetMapping("/calender/date")
 	public ApiResponse<CalenderDateResponse> readCalenderDate(
 		@PathVariable(value = "member_id") Long memberId,
-		@RequestParam(value = "coupleId") Long coupleId,
 		@RequestParam(value = "year") Integer year,
 		@RequestParam(value = "month") Integer month
 	) {
 		final Member member = MemberThreadLocal.get();
 		CalenderDateServiceResponse response = calenderReadService.readCalenderDates(
-			member, memberId, coupleId, year, month);
+			member, memberId, year, month);
 		return ApiResponse.ofSuccess(CalenderDateResponse.from(response));
 	}
 }

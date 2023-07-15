@@ -28,14 +28,12 @@ public class CalenderReadService {
 	private final AnniversaryReadService anniversaryReadService;
 
 	public CalenderDateServiceResponse readCalenderDates(Member member, Long memberId,
-		Long coupleId, Integer year, Integer month) {
+		Integer year, Integer month) {
 
 		if (!Objects.equals(member.getId(), memberId)) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
 		}
-		if (!Objects.equals(coupleReadService.getCoupleInfo(member).getCoupleId(), coupleId)) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
+		Long coupleId = coupleReadService.getCoupleInfo(member).getCoupleId();
 		Long partnerId = coupleReadService.getPartnerId(member);
 
 		DatingDatesServiceResponse datingDates = datingReadService.readDatingDates(

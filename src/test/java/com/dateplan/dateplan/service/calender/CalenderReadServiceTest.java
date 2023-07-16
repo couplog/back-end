@@ -137,15 +137,14 @@ public class CalenderReadServiceTest extends ServiceTestSupport {
 					.build()
 			);
 
-			AnniversaryPattern anniversaryPattern = anniversaryPatternRepository.save(
-				AnniversaryPattern.builder()
-					.couple(couple)
-					.repeatStartDate(LocalDate.now())
-					.repeatEndDate(LocalDate.now())
-					.repeatRule(AnniversaryRepeatRule.NONE)
-					.category(AnniversaryCategory.OTHER)
-					.build()
-			);
+			AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
+				.couple(couple)
+				.repeatStartDate(LocalDate.now())
+				.repeatEndDate(LocalDate.now())
+				.repeatRule(AnniversaryRepeatRule.NONE)
+				.category(AnniversaryCategory.OTHER)
+				.build();
+
 			anniversaryRepository.save(
 				Anniversary.builder()
 					.title("기념일")

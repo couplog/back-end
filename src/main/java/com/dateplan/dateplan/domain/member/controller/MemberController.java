@@ -132,4 +132,12 @@ public class MemberController {
 		anniversaryService.createAnniversariesForBirthDay(serviceResponse.getMember2Id());
 		return ApiResponse.ofSuccess();
 	}
+
+	@PostMapping("/{member_id}/disconnect")
+	public ApiResponse<Void> disconnectCouple(@PathVariable("member_id") Long memberId) {
+		final Member member = MemberThreadLocal.get();
+
+		coupleService.disconnectCouple(member, memberId);
+		return ApiResponse.ofSuccess();
+	}
 }

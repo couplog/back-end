@@ -140,4 +140,14 @@ public class MemberController {
 		coupleService.disconnectCouple(member, memberId);
 		return ApiResponse.ofSuccess();
 	}
+
+	@DeleteMapping("/{member_id}")
+	public ApiResponse<Void> withdrawal(@PathVariable("member_id") Long memberId) {
+		Member member = MemberThreadLocal.get();
+		if (coupleReadService.isMemberConnected(member)) {
+			coupleService.disconnectCouple(member, memberId);
+		}
+		memberService.withdrawal(member, memberId);
+		return ApiResponse.ofSuccess();
+	}
 }

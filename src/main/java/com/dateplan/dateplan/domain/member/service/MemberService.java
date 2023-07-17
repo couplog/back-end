@@ -1,5 +1,7 @@
 package com.dateplan.dateplan.domain.member.service;
 
+import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
+import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -26,6 +28,8 @@ public class MemberService {
 	private final AuthService authService;
 	private final S3Client s3Client;
 	private final StringRedisTemplate redisTemplate;
+	private final CoupleService coupleService;
+	private final CoupleReadService coupleReadService;
 
 	public void signUp(SignUpServiceRequest request) {
 
@@ -88,6 +92,9 @@ public class MemberService {
 	public void withdrawal(Member member, Long memberId) {
 		if (!isSameMember(memberId, member.getId())) {
 			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+		if (coupleReadService.isMemberConnected(member)) {
+			coupleService.disconnectCouple(member, memberId);
 		}
 
 		s3Client.deleteObject(S3ImageType.MEMBER_PROFILE, member.getId().toString());

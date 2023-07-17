@@ -12,6 +12,7 @@ import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.net.URL;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class MemberService {
 	private final MemberReadService memberReadService;
 	private final AuthService authService;
 	private final S3Client s3Client;
+	private final StringRedisTemplate redisTemplate;
 
 	public void signUp(SignUpServiceRequest request) {
 
@@ -81,6 +83,21 @@ public class MemberService {
 		loginMember.updateProfileImageUrl(Member.DEFAULT_PROFILE_IMAGE);
 
 		memberRepository.save(loginMember);
+	}
+
+	public void withdrawal(Member member, Long memberId) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+
+		s3Client.deleteObject(S3ImageType.MEMBER_PROFILE, member.getId().toString());
+		redisTemplate.delete(getRefreshKey(member));
+
+		memberRepository.delete(member);
+	}
+
+	private String getRefreshKey(Member member) {
+		return "[REFRESH]" + member.getId();
 	}
 
 	private boolean isSameMember(Long memberId, Long loginMemberId) {

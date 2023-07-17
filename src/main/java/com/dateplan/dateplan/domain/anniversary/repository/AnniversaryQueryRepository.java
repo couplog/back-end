@@ -38,8 +38,7 @@ public class AnniversaryQueryRepository {
 			.where(anniversary.anniversaryPattern.in(
 				JPAExpressions.selectFrom(anniversaryPattern)
 					.join(anniversaryPattern.couple, couple)
-					.where(coupleIdEq(coupleId))
-					.select(anniversaryPattern)))
+					.where(coupleIdEq(coupleId))))
 			.execute();
 	}
 

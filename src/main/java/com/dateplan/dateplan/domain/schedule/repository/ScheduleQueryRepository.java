@@ -28,8 +28,7 @@ public class ScheduleQueryRepository {
 			.where(schedule.schedulePattern.in(
 				JPAExpressions.selectFrom(schedulePattern)
 					.join(schedulePattern.member, member)
-					.where(memberIdEq(memberId))
-					.select(schedulePattern)))
+					.where(memberIdEq(memberId))))
 			.execute();
 	}
 

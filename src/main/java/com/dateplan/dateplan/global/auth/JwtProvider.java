@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -113,7 +112,6 @@ public class JwtProvider {
 		return true;
 	}
 
-	@NotNull
 	private static String getRefreshKey(Member member) {
 		return REFRESH_KEY_PREFIX + member.getId();
 	}

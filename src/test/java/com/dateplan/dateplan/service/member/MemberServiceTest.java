@@ -9,6 +9,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.times;
 import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
+import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -50,7 +52,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class MemberServiceTest extends ServiceTestSupport {
 
@@ -69,6 +70,8 @@ public class MemberServiceTest extends ServiceTestSupport {
 	@Autowired
 	private CoupleRepository coupleRepository;
 
+	@SpyBean
+	private CoupleService coupleService;
 
 	@DisplayName("회원가입시")
 	@Nested
@@ -576,6 +579,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			// Then
 			assertThat(memberRepository.findById(other.getId())).isEmpty();
+
+			// Verify
+			then(coupleService)
+				.shouldHaveNoInteractions();
 		}
 
 		@DisplayName("[성공] 회원이 연결되어 있는 경우, 회원 연결을 해제하고 회원의 모든 정보가 삭제된다.")
@@ -589,6 +596,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 			assertThat(memberRepository.findById(member.getId())).isEmpty();
 			assertThat(memberRepository.findById(partner.getId())).isPresent();
 			assertThat(coupleRepository.findById(couple.getId())).isEmpty();
+
+			// Verify
+			then(coupleService)
+				.should(times(1)).disconnectCouple(any(Member.class), anyLong());
 		}
 
 		@DisplayName("[실패] 요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다.")
@@ -601,6 +612,10 @@ public class MemberServiceTest extends ServiceTestSupport {
 			assertThatThrownBy(() -> memberService.withdrawal(member, member.getId() + 100))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
+
+			// Verify
+			then(coupleService)
+				.shouldHaveNoInteractions();
 		}
 	}
 

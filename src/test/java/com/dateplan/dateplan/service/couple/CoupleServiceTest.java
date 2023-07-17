@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mockStatic;
@@ -347,6 +348,37 @@ public class CoupleServiceTest extends ServiceTestSupport {
 			assertThatThrownBy(() -> coupleService.connectCouple(member, member.getId(), request))
 				.isInstanceOf(SelfConnectionNotAllowedException.class)
 				.hasMessage(SELF_CONNECTION_NOT_ALLOWED);
+		}
+
+		@Test
+		@DisplayName("[성공] 이미 존재하는 연결 코드가 삭제된다.")
+		void success_removeConnectionCode_When_coupleConnect() {
+
+			// Given
+			String myConnectionCode = "ABC123";
+			String partnerConnectionCode = "DEF123";
+
+			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+			stringValueOperations.set(getConnectionKey(member.getId()), myConnectionCode);
+			stringValueOperations.set(myConnectionCode, String.valueOf(member.getId()));
+			stringValueOperations.set(getConnectionKey(partner.getId()), partnerConnectionCode);
+			stringValueOperations.set(partnerConnectionCode, String.valueOf(partner.getId()));
+
+			ConnectionServiceRequest request = createConnectionServiceRequest(partnerConnectionCode);
+
+			// Stubbing
+			given(memberReadService.findMemberByIdOrElseThrow(partner.getId()))
+				.willReturn(partner);
+			given(coupleRepository.findById(anyLong())).willReturn(
+				Optional.ofNullable(createCouple(member, partner)));
+
+			// When
+			coupleService.connectCouple(member, member.getId(), request);
+
+			assertThat(stringValueOperations.get(getConnectionKey(member.getId()))).isNull();
+			assertThat(stringValueOperations.get(getConnectionKey(partner.getId()))).isNull();
+			assertThat(stringValueOperations.get(myConnectionCode)).isNull();
+			assertThat(stringValueOperations.get(partnerConnectionCode)).isNull();
 		}
 	}
 

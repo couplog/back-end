@@ -112,8 +112,19 @@ public class CoupleService {
 			.firstDate(request.getFirstDate())
 			.build();
 		coupleRepository.save(couple);
+		deleteConnectionKey(memberId);
+		deleteConnectionKey(partnerId);
 
 		return CoupleConnectServiceResponse.from(couple);
+	}
+
+	private void deleteConnectionKey(Long memberId) {
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+		String key = stringValueOperations.getAndDelete(getConnectionKey(memberId));
+
+		if (key != null) {
+			stringValueOperations.getAndDelete(key);
+		}
 	}
 
 	private void throwIfAlreadyConnected(Member partner) {

@@ -11,6 +11,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.DatePath;
 import com.querydsl.core.types.dsl.DateTemplate;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.jpa.impl.JPAUpdateClause;
@@ -31,6 +32,15 @@ public class AnniversaryQueryRepository {
 	private static final String ADD_DATE_FUNCTION = "ADDDATE({0}, {1})";
 
 	private final JPAQueryFactory queryFactory;
+
+	public void deleteByCoupleId(Long coupleId) {
+		queryFactory.delete(anniversary)
+			.where(anniversary.anniversaryPattern.in(
+				JPAExpressions.selectFrom(anniversaryPattern)
+					.join(anniversaryPattern.couple, couple)
+					.where(coupleIdEq(coupleId))))
+			.execute();
+	}
 
 	public List<Anniversary> findAllByCoupleIdAndDateInfo(Long coupleId, Integer year,
 		Integer month, Integer day, boolean patternFetchJoinRequired, boolean onlyRepeatStarted) {

@@ -6,6 +6,7 @@ import static com.dateplan.dateplan.domain.schedule.entity.QSchedulePattern.sche
 
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +22,15 @@ import org.springframework.stereotype.Repository;
 public class ScheduleQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
+
+	public void deleteByMemberId(Long memberId) {
+		queryFactory.delete(schedule)
+			.where(schedule.schedulePattern.in(
+				JPAExpressions.selectFrom(schedulePattern)
+					.join(schedulePattern.member, member)
+					.where(memberIdEq(memberId))))
+			.execute();
+	}
 
 	public Optional<LocalDateTime> findMinStartDateTimeBySchedulePatternId(Long schedulePatternId) {
 		return Optional.ofNullable(queryFactory

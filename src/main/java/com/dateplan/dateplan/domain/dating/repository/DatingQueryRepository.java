@@ -19,6 +19,12 @@ public class DatingQueryRepository {
 
 	private final JPAQueryFactory queryFactory;
 
+	public void deleteByCoupleId(Long coupleId) {
+		queryFactory.delete(dating)
+			.where(coupleIdEq(coupleId))
+			.execute();
+	}
+
 	public List<Dating> findByDateBetween(Long coupleId, Integer year, Integer month, Integer day) {
 		return queryFactory
 			.selectFrom(dating)

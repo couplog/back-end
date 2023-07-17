@@ -9,6 +9,8 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_IMAGE_NOT_FOUND;
 import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.SELF_CONNECTION_NOT_ALLOWED;
 import static com.dateplan.dateplan.global.exception.ErrorCode.INVALID_INPUT_VALUE;
+import static com.dateplan.dateplan.global.exception.ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
@@ -749,6 +751,153 @@ public class MemberControllerTest extends ControllerTestSupport {
 				.andExpect(jsonPath("$.success").value("false"))
 				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
 				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
+		}
+	}
+
+	@Nested
+	@DisplayName("현재 연결되어 있는 커플을 연결 해제 하려할 때")
+	class DisconnectCouple {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/disconnect";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("[성공] 연결되어 있는 회원이 id와 함께 연결 해제 요청을 하면, 연관되어 있는 모든 정보가 삭제된다.")
+		@Test
+		void should_deleteAllInformation_When_disconnectCouple() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(coupleService)
+				.disconnectCouple(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, 1))
+				.andExpectAll(
+					jsonPath("$.success").value("true")
+				);
+		}
+
+		@DisplayName("[실패] 요청한 memberId와 로그인한 회원의 id가 다르면 실패한다")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+
+			willThrow(exception)
+				.given(coupleService)
+				.disconnectCouple(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, 1))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("[실패] memberId의 타입이 Long이 아니면 실패한다")
+		@Test
+		void should_throwTypeMismatchException_When_memberIdTypeIsNotLong() throws Exception {
+
+			willDoNothing()
+				.given(coupleService)
+				.disconnectCouple(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, "a"))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 탈퇴 시")
+	class Withdrawal {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("[성공] 회원 탈퇴를 요청하면 회원의 모든 정보가 삭제된다.")
+		@Test
+		void should_deleteAllInfoRelatedMember_When_Withdrawal() throws Exception {
+
+			// Stubbing
+			willDoNothing()
+				.given(memberService)
+				.withdrawal(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, 1))
+				.andExpectAll(
+					jsonPath("$.success").value("true"));
+		}
+
+		@DisplayName("[실패] 요청한 memberId와 로그인한 회원의 id가 다르면 실패한다")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() throws Exception {
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+
+			willThrow(exception)
+				.given(memberService)
+				.withdrawal(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, 1))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("[실패] memberId의 타입이 Long이 아니면 실패한다")
+		@Test
+		void should_throwTypeMismatchException_When_memberIdTypeIsNotLong() throws Exception {
+
+			willDoNothing()
+				.given(memberService)
+				.withdrawal(any(Member.class), anyLong());
+
+			// When & Then
+			mockMvc.perform(
+					delete(REQUEST_URL, "a"))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
 		}
 	}
 

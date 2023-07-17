@@ -9,6 +9,7 @@ import static com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage.S3_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -19,6 +20,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
 import com.amazonaws.SdkClientException;
+import com.dateplan.dateplan.domain.couple.entity.Couple;
+import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
+import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -62,6 +66,12 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 	@MockBean
 	private AuthService authService;
+
+	@Autowired
+	private CoupleRepository coupleRepository;
+
+	@SpyBean
+	private CoupleService coupleService;
 
 	@DisplayName("회원가입시")
 	@Nested
@@ -527,6 +537,84 @@ public class MemberServiceTest extends ServiceTestSupport {
 				.isEqualTo(savedImageURL);
 
 			then(s3Client)
+				.shouldHaveNoInteractions();
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 탈퇴 시")
+	class Withdrawal {
+
+		private Member member;
+		private Member partner;
+		private Couple couple;
+
+		@BeforeEach
+		void setUp() {
+			member = memberRepository.save(createMember("01011112222", "aaa", "url"));
+			partner = memberRepository.save(createMember("01011113333", "bbb", "url"));
+			couple = coupleRepository.save(Couple.builder()
+				.member1(member)
+				.member2(partner)
+				.firstDate(LocalDate.now())
+				.build()
+			);
+		}
+
+		@AfterEach
+		void tearDown() {
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("[성공] 회원이 연결되어 있지 않은 경우, 회원의 모든 정보가 삭제된다.")
+		@Test
+		void should_deleteAllInfoRelatedMember_When_memberNotConnected() {
+
+			// Given
+			Member other = memberRepository.save(createMember("01011114444", "ccc", "url"));
+
+			// When
+			memberService.withdrawal(other, other.getId());
+
+			// Then
+			assertThat(memberRepository.findById(other.getId())).isEmpty();
+
+			// Verify
+			then(coupleService)
+				.shouldHaveNoInteractions();
+		}
+
+		@DisplayName("[성공] 회원이 연결되어 있는 경우, 회원 연결을 해제하고 회원의 모든 정보가 삭제된다.")
+		@Test
+		void should_deleteAllInfoRelatedMember_When_memberConnected() {
+
+			// When
+			memberService.withdrawal(member, member.getId());
+
+			// Then
+			assertThat(memberRepository.findById(member.getId())).isEmpty();
+			assertThat(memberRepository.findById(partner.getId())).isPresent();
+			assertThat(coupleRepository.findById(couple.getId())).isEmpty();
+
+			// Verify
+			then(coupleService)
+				.should(times(1)).disconnectCouple(any(Member.class), anyLong());
+		}
+
+		@DisplayName("[실패] 요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다.")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() {
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			assertThatThrownBy(() -> memberService.withdrawal(member, member.getId() + 100))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+
+			// Verify
+			then(coupleService)
 				.shouldHaveNoInteractions();
 		}
 	}

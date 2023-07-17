@@ -7,24 +7,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
+import com.dateplan.dateplan.domain.anniversary.entity.Anniversary;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryCategory;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryPattern;
+import com.dateplan.dateplan.domain.anniversary.entity.AnniversaryRepeatRule;
+import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
+import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryRepository;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
+import com.dateplan.dateplan.domain.dating.entity.Dating;
+import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
+import com.dateplan.dateplan.domain.schedule.entity.Schedule;
+import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
+import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
+import com.dateplan.dateplan.global.constant.RepeatRule;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
@@ -35,6 +49,7 @@ import com.dateplan.dateplan.global.exception.member.SelfConnectionNotAllowedExc
 import com.dateplan.dateplan.global.util.RandomCodeGenerator;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -65,6 +80,22 @@ public class CoupleServiceTest extends ServiceTestSupport {
 
 	@MockBean
 	private MemberReadService memberReadService;
+
+	@Autowired
+	private DatingRepository datingRepository;
+
+	@Autowired
+	private ScheduleRepository scheduleRepository;
+
+	@Autowired
+	private SchedulePatternRepository schedulePatternRepository;
+
+	@Autowired
+	private AnniversaryRepository anniversaryRepository;
+
+	@Autowired
+	private AnniversaryPatternRepository anniversaryPatternRepository;
+
 
 	@DisplayName("연결 코드 조회 시")
 	@Nested
@@ -348,6 +379,37 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				.isInstanceOf(SelfConnectionNotAllowedException.class)
 				.hasMessage(SELF_CONNECTION_NOT_ALLOWED);
 		}
+
+		@Test
+		@DisplayName("[성공] 이미 존재하는 연결 코드가 삭제된다.")
+		void success_removeConnectionCode_When_coupleConnect() {
+
+			// Given
+			String myConnectionCode = "ABC123";
+			String partnerConnectionCode = "DEF123";
+
+			ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+			stringValueOperations.set(getConnectionKey(member.getId()), myConnectionCode);
+			stringValueOperations.set(myConnectionCode, String.valueOf(member.getId()));
+			stringValueOperations.set(getConnectionKey(partner.getId()), partnerConnectionCode);
+			stringValueOperations.set(partnerConnectionCode, String.valueOf(partner.getId()));
+
+			ConnectionServiceRequest request = createConnectionServiceRequest(partnerConnectionCode);
+
+			// Stubbing
+			given(memberReadService.findMemberByIdOrElseThrow(partner.getId()))
+				.willReturn(partner);
+			given(coupleRepository.findById(anyLong())).willReturn(
+				Optional.ofNullable(createCouple(member, partner)));
+
+			// When
+			coupleService.connectCouple(member, member.getId(), request);
+
+			assertThat(stringValueOperations.get(getConnectionKey(member.getId()))).isNull();
+			assertThat(stringValueOperations.get(getConnectionKey(partner.getId()))).isNull();
+			assertThat(stringValueOperations.get(myConnectionCode)).isNull();
+			assertThat(stringValueOperations.get(partnerConnectionCode)).isNull();
+		}
 	}
 
 //	@Nested
@@ -485,6 +547,120 @@ public class CoupleServiceTest extends ServiceTestSupport {
 				Operation.UPDATE);
 
 			assertThatThrownBy(() -> coupleService.updateFirstDate(member1, coupleId, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
+		}
+	}
+
+	@Nested
+	@DisplayName("현재 연결되어 있는 커플을 연결 해제 하려할 때")
+	class DisconnectCouple {
+
+		private Member member;
+		private Member partner;
+		private Couple couple;
+
+		@BeforeEach
+		void setUp() {
+			member = memberRepository.save(createMember("01011112222", "aaa"));
+			partner = memberRepository.save(createMember("01011113333", "bbb"));
+			couple = coupleRepository.save(createCouple(member, partner));
+		}
+
+		@AfterEach
+		void tearDown() {
+			datingRepository.deleteAllInBatch();
+			anniversaryRepository.deleteAllInBatch();
+			anniversaryPatternRepository.deleteAllInBatch();
+			scheduleRepository.deleteAllInBatch();
+			schedulePatternRepository.deleteAllInBatch();
+			coupleRepository.deleteAllInBatch();
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("[성공] 올바른 memberId를 요청하면 데이트, 회원, 연결되어 있는 회원, 기념일 일정이 모두 삭제된다")
+		@Test
+		void should_deleteAllSchedules_When_disconnectCouple() {
+
+			// Given
+			SchedulePattern schedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(member)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now())
+					.repeatRule(RepeatRule.N)
+					.build()
+			);
+			scheduleRepository.save(
+				Schedule.builder()
+					.title("title")
+					.schedulePattern(schedulePattern)
+					.startDateTime(LocalDateTime.now())
+					.endDateTime(LocalDateTime.now())
+					.build()
+			);
+
+			SchedulePattern partnerSchedulePattern = schedulePatternRepository.save(
+				SchedulePattern.builder()
+					.member(partner)
+					.repeatStartDate(LocalDate.now())
+					.repeatEndDate(LocalDate.now())
+					.repeatRule(RepeatRule.N)
+					.build()
+			);
+			scheduleRepository.save(
+				Schedule.builder()
+					.title("title")
+					.schedulePattern(partnerSchedulePattern)
+					.startDateTime(LocalDateTime.now())
+					.endDateTime(LocalDateTime.now())
+					.build()
+			);
+
+			AnniversaryPattern anniversaryPattern = AnniversaryPattern.builder()
+				.couple(couple)
+				.repeatStartDate(LocalDate.now())
+				.repeatEndDate(LocalDate.now())
+				.category(AnniversaryCategory.OTHER)
+				.repeatRule(AnniversaryRepeatRule.NONE)
+				.build();
+			anniversaryRepository.save(
+				Anniversary.builder()
+					.title("title")
+					.anniversaryPattern(anniversaryPattern)
+					.date(LocalDate.now())
+					.build()
+			);
+
+			datingRepository.save(
+				Dating.builder()
+					.title("title")
+					.couple(couple)
+					.startDateTime(LocalDateTime.now())
+					.endDateTime(LocalDateTime.now())
+					.build()
+			);
+
+			// When
+			coupleService.disconnectCouple(member, member.getId());
+
+			// Then
+			assertThat(coupleRepository.findAll()).isEmpty();
+			assertThat(datingRepository.findAll()).isEmpty();
+			assertThat(anniversaryRepository.findAll()).isEmpty();
+			assertThat(scheduleRepository.findAll()).isEmpty();
+			assertThat(schedulePatternRepository.findAll()).isEmpty();
+			assertThat(anniversaryPatternRepository.findAll()).isEmpty();
+		}
+
+		@DisplayName("[실패] 로그인한 회원의 id와 요청의 memberId가 다르면 예외를 반환한다")
+		@Test
+		void should_throwNoPermission_When_mismatchMemberId() {
+
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.DELETE);
+			// When & Then
+			assertThatThrownBy(() -> coupleService.disconnectCouple(member, member.getId() + 100))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}

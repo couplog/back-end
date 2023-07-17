@@ -2,15 +2,20 @@ package com.dateplan.dateplan.domain.couple.service;
 
 import static com.dateplan.dateplan.global.util.RandomCodeGenerator.generateConnectionCode;
 
+import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryPatternRepository;
+import com.dateplan.dateplan.domain.anniversary.repository.AnniversaryQueryRepository;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.dto.request.FirstDateServiceRequest;
 import com.dateplan.dateplan.domain.couple.service.dto.response.FirstDateServiceResponse;
+import com.dateplan.dateplan.domain.dating.repository.DatingQueryRepository;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
+import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
+import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
@@ -37,6 +42,42 @@ public class CoupleService {
 	private final StringRedisTemplate redisTemplate;
 	private final CoupleRepository coupleRepository;
 	private final CoupleReadService coupleReadService;
+	private final SchedulePatternRepository schedulePatternRepository;
+	private final AnniversaryPatternRepository anniversaryPatternRepository;
+	private final ScheduleQueryRepository scheduleQueryRepository;
+	private final AnniversaryQueryRepository anniversaryQueryRepository;
+	private final DatingQueryRepository datingQueryRepository;
+
+	public void disconnectCouple(Member member, Long memberId) {
+		if (!isSameMember(member.getId(), memberId)) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
+		}
+
+		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
+		Long partnerId = couple.getPartnerId(member);
+
+		deleteSchedules(memberId, partnerId);
+		deleteDating(couple);
+		deleteAnniversaries(couple);
+		coupleRepository.deleteById(couple.getId());
+	}
+
+	private void deleteDating(Couple couple) {
+		datingQueryRepository.deleteByCoupleId(couple.getId());
+	}
+
+	private void deleteAnniversaries(Couple couple) {
+		anniversaryQueryRepository.deleteByCoupleId(couple.getId());
+		anniversaryPatternRepository.deleteAllByCoupleId(couple.getId());
+	}
+
+	private void deleteSchedules(Long memberId, Long partnerId) {
+		scheduleQueryRepository.deleteByMemberId(memberId);
+		scheduleQueryRepository.deleteByMemberId(partnerId);
+
+		schedulePatternRepository.deleteAllByMemberId(memberId);
+		schedulePatternRepository.deleteAllByMemberId(partnerId);
+	}
 
 	@Transactional(readOnly = true)
 	public FirstDateServiceResponse getFirstDate(Long coupleId) {
@@ -112,8 +153,19 @@ public class CoupleService {
 			.firstDate(request.getFirstDate())
 			.build();
 		coupleRepository.save(couple);
+		deleteConnectionKey(memberId);
+		deleteConnectionKey(partnerId);
 
 		return CoupleConnectServiceResponse.from(couple);
+	}
+
+	private void deleteConnectionKey(Long memberId) {
+		ValueOperations<String, String> stringValueOperations = redisTemplate.opsForValue();
+		String key = stringValueOperations.getAndDelete(getConnectionKey(memberId));
+
+		if (key != null) {
+			stringValueOperations.getAndDelete(key);
+		}
 	}
 
 	private void throwIfAlreadyConnected(Member partner) {

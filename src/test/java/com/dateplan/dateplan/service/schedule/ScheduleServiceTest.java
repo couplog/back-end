@@ -224,7 +224,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			assertThat(newSchedulePattern.getRepeatStartDate()).isEqualTo(
 				request.getStartDateTime().toLocalDate());
 			assertThat(newSchedulePattern.getRepeatEndDate()).isEqualTo(
-				request.getEndDateTime().toLocalDate());
+				request.getStartDateTime().toLocalDate());
 			assertThat(newSchedulePattern.getRepeatRule()).isEqualTo(
 				RepeatRule.N);
 

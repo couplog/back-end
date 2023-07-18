@@ -26,6 +26,12 @@ jobs:
         run: ./gradlew clean build -Djasypt.password=${{ secrets.JASYPT_PASSWORD }}
         shell: bash
 
+      - name: Register test results to comment in PR
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: '**/build/test-results/test/TEST-*.xml'
+
       - name: Get current time
         uses: 1466587594/get-current-time@v2
         id: current-time

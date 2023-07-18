@@ -17,10 +17,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set Timezone to +8 (With input)
-          uses: szenius/set-timezone@v1.2
-          with:
-            timezoneLinux: Asia/Seoul
+      - name: Set Timezone
+        uses: szenius/set-timezone@v1.2
+        with:
+          timezoneLinux: Asia/Seoul
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3

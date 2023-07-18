@@ -26,9 +26,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.controller.ControllerTestSupport;
+import com.dateplan.dateplan.domain.member.controller.dto.request.CheckPasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
@@ -897,6 +900,110 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
 					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("회원 비밀번호 확인 시")
+	class CheckPassword {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/password";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("[성공] 현재 비밀번호와 일치하는 비밀번호를 요청하면 true를 반환한다.")
+		@Test
+		void should_returnTrue_When_matchPassword() throws Exception {
+
+			// Given
+			CheckPasswordRequest request = CheckPasswordRequest.builder()
+				.password("password")
+				.build();
+			CheckPasswordServiceResponse response = CheckPasswordServiceResponse.builder()
+				.passwordMatch(true)
+				.build();
+
+			// Stubbing
+			given(memberService.checkPassword(any(Member.class), anyLong(),
+				any(CheckPasswordServiceRequest.class)))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					jsonPath("$.success").value("true"),
+					jsonPath("$.data.checkPassword").value(response.getPasswordMatch())
+				);
+		}
+
+		@DisplayName("[실패] memberId의 타입이 Long이 아니면 실패한다")
+		@Test
+		void should_throwTypeMismatchException_When_memberIdTypeIsNotLong() throws Exception {
+
+			CheckPasswordRequest request = CheckPasswordRequest.builder()
+				.password("password")
+				.build();
+			CheckPasswordServiceResponse response = CheckPasswordServiceResponse.builder()
+				.passwordMatch(false)
+				.build();
+
+			// Stubbing
+			given(memberService.checkPassword(any(Member.class), anyLong(), any(
+				CheckPasswordServiceRequest.class)))
+				.willReturn(response);
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, "A")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@DisplayName("[실패] 요청한 memberId와 로그인한 회원의 id가 다르면 실패한다.")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() throws Exception {
+
+			CheckPasswordRequest request = CheckPasswordRequest.builder()
+				.password("password")
+				.build();
+
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+
+			// Stubbing
+			given(memberService.checkPassword(any(Member.class), anyLong(), any(
+				CheckPasswordServiceRequest.class)))
+				.willThrow(exception);
+
+			// When & Then
+			mockMvc.perform(
+					post(REQUEST_URL, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}

@@ -1,13 +1,13 @@
 name: github-action-test CD
 
+on:
+  push:
+    branches: [ release_test ] # release 브랜치에 push 되었을 때
+
 permissions:
   contents: read
   checks: write
   id-token: write
-
-on:
-  push:
-    branches: [ release_test ] # release 브랜치에 push 되었을 때
 
 jobs:
   build:

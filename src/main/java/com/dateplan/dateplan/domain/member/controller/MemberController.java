@@ -3,7 +3,9 @@ package com.dateplan.dateplan.domain.member.controller;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
+import com.dateplan.dateplan.domain.member.controller.dto.request.CheckPasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.response.CheckPasswordResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
@@ -11,6 +13,7 @@ import com.dateplan.dateplan.domain.member.controller.dto.response.ProfileImageU
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
@@ -146,5 +149,16 @@ public class MemberController {
 		Member member = MemberThreadLocal.get();
 		memberService.withdrawal(member, memberId);
 		return ApiResponse.ofSuccess();
+	}
+
+	@PostMapping("/{member_id}/password")
+	public ApiResponse<CheckPasswordResponse> checkPassword(
+		@PathVariable("member_id") Long memberId,
+		@Valid @RequestBody CheckPasswordRequest request
+	) {
+		final Member member = MemberThreadLocal.get();
+		CheckPasswordServiceResponse checkPasswordServiceResponse = memberService.checkPassword(
+			member, memberId, request.toCheckPasswordServiceRequest());
+		return ApiResponse.ofSuccess(CheckPasswordResponse.from(checkPasswordServiceResponse));
 	}
 }

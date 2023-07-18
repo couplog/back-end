@@ -88,3 +88,7 @@ tasks.withType(JavaCompile){
 clean {
 	delete file(querydslDir)
 }
+
+jar{
+	enabled = false
+}

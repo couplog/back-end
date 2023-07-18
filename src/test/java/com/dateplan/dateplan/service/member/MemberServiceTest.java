@@ -29,6 +29,8 @@ import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.constant.Gender;
@@ -44,6 +46,7 @@ import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
+import org.jasypt.util.password.PasswordEncryptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -72,6 +75,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 	@SpyBean
 	private CoupleService coupleService;
+
+	@Autowired
+	private PasswordEncryptor passwordEncryptor;
 
 	@DisplayName("회원가입시")
 	@Nested
@@ -538,6 +544,83 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 			then(s3Client)
 				.shouldHaveNoInteractions();
+		}
+	}
+
+	@Nested
+	@DisplayName("비밀번호 확인 시")
+	class CheckPassword {
+
+		private Member member;
+
+		@BeforeEach
+		void setUp() {
+			String password = passwordEncryptor.encryptPassword("password");
+			member = memberRepository.save(Member.builder()
+				.phone("01011112222")
+				.name("name")
+				.nickname("nickname")
+				.birthDay(LocalDate.now())
+				.gender(Gender.MALE)
+				.password(password)
+				.build()
+			);
+		}
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("[성공] 현재 비밀번호와 일치하는 비밀번호를 요청하면 true를 반환한다.")
+		@Test
+		void should_returnTrue_When_matchPassword() {
+
+			// Given
+			CheckPasswordServiceRequest request = CheckPasswordServiceRequest.builder()
+				.password("password")
+				.build();
+
+			// When
+			CheckPasswordServiceResponse response = memberService.checkPassword(
+				member, member.getId(), request);
+
+			// Then
+			assertThat(response.getPasswordMatch()).isTrue();
+		}
+
+		@DisplayName("[실패] 현재 비밀번호와 일치하지않는 비밀번호를 요청하면 false를 반환한다.")
+		@Test
+		void should_returnFalse_When_mismatchPassword() {
+
+			// Given
+			CheckPasswordServiceRequest request = CheckPasswordServiceRequest.builder()
+				.password("abcd1234")
+				.build();
+
+			// When
+			CheckPasswordServiceResponse response = memberService.checkPassword(
+				member, member.getId(), request);
+
+			// Then
+			assertThat(response.getPasswordMatch()).isFalse();
+		}
+
+		@DisplayName("[실패] 요청한 memberId와 로그인한 회원의 id가 다르면 실패한다.")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() {
+
+			// Given
+			CheckPasswordServiceRequest request = CheckPasswordServiceRequest.builder()
+				.password("abcd1234")
+				.build();
+
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.READ);
+			assertThatThrownBy(
+				() -> memberService.checkPassword(member, member.getId() + 100, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

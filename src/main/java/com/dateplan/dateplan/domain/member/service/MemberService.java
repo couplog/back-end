@@ -5,6 +5,8 @@ import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3Client;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
@@ -14,6 +16,7 @@ import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.net.URL;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ public class MemberService {
 	private final StringRedisTemplate redisTemplate;
 	private final CoupleService coupleService;
 	private final CoupleReadService coupleReadService;
+	private final PasswordEncryptor passwordEncryptor;
 
 	public void signUp(SignUpServiceRequest request) {
 
@@ -101,6 +105,21 @@ public class MemberService {
 		redisTemplate.delete(getRefreshKey(member));
 
 		memberRepository.delete(member);
+	}
+
+	public CheckPasswordServiceResponse checkPassword(
+		Member member,
+		Long memberId,
+		CheckPasswordServiceRequest request
+	) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.READ);
+		}
+
+		String encryptedPassword = member.getPassword();
+		boolean passwordMatch = passwordEncryptor.checkPassword(request.getPassword(),
+			encryptedPassword);
+		return CheckPasswordServiceResponse.from(passwordMatch);
 	}
 
 	private String getRefreshKey(Member member) {

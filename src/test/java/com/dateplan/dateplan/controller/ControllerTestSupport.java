@@ -1,5 +1,6 @@
 package com.dateplan.dateplan.controller;
 
+import com.dateplan.dateplan.TestRedisConfig;
 import com.dateplan.dateplan.domain.anniversary.controller.AnniversaryController;
 import com.dateplan.dateplan.domain.anniversary.interceptor.AnniversaryAuthInterceptor;
 import com.dateplan.dateplan.domain.anniversary.service.AnniversaryReadService;
@@ -27,9 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+@Import(TestRedisConfig.class)
 @ActiveProfiles("test")
 @WebMvcTest(controllers = {AuthController.class, MemberController.class, CoupleController.class,
 	AnniversaryController.class, ScheduleController.class, DatingController.class,

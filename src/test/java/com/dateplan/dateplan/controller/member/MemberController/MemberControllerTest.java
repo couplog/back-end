@@ -944,6 +944,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpectAll(
+					status().isOk(),
 					jsonPath("$.success").value("true"),
 					jsonPath("$.data.checkPassword").value(response.getPasswordMatch())
 				);
@@ -972,6 +973,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpectAll(
+					status().isBadRequest(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
 					jsonPath("$.message").value(containsString("Long"))
@@ -1001,6 +1003,7 @@ public class MemberControllerTest extends ControllerTestSupport {
 						.contentType(MediaType.APPLICATION_JSON)
 						.characterEncoding(StandardCharsets.UTF_8))
 				.andExpectAll(
+					status().isForbidden(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())

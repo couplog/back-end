@@ -10,6 +10,30 @@ spring:
 spring:
   config:
     activate:
+      on-profile: "db-prod"
+
+  jpa:
+    database: MYSQL
+    hibernate:
+      ddl-auto: update
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ENC(yD1Qy4SsVOnez+mrque/yfCokcyEjvDRl08g6xdZUMIQjQQOUJDxvEsn+GwpoVRizKVY9nh81pBkei7LN+h5gv7+oENY9fxktACSjPExEfjS0IkeVSLMGSDfeI11PJDflz14DzvAdP2zpIWZ7Ae6O65YVN3SQHm6ZAaB+65I528u2OiMqE5PeH4Doujba1XyJ+rnm7haHRgEy4gbvbcoXcwzXJoSTJqFaVEo2fJs0BC1bT3fDCiBJwXDX1ALjvPbXy1q6pSR0vom49ogMjIcwRdaJz/muW/agnO0Cl1DmAjx9MwTofLRiH+3zdkj+W60iIADEIKbfCgkYwGD6TdIIQ==)
+    username: ENC(L6wZFN5+xa56lnIBSigwaFEZrO3LuCPx)
+    password: ENC(mfnUX1gJaOyjdsUT2qyJ/OjCDFgY73SM)
+    hikari:
+      max-lifetime: 60000
+      connection-timeout: 30000
+      maximum-pool-size: 10
+
+  redis:
+    port: ENC(NmLvXHepNpqXSnmI3c1iyg==)
+    host: ENC(jgA7tbdZoDH+t0fxWriOmUuaPk2hSWfm9r1sqW7FQi0p41zXLeJ0xRv0y/iZUi5fxf5EamclGU8esL1MylozaOCbBjtBtysS9DxMm4iyXXI=)
+---
+spring:
+  config:
+    activate:
       on-profile: "db-local"
 
   jpa:

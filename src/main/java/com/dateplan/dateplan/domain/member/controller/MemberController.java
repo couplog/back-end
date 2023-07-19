@@ -6,6 +6,7 @@ import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.request.CheckPasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.CheckPasswordResponse;
+import com.dateplan.dateplan.domain.member.controller.dto.request.UpdatePasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
@@ -160,5 +161,15 @@ public class MemberController {
 		CheckPasswordServiceResponse checkPasswordServiceResponse = memberService.checkPassword(
 			member, memberId, request.toCheckPasswordServiceRequest());
 		return ApiResponse.ofSuccess(CheckPasswordResponse.from(checkPasswordServiceResponse));
+	}
+
+	@PutMapping("/{member_id}/password")
+	public ApiResponse<Void> updatePassword(
+		@PathVariable("member_id") Long memberId,
+		@Valid @RequestBody UpdatePasswordRequest request
+	) {
+		Member member = MemberThreadLocal.get();
+		memberService.updatePassword(member, memberId, request.toUpdatePasswordServiceRequest());
+		return ApiResponse.ofSuccess();
 	}
 }

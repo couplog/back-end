@@ -28,11 +28,13 @@ import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.controller.ControllerTestSupport;
 import com.dateplan.dateplan.domain.member.controller.dto.request.CheckPasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.request.UpdatePasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.request.CheckPasswordServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.request.ConnectionServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.UpdatePasswordServiceRequest;
 import com.dateplan.dateplan.domain.member.service.dto.response.ConnectionServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.CoupleConnectServiceResponse;
 import com.dateplan.dateplan.domain.member.service.dto.response.MemberInfoServiceResponse;
@@ -42,6 +44,7 @@ import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
+import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
 import com.dateplan.dateplan.global.exception.S3Exception;
 import com.dateplan.dateplan.global.exception.S3ImageNotFoundException;
 import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
@@ -1007,6 +1010,140 @@ public class MemberControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+	}
+
+	@Nested
+	@DisplayName("비밀번호 변경 시")
+	class UpdatePassword {
+
+		private static final String REQUEST_URL = "/api/members/{member_id}/password";
+
+		@BeforeEach
+		void setUp() {
+			MemberThreadLocal.set(createMember());
+		}
+
+		@AfterEach
+		void tearDown() {
+			MemberThreadLocal.remove();
+		}
+
+		@DisplayName("[성공] 올바른 패턴의 비밀번호를 입력하면 성공한다.")
+		@Test
+		void should_updatePassword_When_validRequest() throws Exception {
+
+			// Given
+			UpdatePasswordRequest request = UpdatePasswordRequest.builder()
+				.password("password")
+				.build();
+
+			// Stubbing
+			willDoNothing()
+				.given(memberService)
+				.updatePassword(any(Member.class), anyLong(),
+					any(UpdatePasswordServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isOk(),
+					jsonPath("$.success").value("true")
+				);
+		}
+
+		@DisplayName("[실패] memberId의 타입이 Long이 아니면 실패한다")
+		@Test
+		void should_throwTypeMismatchException_When_memberIdTypeIsNotLong() throws Exception {
+
+			// Given
+			UpdatePasswordRequest request = UpdatePasswordRequest.builder()
+				.password("password")
+				.build();
+
+			// Stubbing
+			willDoNothing()
+				.given(memberService)
+				.updatePassword(any(Member.class), anyLong(),
+					any(UpdatePasswordServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, "A")
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
+					jsonPath("$.message").value(containsString("Long"))
+				);
+		}
+
+		@DisplayName("[실패] 요청한 memberId와 로그인한 회원의 id가 다르면 실패한다.")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() throws Exception {
+
+			// Given
+			UpdatePasswordRequest request = UpdatePasswordRequest.builder()
+				.password("password")
+				.build();
+
+			// Stubbing
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.UPDATE);
+			willThrow(exception)
+				.given(memberService)
+				.updatePassword(any(Member.class), anyLong(),
+					any(UpdatePasswordServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isForbidden(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(exception.getErrorCode().getCode()),
+					jsonPath("$.message").value(exception.getMessage())
+				);
+		}
+
+		@DisplayName("[실패] 비밀번호의 패턴이 올바르지 않으면 실패한다")
+		@ParameterizedTest
+		@NullAndEmptySource
+		@CsvSource({"aaaaaaaaaaaaaaaaaaaaa", "a", "!@#$%^&*()"})
+		void should_returnBadRequest_When_passwordPatternInvalid(String password) throws Exception {
+			// Given
+			UpdatePasswordRequest request = UpdatePasswordRequest.builder()
+				.password(password)
+				.build();
+
+			// Stubbing
+			willDoNothing()
+				.given(memberService)
+				.updatePassword(any(Member.class), anyLong(),
+					any(UpdatePasswordServiceRequest.class));
+
+			// When & Then
+			mockMvc.perform(
+					put(REQUEST_URL, 1)
+						.content(om.writeValueAsString(request))
+						.contentType(MediaType.APPLICATION_JSON)
+						.characterEncoding(StandardCharsets.UTF_8))
+				.andExpectAll(
+					status().isBadRequest(),
+					jsonPath("$.success").value("false"),
+					jsonPath("$.code").value(INVALID_INPUT_VALUE.getCode()),
+					jsonPath("$.message").value(DetailMessage.INVALID_PASSWORD_PATTERN)
 				);
 		}
 	}

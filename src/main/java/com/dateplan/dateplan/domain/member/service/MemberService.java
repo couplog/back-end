@@ -6,6 +6,7 @@ import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLR
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.UpdatePasswordServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3Client;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -101,6 +102,15 @@ public class MemberService {
 		redisTemplate.delete(getRefreshKey(member));
 
 		memberRepository.delete(member);
+	}
+
+	public void updatePassword(Member member, Long memberId, UpdatePasswordServiceRequest request) {
+		if (!isSameMember(memberId, member.getId())) {
+			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
+		}
+
+		member.updatePassword(request.getPassword());
+		memberRepository.save(member);
 	}
 
 	private String getRefreshKey(Member member) {

@@ -4,6 +4,7 @@ import com.dateplan.dateplan.domain.anniversary.service.AnniversaryService;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.member.controller.dto.request.ConnectionRequest;
+import com.dateplan.dateplan.domain.member.controller.dto.request.UpdatePasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.ConnectionResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.MemberInfoResponse;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
@@ -145,6 +146,16 @@ public class MemberController {
 	public ApiResponse<Void> withdrawal(@PathVariable("member_id") Long memberId) {
 		Member member = MemberThreadLocal.get();
 		memberService.withdrawal(member, memberId);
+		return ApiResponse.ofSuccess();
+	}
+
+	@PutMapping("/{member_id}/password")
+	public ApiResponse<Void> updatePassword(
+		@PathVariable("member_id") Long memberId,
+		@Valid @RequestBody UpdatePasswordRequest request
+	) {
+		Member member = MemberThreadLocal.get();
+		memberService.updatePassword(member, memberId, request.toUpdatePasswordServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 }

@@ -23,6 +23,7 @@ import com.amazonaws.SdkClientException;
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
+import com.dateplan.dateplan.domain.member.controller.dto.request.UpdatePasswordRequest;
 import com.dateplan.dateplan.domain.member.controller.dto.response.PresignedURLResponse;
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
@@ -30,6 +31,7 @@ import com.dateplan.dateplan.domain.member.service.AuthService;
 import com.dateplan.dateplan.domain.member.service.MemberReadService;
 import com.dateplan.dateplan.domain.member.service.MemberService;
 import com.dateplan.dateplan.domain.member.service.dto.request.SignUpServiceRequest;
+import com.dateplan.dateplan.domain.member.service.dto.request.UpdatePasswordServiceRequest;
 import com.dateplan.dateplan.domain.s3.S3ImageType;
 import com.dateplan.dateplan.global.constant.Gender;
 import com.dateplan.dateplan.global.constant.Operation;
@@ -44,6 +46,7 @@ import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
+import org.jasypt.util.password.PasswordEncryptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -72,6 +75,9 @@ public class MemberServiceTest extends ServiceTestSupport {
 
 	@SpyBean
 	private CoupleService coupleService;
+
+	@Autowired
+	private PasswordEncryptor passwordEncryptor;
 
 	@DisplayName("회원가입시")
 	@Nested
@@ -616,6 +622,68 @@ public class MemberServiceTest extends ServiceTestSupport {
 			// Verify
 			then(coupleService)
 				.shouldHaveNoInteractions();
+		}
+	}
+
+	@Nested
+	@DisplayName("비밀번호 변경 시")
+	class UpdatePassword {
+
+		private Member member;
+
+		@BeforeEach
+		void setUp() {
+			String password = passwordEncryptor.encryptPassword("password");
+			member = memberRepository.save(Member.builder()
+				.phone("01011112222")
+				.name("name")
+				.nickname("nickname")
+				.birthDay(LocalDate.now())
+				.gender(Gender.MALE)
+				.password(password)
+				.build()
+			);
+		}
+
+		@AfterEach
+		void tearDown() {
+			memberRepository.deleteAllInBatch();
+		}
+
+		@DisplayName("[성공] 올바른 패턴의 비밀번호가 입력되면 비밀번호가 변경된다.")
+		@Test
+		void should_updatePassword_When_inputValidPassword() {
+
+			// Given
+			UpdatePasswordServiceRequest request = UpdatePasswordServiceRequest.builder()
+				.password("newPassword")
+				.build();
+
+			// When
+			memberService.updatePassword(member, member.getId(), request);
+
+			// Then
+			member = memberRepository.findById(member.getId()).get();
+			assertThat(passwordEncryptor.checkPassword(request.getPassword(), member.getPassword()))
+				.isTrue();
+		}
+
+		@DisplayName("[실패] 요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다")
+		@Test
+		void should_throwNoPermissionException_When_mismatchMemberId() {
+
+			// Given
+			UpdatePasswordServiceRequest request = UpdatePasswordServiceRequest.builder()
+				.password("newPassword")
+				.build();
+
+			// When & Then
+			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
+				Operation.UPDATE);
+			assertThatThrownBy(
+				() -> memberService.updatePassword(member, member.getId() + 100, request))
+				.isInstanceOf(exception.getClass())
+				.hasMessage(exception.getMessage());
 		}
 	}
 

@@ -87,4 +87,8 @@ public class Member {
 
 		this.birthDay = birthDay;
 	}
+
+	public void updatePassword(String password) {
+		this.password = password;
+	}
 }

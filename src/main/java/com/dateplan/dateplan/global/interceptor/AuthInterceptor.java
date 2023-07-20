@@ -27,6 +27,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 			throw new TokenNotFoundException(request.getRequestURI() + " " + request.getMethod());
 		}
 
+
 		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");
 		jwtProvider.checkValidation(token);
 		Member member = jwtProvider.findMemberByToken(token);

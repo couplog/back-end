@@ -10,8 +10,8 @@ public class TokenNotFoundException extends ApplicationException {
 	@Serial
 	private static final long serialVersionUID = 4429870598490380089L;
 
-	public TokenNotFoundException() {
-		super(DetailMessage.TOKEN_NOT_FOUND, ErrorCode.TOKEN_NOT_FOUND);
+	public TokenNotFoundException(String a) {
+		super(DetailMessage.TOKEN_NOT_FOUND + " " + a, ErrorCode.TOKEN_NOT_FOUND);
 	}
 
 }

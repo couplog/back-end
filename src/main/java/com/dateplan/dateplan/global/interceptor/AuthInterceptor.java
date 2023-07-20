@@ -24,7 +24,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 		Object handler) {
 		Optional<String> tokenByHeader = jwtProvider.resolveToken(request);
 		if (tokenByHeader.isEmpty()) {
-			throw new TokenNotFoundException();
+			throw new TokenNotFoundException(request.getRequestURI());
 		}
 
 		String token = tokenByHeader.get().replaceFirst(Auth.BEARER.getContent(), "");

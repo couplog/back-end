@@ -41,7 +41,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.ModelAndView;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled
 public class AuthInterceptorTest {
 
 	private final AuthInterceptor authInterceptor;

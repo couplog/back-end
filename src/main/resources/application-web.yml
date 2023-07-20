@@ -4,3 +4,9 @@ spring:
   web:
     resources:
       add-mappings: false
+
+server:
+  error:
+    include-message: always
+    include-stacktrace: always
+    include-binding-errors: always

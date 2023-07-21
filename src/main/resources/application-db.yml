@@ -29,7 +29,7 @@ spring:
 
   redis:
     port: ENC(NmLvXHepNpqXSnmI3c1iyg==)
-    host: ENC(jgA7tbdZoDH+t0fxWriOmUuaPk2hSWfm9r1sqW7FQi0p41zXLeJ0xRv0y/iZUi5fxf5EamclGU8esL1MylozaOCbBjtBtysS9DxMm4iyXXI=)
+    host: ENC(uZqWlaWhQOjQcKsZtkcJb0yPGzFWLIPaTcEcMa2zovIXBkOFVa+AXhn6xLrx0VcDmTqvaNMD16rJYcCjC/ak3AVSb7M0Wb8E)
 ---
 spring:
   config:

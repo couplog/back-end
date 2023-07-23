@@ -3,7 +3,7 @@ package com.dateplan.dateplan.global.constant;
 public enum Auth {
 
 	// 2시간
-	ACCESS_TOKEN_EXPIRATION(1_000L * 60 * 60 * 2),
+	ACCESS_TOKEN_EXPIRATION(1_000L * 60),
 	// 2주
 	REFRESH_TOKEN_EXPIRATION(1_000L * 60 * 60 * 24 * 14),
 

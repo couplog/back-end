@@ -2,12 +2,11 @@ name: github-action-test CD
 
 on:
   push:
-    branches: [ release_test ] # release 브랜치에 push 되었을 때
+    branches: [ release_test ]
 
 permissions:
-  contents: read
   checks: write
-  id-token: write
+  pull-requests: write
 
 jobs:
   build:
@@ -17,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Set Timezone
+      - name: Set Timezone # 테스트 환경에서의 timezone 설정
         uses: szenius/set-timezone@v1.2
         with:
           timezoneLinux: Asia/Seoul
@@ -28,7 +27,7 @@ jobs:
           distribution: corretto
           java-version: 17
 
-      - name: Gradle Caching
+      - name: Gradle Caching # gradle 캐싱
         uses: actions/cache@v3
         with:
           path: |
@@ -46,12 +45,14 @@ jobs:
         run: ./gradlew clean build -Djasypt.password=${{ secrets.JASYPT_PASSWORD }}
         shell: bash
 
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v3
-        if: success() || failure()
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
         with:
-          report_paths: '**/build/test-results/test/TEST-*.xml'
-          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          files: |
+            test-results/**/*.xml
+            test-results/**/*.trx
+            test-results/**/*.json
 
       - name: Get current time
         uses: 1466587594/get-current-time@v2

@@ -56,7 +56,7 @@ jobs:
         if: always()
         with:
           report_paths: '**/build/test-results/test/TEST-*.xml'
-          token: ${{ secrets.MY_GITHUB_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Get current time
         uses: 1466587594/get-current-time@v2

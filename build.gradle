@@ -50,6 +50,11 @@ dependencies {
 
 	// test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// testcontainers
+	testImplementation 'org.testcontainers:testcontainers:1.17.6' // TC 의존성
+	testImplementation 'org.testcontainers:junit-jupiter:1.17.6'  // TC 의존성
+	testImplementation 'org.testcontainers:mysql:1.17.6'
 }
 
 tasks.named('test') {

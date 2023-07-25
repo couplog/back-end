@@ -73,21 +73,17 @@ spring:
     show-sql: true
     database: MYSQL
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
 
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ENC(IG3nk4RAt92bHhyThDj+Vw/C1bdsjcxopU7qgcHc/qumAoeARn1gfwC09aeCpnSeOZo2EsrJsRJRdbvJMM2KVsqOrOwWtSNt3ds5iS3IaVkosbZm5bYRH/0OJ+139gsnY9Vr8su8Pz3uORCJgnOJbghWrVZLJ0I5c4268gKZa1B2fVC5KMw+oaQJ631jiIBgufaWtKV7KPHlOS2LPpmgcQ==)
-    username: ENC(PsJ4IZm58TJkm2kpxsy+Kg==)
-    password: ENC(HC5aZC9e1uoiyKV5i2mAmw==)
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mysql:8:///?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=UTC&rewriteBatchedStatements=true
+    username: test
+    password: test
     hikari:
       max-lifetime: 60000
       connection-timeout: 30000
       maximum-pool-size: 10
-
-  redis:
-    port: 6379
-    host: localhost

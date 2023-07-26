@@ -4,6 +4,9 @@ on:
   push:
     branches: [ release/** ]
 
+permissions:
+  checks: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,10 +21,10 @@ jobs:
           timezoneLinux: Asia/Seoul
 
       - name: Set up JDK 17
-          uses: actions/setup-java@v3
-          with:
-            distribution: corretto
-            java-version: 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: corretto
+          java-version: 17
 
       - name: Gradle Caching # gradle 캐싱
         uses: actions/cache@v3
@@ -42,8 +45,8 @@ jobs:
         shell: bash
 
       - name: test report
-          uses: mikepenz/action-junit-report@v3
-          if: always()
-          with:
-            report_paths: '**/build/test-results/test/TEST-*.xml'
-            token: ${{ github.token }}
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+          token: ${{ github.token }}

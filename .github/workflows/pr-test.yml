@@ -1,8 +1,9 @@
 name: pr-test
 
 on:
-  pull-request:
+  pull_request:
     branches: [ dev, main ]
+    types: [opened, reopened]
 
 permissions:
   checks: write

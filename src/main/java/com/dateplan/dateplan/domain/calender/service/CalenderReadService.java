@@ -39,9 +39,9 @@ public class CalenderReadService {
 		DatingDatesServiceResponse datingDates = datingReadService.readDatingDates(
 			member, coupleId, year, month);
 		ScheduleDatesServiceResponse myScheduleDates = scheduleReadService.readScheduleDates(
-			member, memberId, year, month);
+			memberId, year, month);
 		ScheduleDatesServiceResponse partnerScheduleDates = scheduleReadService.readScheduleDates(
-			member, partnerId, year, month);
+			partnerId, year, month);
 		AnniversaryDatesServiceResponse anniversaryDates = anniversaryReadService.readAnniversaryDates(
 			coupleId, year, month);
 		return CalenderDateServiceResponse.of(datingDates, myScheduleDates, partnerScheduleDates,

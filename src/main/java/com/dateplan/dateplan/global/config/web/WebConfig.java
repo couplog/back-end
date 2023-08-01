@@ -1,6 +1,7 @@
 package com.dateplan.dateplan.global.config.web;
 
 import com.dateplan.dateplan.domain.anniversary.interceptor.AnniversaryAuthInterceptor;
+import com.dateplan.dateplan.domain.schedule.interceptor.ScheduleAuthInterceptor;
 import com.dateplan.dateplan.global.interceptor.AuthInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 	private final AuthInterceptor authInterceptor;
 	private final AnniversaryAuthInterceptor anniversaryAuthInterceptor;
+	private final ScheduleAuthInterceptor scheduleAuthInterceptor;
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
@@ -24,5 +26,9 @@ public class WebConfig implements WebMvcConfigurer {
 		registry
 			.addInterceptor(anniversaryAuthInterceptor)
 			.addPathPatterns("/api/couples/**/anniversary/**");
+
+		registry
+			.addInterceptor(scheduleAuthInterceptor)
+			.addPathPatterns("/api/members/**/schedules/**");
 	}
 }

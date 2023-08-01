@@ -26,11 +26,8 @@ import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceRes
 import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
@@ -56,9 +53,18 @@ import org.springframework.http.MediaType;
 public class DatingControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
-	void setUp() {
+	void setUp() throws Exception {
 		given(
-			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
+			authInterceptor.preHandle(
+				any(HttpServletRequest.class),
+				any(HttpServletResponse.class),
+				any(Object.class)))
+			.willReturn(true);
+
+		given(
+			datingAuthInterceptor.preHandle(
+				any(HttpServletRequest.class),
+				any(HttpServletResponse.class),
 				any(Object.class)))
 			.willReturn(true);
 	}
@@ -89,7 +95,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -114,7 +120,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -141,7 +147,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -168,7 +174,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -184,60 +190,6 @@ public class DatingControllerTest extends ControllerTestSupport {
 			);
 		}
 
-		@DisplayName("요청한 couple_id와 현재 로그인한 멤버의 couple_id가 다르면 실패한다")
-		@Test
-		void failWithNoPermission() throws Exception {
-
-			// Given
-			DatingCreateRequest request = createDatingCreateRequest(null, null, null, null, null);
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.CREATE);
-			willThrow(exception)
-				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(
-				post(REQUEST_URL, 1)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8)
-			).andExpectAll(
-				status().isForbidden(),
-				jsonPath("$.success").value("false"),
-				jsonPath("$.code").value(exception.getErrorCode().getCode()),
-				jsonPath("$.message").value(exception.getMessage())
-			);
-		}
-
-		@DisplayName("pathVariable의 타입이 유효하지 않으면 실패한다")
-		@Test
-		void failWithInvalidTypeMismatch() throws Exception {
-
-			// Given
-			DatingCreateRequest request = createDatingCreateRequest(null, null, null, null, null);
-
-			// Stubbing
-			willDoNothing()
-				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(
-				post(REQUEST_URL, "abc")
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8)
-			).andExpectAll(
-				status().isBadRequest(),
-				jsonPath("$.success").value("false"),
-				jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
-				jsonPath("$.message").value(containsString("Long"))
-			);
-		}
-
 		@DisplayName("데이트 일정 종료 시간이 2049년 12월 31일 이후이면 실패한다")
 		@Test
 		void failWithInvalidCalendarEndDate() throws Exception {
@@ -249,7 +201,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -277,7 +229,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			InvalidDateTimeRangeException exception = new InvalidDateTimeRangeException();
@@ -306,7 +258,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			MemberNotConnectedException exception = new MemberNotConnectedException();
 			willThrow(exception)
 				.given(datingService)
-				.createDating(any(Member.class), anyLong(), any(DatingCreateServiceRequest.class));
+				.createDating(any(Member.class), any(DatingCreateServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(
@@ -350,7 +302,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			// Stubbing
 			given(
-				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				datingReadService.readDatingDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -364,28 +316,6 @@ public class DatingControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("현재 로그인한 회원이 연결된 커플의 couple_id와 요청의 couple_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermissionRequest() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			given(
-				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
-				.willThrow(exception);
-
-			// When & Then
-			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("year", String.valueOf(LocalDate.now().getYear()))
-					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
-				.andExpect(status().isForbidden())
-				.andExpectAll(
-					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
 		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
 		@Test
 		void failWithNotConnectedRequest() throws Exception {
@@ -393,7 +323,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			// Stubbing
 			MemberNotConnectedException exception = new MemberNotConnectedException();
 			given(
-				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				datingReadService.readDatingDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(exception);
 
 			// When & Then
@@ -417,7 +347,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			// Stubbing
 			given(
-				datingReadService.readDatingDates(any(Member.class), anyLong(), anyInt(), anyInt()))
+				datingReadService.readDatingDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -457,8 +387,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 			LocalDate now = LocalDate.now();
 
 			// Stubbing
-			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
-				anyInt()))
+			given(datingReadService.readDating(anyLong(), anyInt(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -490,8 +419,8 @@ public class DatingControllerTest extends ControllerTestSupport {
 			DatingServiceResponse response = createDatingServiceResponse();
 
 			// Stubbing
-			given(datingReadService.readDating
-				(any(Member.class), anyLong(), anyInt(), anyInt(), anyInt())).willReturn(response);
+			given(datingReadService.readDating(anyLong(), anyInt(), anyInt(), anyInt()))
+				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(
@@ -507,35 +436,11 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 
 		@Test
-		void 실패_로그인한회원의coupleId와_요청의coupleId가다르면_예외를반환한다() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
-				anyInt()))
-				.willThrow(exception);
-
-			// When & Then
-			mockMvc.perform(
-					get(REQUEST_URL, 1)
-						.param("year", "2020")
-						.param("month", "10")
-						.param("day", "10"))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage()));
-		}
-
-		@Test
 		void 실패_회원이_연결되어있지않으면_예외를_반환한다() throws Exception {
 
 			// Stubbing
 			MemberNotConnectedException exception = new MemberNotConnectedException();
-			given(datingReadService.readDating(any(Member.class), anyLong(), anyInt(), anyInt(),
-				anyInt()))
+			given(datingReadService.readDating(anyLong(), anyInt(), anyInt(), anyInt()))
 				.willThrow(exception);
 
 			// When & Then
@@ -574,8 +479,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -595,8 +499,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -618,8 +521,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -641,8 +543,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -663,8 +564,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, "a", "b")
@@ -680,38 +580,13 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 
 		@Test
-		void 실패_요청한회원이연결된couple의id와_요청의coupleId가다르면_예외를반환한다() throws Exception {
-			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
-
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.UPDATE);
-			willThrow(exception)
-				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
-
-			mockMvc.perform(
-					put(REQUEST_URL, 1, 1)
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
-		@Test
 		void 실패_요청에해당하는데이트일정이_존재하지않으면_예외를반환한다() throws Exception {
 			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
 
 			DatingNotFoundException exception = new DatingNotFoundException();
 			willThrow(exception)
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -733,8 +608,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			InvalidDateTimeRangeException exception = new InvalidDateTimeRangeException();
 			mockMvc.perform(
@@ -757,8 +631,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
+				.updateDating(anyLong(), any(DatingUpdateServiceRequest.class));
 
 			mockMvc.perform(
 					put(REQUEST_URL, 1, 1)
@@ -770,30 +643,6 @@ public class DatingControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()),
 					jsonPath("$.message").value(DetailMessage.INVALID_CALENDER_TIME_RANGE)
-				);
-		}
-
-		@Test
-		void 실패_요청한coupleId와_조회한데이트일정의coupldId가다르면_예외를반환한다() throws Exception {
-			DatingUpdateRequest request = createDatingUpdateRequest(null, null, null, null, null);
-
-			NoPermissionException exception = new NoPermissionException(Resource.DATING,
-				Operation.UPDATE);
-			willThrow(exception)
-				.given(datingService)
-				.updateDating(any(Member.class), anyLong(), anyLong(),
-					any(DatingUpdateServiceRequest.class));
-
-			mockMvc.perform(
-					put(REQUEST_URL, 1, 1)
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}
@@ -819,7 +668,7 @@ public class DatingControllerTest extends ControllerTestSupport {
 
 			willDoNothing()
 				.given(datingService)
-				.deleteDating(any(Member.class), anyLong(), anyLong());
+				.deleteDating(anyLong());
 
 			mockMvc.perform(
 					delete(REQUEST_URL, 1, 1))
@@ -830,72 +679,17 @@ public class DatingControllerTest extends ControllerTestSupport {
 		}
 
 		@Test
-		void 실패_pathVariable의타입이_올바르지않으면_예외를반환한다() throws Exception {
-
-			willDoNothing()
-				.given(datingService)
-				.deleteDating(any(Member.class), anyLong(), anyLong());
-
-			mockMvc.perform(
-					delete(REQUEST_URL, "a", "b"))
-				.andExpectAll(
-					status().isBadRequest(),
-					jsonPath("success").value("false"),
-					jsonPath("$.code").value(ErrorCode.METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
-					jsonPath("$.message").value(containsString("Long"))
-				);
-		}
-
-		@Test
-		void 실패_요청의coupldId와_회원이연결된커플의Id가다르면_예외를반환한다() throws Exception {
-
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.DELETE);
-			willThrow(exception)
-				.given(datingService)
-				.deleteDating(any(Member.class), anyLong(), anyLong());
-
-			mockMvc.perform(
-					delete(REQUEST_URL, 1, 1))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
-		@Test
 		void 실패_요청한datingId에_해당하는데이트일정이없으면_예외를반환한다() throws Exception {
 
 			DatingNotFoundException exception = new DatingNotFoundException();
 			willThrow(exception)
 				.given(datingService)
-				.deleteDating(any(Member.class), anyLong(), anyLong());
+				.deleteDating(anyLong());
 
 			mockMvc.perform(
 					delete(REQUEST_URL, 1, 1))
 				.andExpectAll(
 					status().isNotFound(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
-		@Test
-		void 실패_요청한coupleId와_조회한데이트일정의coupldId가다르면_예외를반환한다() throws Exception {
-
-			NoPermissionException exception = new NoPermissionException(Resource.DATING,
-				Operation.DELETE);
-			willThrow(exception)
-				.given(datingService)
-				.deleteDating(any(Member.class), anyLong(), anyLong());
-
-			mockMvc.perform(
-					delete(REQUEST_URL, 1, 1))
-				.andExpectAll(
-					status().isForbidden(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())

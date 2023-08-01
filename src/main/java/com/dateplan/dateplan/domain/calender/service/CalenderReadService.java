@@ -37,7 +37,7 @@ public class CalenderReadService {
 		Long partnerId = coupleReadService.getPartnerId(member);
 
 		DatingDatesServiceResponse datingDates = datingReadService.readDatingDates(
-			member, coupleId, year, month);
+			coupleId, year, month);
 		ScheduleDatesServiceResponse myScheduleDates = scheduleReadService.readScheduleDates(
 			member, memberId, year, month);
 		ScheduleDatesServiceResponse partnerScheduleDates = scheduleReadService.readScheduleDates(

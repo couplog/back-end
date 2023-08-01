@@ -35,12 +35,9 @@ public class DatingController {
 
 	@ResponseStatus(value = HttpStatus.CREATED)
 	@PostMapping("/{couple_id}/dating")
-	public ApiResponse<Void> createDating(
-		@PathVariable("couple_id") Long coupleId,
-		@Valid @RequestBody DatingCreateRequest request
-	) {
+	public ApiResponse<Void> createDating(@Valid @RequestBody DatingCreateRequest request) {
 		final Member member = MemberThreadLocal.get();
-		datingService.createDating(member, coupleId, request.toDatingCreateServiceRequest());
+		datingService.createDating(member, request.toDatingCreateServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 
@@ -50,23 +47,20 @@ public class DatingController {
 		@RequestParam(value = "year", required = false) Integer year,
 		@RequestParam(value = "month", required = false) Integer month
 	) {
-		final Member member = MemberThreadLocal.get();
-		DatingDatesServiceResponse response = datingReadService.readDatingDates(
-			member, coupleId, year, month);
+		DatingDatesServiceResponse response = datingReadService.readDatingDates(coupleId, year,
+			month);
 		return ApiResponse.ofSuccess(DatingDatesResponse.from(response));
 	}
 
 	@PutMapping("/{couple_id}/dating/{dating_id}")
 	public ApiResponse<Void> updateDating(
-		@PathVariable("couple_id") Long coupleId,
 		@PathVariable("dating_id") Long datingId,
 		@Valid @RequestBody DatingUpdateRequest request
 	) {
-		final Member member = MemberThreadLocal.get();
-		datingService.updateDating(member, coupleId, datingId,
-			request.toDatingUpdateServiceRequest());
+		datingService.updateDating(datingId, request.toDatingUpdateServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
+
 	@GetMapping("/{couple_id}/dating")
 	public ApiResponse<DatingResponse> readDating(
 		@PathVariable("couple_id") Long coupleId,
@@ -74,19 +68,15 @@ public class DatingController {
 		@RequestParam("month") Integer month,
 		@RequestParam("day") Integer day
 	) {
-		final Member member = MemberThreadLocal.get();
-		DatingServiceResponse response = datingReadService.readDating(member, coupleId, year, month,
-			day);
+		DatingServiceResponse response = datingReadService.readDating(coupleId, year, month, day);
 		return ApiResponse.ofSuccess(DatingResponse.from(response));
 	}
 
 	@DeleteMapping("/{couple_id}/dating/{dating_id}")
 	public ApiResponse<Void> deleteDating(
-		@PathVariable("couple_id") Long coupleId,
 		@PathVariable("dating_id") Long datingId
 	) {
-		final Member member = MemberThreadLocal.get();
-		datingService.deleteDating(member, coupleId, datingId);
+		datingService.deleteDating(datingId);
 		return ApiResponse.ofSuccess();
 	}
 }

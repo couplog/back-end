@@ -1,7 +1,7 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.0.6'
-	id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+    id 'org.springframework.boot' version '3.0.6'
+    id 'io.spring.dependency-management' version '1.1.0'
 }
 
 group = 'com.dateplan'
@@ -9,58 +9,58 @@ version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
 
     //web
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// db
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    // db
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-	// sms
-	implementation 'net.nurigo:sdk:4.2.7'
+    // sms
+    implementation 'net.nurigo:sdk:4.2.7'
 
-	// s3
-	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.470'
+    // s3
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.470'
 
-	// querydsl
-	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-	annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
-	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
-	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+    // querydsl
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
-	// else
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
-	implementation 'io.jsonwebtoken:jjwt:0.9.1'
-	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    // else
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
 
-	// test
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-	// testcontainers
-	testImplementation 'org.testcontainers:testcontainers:1.17.6' // TC 의존성
-	testImplementation 'org.testcontainers:junit-jupiter:1.17.6'  // TC 의존성
-	testImplementation 'org.testcontainers:mysql:1.17.6'
+    // testcontainers
+    testImplementation 'org.testcontainers:testcontainers:1.17.6' // TC 의존성
+    testImplementation 'org.testcontainers:junit-jupiter:1.17.6'  // TC 의존성
+    testImplementation 'org.testcontainers:mysql:1.17.6'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 
-	systemProperties System.properties
+    systemProperties System.properties
 }
 
 // 빌드 옵션
@@ -68,21 +68,25 @@ def querydslDir = "$buildDir/generated/querydsl"
 
 // gradle build 시 QClass 소스도 함께 Build 하기 위해
 sourceSets {
-	main.java.srcDirs += [ querydslDir ]
+    main.java.srcDirs += [querydslDir]
 }
 
 // 기존에는 Qclass 내 Generated 를 java 9에 있는 javax.annotation.processing.Generated 로 import
 // 다른 버전의 java 에서도 사용할 수 있도록 java.annotation.Generated 로 설정
-compileJava{
-	options.compilerArgs << '-Aquerydsl.generatedAnnotationClass=javax.annotation.Generated'
+compileJava {
+    options.compilerArgs << '-Aquerydsl.generatedAnnotationClass=javax.annotation.Generated'
 }
 
 // annotation processor 가 만든 QClass 를 querydslDir 에 저장
-tasks.withType(JavaCompile){
-	options.generatedSourceOutputDirectory = file(querydslDir)
+tasks.withType(JavaCompile) {
+    options.generatedSourceOutputDirectory = file(querydslDir)
 }
 
 // clean 실행시 QClass 삭제
 clean {
-	delete file(querydslDir)
+    delete file(querydslDir)
+}
+
+jar {
+    enabled = false
 }

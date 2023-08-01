@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
@@ -15,19 +14,13 @@ import com.dateplan.dateplan.domain.schedule.controller.dto.response.ScheduleEnt
 import com.dateplan.dateplan.domain.schedule.entity.Schedule;
 import com.dateplan.dateplan.domain.schedule.entity.SchedulePattern;
 import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepository;
-import com.dateplan.dateplan.domain.schedule.repository.ScheduleQueryRepository;
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.ScheduleReadService;
 import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesServiceResponse;
 import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
-import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -43,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 
 public class ScheduleReadServiceTest extends ServiceTestSupport {
 
@@ -52,9 +44,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 	@MockBean
 	private CoupleReadService coupleReadService;
-
-	@SpyBean
-	private ScheduleQueryRepository queryRepository;
 
 	@Autowired
 	private MemberRepository memberRepository;
@@ -113,44 +102,13 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			given(coupleReadService.getPartnerId(any(Member.class)))
 				.willReturn(partner.getId());
 
-			ScheduleDatesServiceResponse response = scheduleReadService.readScheduleDates(member,
+			ScheduleDatesServiceResponse response = scheduleReadService.readScheduleDates(
 				member.getId(), null, null);
 
 			List<LocalDate> actualDates = response.getScheduleDates();
 			assertThat(actualDates)
 				.containsExactlyElementsOf(savedScheduleDates)
 				.isSortedAccordingTo(LocalDate::compareTo);
-		}
-
-		@DisplayName("로그인한 회원과 요청한 memberId가 다르면 실패한다.")
-		@Test
-		void failWithNoPermission() {
-
-			assertThatThrownBy(
-				() -> scheduleReadService.readScheduleDates(member, member.getId() + 100, null,
-					null))
-				.isInstanceOf(NoPermissionException.class)
-				.hasMessage(String.format(DetailMessage.NO_PERMISSION, Resource.MEMBER.getName(),
-					Operation.READ.getName()));
-
-			then(queryRepository)
-				.shouldHaveNoInteractions();
-		}
-
-		@DisplayName("회원이 연결되어 있지 않으면 실패한다.")
-		@Test
-		void failWithNotConnected() {
-
-			given(coupleReadService.getPartnerId(any(Member.class)))
-				.willThrow(new MemberNotConnectedException());
-
-			assertThatThrownBy(
-				() -> scheduleReadService.readScheduleDates(member, member.getId(), null, null))
-				.isInstanceOf(MemberNotConnectedException.class)
-				.hasMessage(DetailMessage.Member_NOT_CONNECTED);
-
-			then(queryRepository)
-				.shouldHaveNoInteractions();
 		}
 	}
 
@@ -161,7 +119,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		private static final String NEED_SCHEDULES = "needSchedules";
 		private Member member;
 		private Member partner;
-		private Couple couple;
 		private final List<ScheduleEntry> schedules = new ArrayList<>();
 		private final List<ScheduleEntry> partnerSchedules = new ArrayList<>();
 
@@ -169,7 +126,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 		void setUp(TestInfo testInfo) {
 			member = createMember("01012345678", "aaa");
 			partner = createMember("01012345679", "bbb");
-			couple = createCouple(member, partner);
+			Couple couple = createCouple(member, partner);
 			memberRepository.saveAll(List.of(member, partner));
 			coupleRepository.save(couple);
 
@@ -213,7 +170,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 			// Given
 			ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedules(
-				member.getId(), member,
+				member.getId(),
 				LocalDate.now().getYear(),
 				LocalDate.now().getMonthValue(),
 				LocalDate.now().getDayOfMonth());
@@ -245,7 +202,7 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 
 			// Given
 			ScheduleServiceResponse scheduleServiceResponse = scheduleReadService.readSchedules(
-				partner.getId(), member,
+				partner.getId(),
 				LocalDate.now().getYear(),
 				LocalDate.now().getMonthValue(),
 				LocalDate.now().getDayOfMonth());
@@ -269,23 +226,6 @@ public class ScheduleReadServiceTest extends ServiceTestSupport {
 			assertThat(scheduleServiceResponse.getSchedules())
 				.extracting(ScheduleEntry::getStartDateTime)
 				.isSortedAccordingTo(Comparator.naturalOrder());
-		}
-
-		@DisplayName("요청한 member_id가 회원 또는 연결된 회원의 id가 아니면 실패한다")
-		@Test
-		void failWithNoPermission() {
-
-			// Given
-			LocalDate now = LocalDate.now();
-			NoPermissionException exception =
-				new NoPermissionException(Resource.MEMBER, Operation.READ);
-
-			// When & Then
-			assertThatThrownBy(
-				() -> scheduleReadService.readSchedules(partner.getId() + 100,
-					member, now.getYear(), now.getMonthValue(), now.getDayOfMonth()))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
 		}
 	}
 

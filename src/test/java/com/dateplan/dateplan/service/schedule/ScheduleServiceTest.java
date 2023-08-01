@@ -14,10 +14,7 @@ import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleService
 import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
 import com.dateplan.dateplan.global.constant.DateConstants;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
 import com.dateplan.dateplan.global.util.ScheduleDateUtil;
 import com.dateplan.dateplan.service.ServiceTestSupport;
@@ -81,7 +78,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
 
 			// When
-			scheduleService.createSchedule(member, memberId, request);
+			scheduleService.createSchedule(member, request);
 
 			// Then
 			SchedulePattern schedulePattern = schedulePatternRepository.findAll().get(0);
@@ -124,33 +121,11 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				}
 			}
 		}
-
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@ParameterizedTest
-		@EnumSource(value = RepeatRule.class, names = {"N", "D", "W", "M", "Y"})
-		void FailWithNoPermissionRequest(RepeatRule repeatRule) {
-
-			// Given
-			Long memberId = member.getId();
-			Long otherMemberId = memberId + 1;
-
-			// When
-			ScheduleServiceRequest request = createScheduleServiceRequest(repeatRule);
-
-			// Then
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.CREATE);
-			assertThatThrownBy(() -> scheduleService.createSchedule(member, otherMemberId, request))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
 	}
 
 	@DisplayName("일정 수정 시")
 	@Nested
 	class UpdateSchedule {
-
-		private static final String NEED_SCHEDULE = "needSchedule";
 
 		Member member;
 		List<Schedule> schedules;
@@ -192,8 +167,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
-				false);
+			scheduleService.updateSchedule(schedule.getId(), request, member, false);
 
 			// Then
 			Schedule updatedSchedule = scheduleRepository.findById(schedule.getId()).get();
@@ -213,8 +187,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
-				false);
+			scheduleService.updateSchedule(schedule.getId(), request, member, false);
 
 			// Then
 			Long newSchedulePatternId = schedule.getSchedulePattern().getId() + 1;
@@ -260,8 +233,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 				)
 			);
 
-			scheduleService.updateSchedule(member.getId(), schedules.get(0).getId(), request,
-				member, false);
+			scheduleService.updateSchedule(schedules.get(0).getId(), request, member, false);
 
 			SchedulePattern newSchedulePattern = schedulePatternRepository.findById(
 				schedulePattern.getId()).get();
@@ -293,8 +265,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					.build()
 			);
 
-			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
-				false);
+			scheduleService.updateSchedule(schedule.getId(), request, member, false);
 
 			assertThat(schedule.getSchedulePattern().getId()).isEqualTo(schedulePattern.getId());
 		}
@@ -307,8 +278,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.updateSchedule(member.getId(), schedule.getId(), request, member,
-				true);
+			scheduleService.updateSchedule(schedule.getId(), request, member, true);
 
 			// Then
 			List<Schedule> updatedSchedules = scheduleRepository.findBySchedulePatternId(
@@ -330,23 +300,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			}
 		}
 
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermission() {
-
-			// Given
-			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.UPDATE);
-			assertThatThrownBy(() ->
-				scheduleService.updateSchedule(member.getId() + 100, 1L, request, member, true))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-		}
-
 		@DisplayName("요청에 해당하는 일정을 찾을 수 없으면 실패한다")
 		@Test
 		void failWIthScheduleNotFound() {
@@ -356,48 +309,10 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// When & Then
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			assertThatThrownBy(() ->
-				scheduleService.updateSchedule(
-					member.getId(), 100000L, request, member, true))
+				scheduleService.updateSchedule(100000L, request, member, true))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 
-		}
-
-		@Test
-		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() {
-			Member otherMember = memberRepository.save(Member.builder()
-				.phone("01011112222")
-				.name("name")
-				.nickname("ccc")
-				.gender(Gender.MALE)
-				.birthDay(LocalDate.now())
-				.password("password")
-				.build());
-
-			SchedulePattern schedulePattern = schedulePatternRepository.save(
-				SchedulePattern.builder()
-					.member(otherMember)
-					.repeatStartDate(LocalDate.now())
-					.repeatEndDate(LocalDate.now())
-					.repeatRule(RepeatRule.N)
-					.build());
-			Schedule otherSchedule = scheduleRepository.save(Schedule.builder()
-				.title("otherDating")
-				.startDateTime(LocalDateTime.now())
-				.endDateTime(LocalDateTime.now())
-				.schedulePattern(schedulePattern)
-				.build());
-
-			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
-
-			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
-				Operation.UPDATE);
-
-			assertThatThrownBy(() ->
-				scheduleService.updateSchedule(member.getId(), otherSchedule.getId(), request,
-					member, false))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
 		}
 	}
 
@@ -451,7 +366,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, false);
+			scheduleService.deleteSchedule(schedule.getId(), false);
 
 			// Then
 			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
@@ -468,25 +383,12 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			Schedule schedule = schedules.get(0);
 
 			// When
-			scheduleService.deleteSchedule(member.getId(), schedule.getId(), member, true);
+			scheduleService.deleteSchedule(schedule.getId(), true);
 
 			// Then
 			assertThat(scheduleRepository.findById(schedule.getId())).isEqualTo(Optional.empty());
 			assertThat(schedulePatternRepository.findById(
 				schedule.getSchedulePattern().getId())).isEmpty();
-		}
-
-		@DisplayName("요청한 회원의 id와 로그인한 회원의 id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermission() {
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.DELETE);
-			assertThatThrownBy(
-				() -> scheduleService.deleteSchedule(member.getId() + 10, 1L, member, false))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
 		}
 
 		@DisplayName("요청한 일정이 존재하지 않으면 실패한다")
@@ -496,7 +398,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 			// When & Then
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			assertThatThrownBy(
-				() -> scheduleService.deleteSchedule(member.getId(), 1000000L, member, false))
+				() -> scheduleService.deleteSchedule(1000000L, false))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -508,8 +410,7 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 
 			// When
 			schedules.forEach(
-				iterSchedule -> scheduleService.deleteSchedule(member.getId(), iterSchedule.getId(),
-					member, false)
+				iterSchedule -> scheduleService.deleteSchedule(iterSchedule.getId(), false)
 			);
 
 			// Then
@@ -520,44 +421,6 @@ public class ScheduleServiceTest extends ServiceTestSupport {
 					assertThat(scheduleRepository.findById(iterSchedule.getId())).isEmpty();
 				}
 			);
-		}
-
-		@Tag(NEED_SCHEDULE)
-		@Test
-		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() {
-			Member otherMember = memberRepository.save(Member.builder()
-				.phone("01011112222")
-				.name("name")
-				.nickname("ccc")
-				.gender(Gender.MALE)
-				.birthDay(LocalDate.now())
-				.password("password")
-				.build());
-
-			SchedulePattern schedulePattern = schedulePatternRepository.save(
-				SchedulePattern.builder()
-					.member(otherMember)
-					.repeatStartDate(LocalDate.now())
-					.repeatEndDate(LocalDate.now())
-					.repeatRule(RepeatRule.N)
-					.build());
-			Schedule otherSchedule = scheduleRepository.save(Schedule.builder()
-				.title("otherDating")
-				.startDateTime(LocalDateTime.now())
-				.endDateTime(LocalDateTime.now())
-				.schedulePattern(schedulePattern)
-				.build());
-
-			ScheduleUpdateServiceRequest request = createScheduleUpdateServiceRequest();
-
-			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
-				Operation.DELETE);
-
-			assertThatThrownBy(() ->
-				scheduleService.deleteSchedule(member.getId(), otherSchedule.getId(), member,
-					false))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
 		}
 	}
 

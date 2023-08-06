@@ -1,8 +1,13 @@
 spring:
   profiles:
     active:
-      - local
+      - prod
     group:
+      prod:
+        - db-prod
+        - web
+        - sms
+        - cloud
       local:
         - db-local
         - logging-local

@@ -32,12 +32,11 @@ public class ScheduleController {
 	private final ScheduleReadService scheduleReadService;
 
 	@PostMapping("/{member_id}/schedules")
-	public ApiResponse<Void> createSchedule(@PathVariable("member_id") Long memberId,
-		@Valid @RequestBody ScheduleRequest request) {
+	public ApiResponse<Void> createSchedule(@Valid @RequestBody ScheduleRequest request) {
 
 		Member loginMember = MemberThreadLocal.get();
 
-		scheduleService.createSchedule(loginMember, memberId, request.toScheduleServiceRequest());
+		scheduleService.createSchedule(loginMember, request.toScheduleServiceRequest());
 		return ApiResponse.ofSuccess();
 	}
 
@@ -47,11 +46,8 @@ public class ScheduleController {
 		@RequestParam(value = "year", required = false) Integer year,
 		@RequestParam(value = "month", required = false) Integer month
 	) {
-
-		Member loginMember = MemberThreadLocal.get();
-
 		ScheduleDatesServiceResponse scheduleDatesServiceResponse = scheduleReadService
-			.readScheduleDates(loginMember, memberId, year, month);
+			.readScheduleDates(memberId, year, month);
 
 		return ApiResponse.ofSuccess(ScheduleDatesResponse.from(scheduleDatesServiceResponse));
 	}
@@ -63,33 +59,29 @@ public class ScheduleController {
 		@RequestParam(value = "month") Integer month,
 		@RequestParam(value = "day") Integer day
 	) {
-		final Member member = MemberThreadLocal.get();
-		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, member, year,
+		ScheduleServiceResponse response = scheduleReadService.readSchedules(memberId, year,
 			month, day);
 		return ApiResponse.ofSuccess(ScheduleResponse.from(response));
 	}
 
 	@PutMapping("/{member_id}/schedules/{schedule_id}")
 	public ApiResponse<Void> updateSchedule(
-		@PathVariable("member_id") Long memberId,
 		@PathVariable("schedule_id") Long scheduleId,
 		@Valid @RequestBody ScheduleUpdateRequest request,
 		@RequestParam(value = "updateRepeat", defaultValue = "false") Boolean updateRepeat
 	) {
 		Member member = MemberThreadLocal.get();
 		scheduleService.updateSchedule(
-			memberId, scheduleId, request.toScheduleUpdateServiceRequest(), member, updateRepeat);
+			scheduleId, request.toScheduleUpdateServiceRequest(), member, updateRepeat);
 		return ApiResponse.ofSuccess();
 	}
 
 	@DeleteMapping("/{member_id}/schedules/{schedule_id}")
 	public ApiResponse<Void> deleteSchedule(
 		@PathVariable("member_id") Long memberId,
-		@PathVariable("schedule_id") Long scheduleId,
 		@RequestParam(value = "deleteRepeat", defaultValue = "false") Boolean deleteRepeat
 	) {
-		Member member = MemberThreadLocal.get();
-		scheduleService.deleteSchedule(memberId, scheduleId, member, deleteRepeat);
+		scheduleService.deleteSchedule(memberId, deleteRepeat);
 		return ApiResponse.ofSuccess();
 	}
 }

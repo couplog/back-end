@@ -35,12 +35,9 @@ import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleDatesS
 import com.dateplan.dateplan.domain.schedule.service.dto.response.ScheduleServiceResponse;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
-import com.dateplan.dateplan.global.constant.Resource;
 import com.dateplan.dateplan.global.exception.ErrorCode;
 import com.dateplan.dateplan.global.exception.ErrorCode.DetailMessage;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.schedule.InvalidDateTimeRangeException;
 import com.dateplan.dateplan.global.exception.schedule.ScheduleNotFoundException;
@@ -66,10 +63,17 @@ import org.springframework.http.MediaType;
 public class ScheduleControllerTest extends ControllerTestSupport {
 
 	@BeforeEach
-	void setUp() {
-		given(
-			authInterceptor.preHandle(any(HttpServletRequest.class), any(HttpServletResponse.class),
-				any(Object.class)))
+	void setUp() throws Exception {
+		given(authInterceptor.preHandle(
+			any(HttpServletRequest.class),
+			any(HttpServletResponse.class),
+			any(Object.class)))
+			.willReturn(true);
+
+		given(scheduleAuthInterceptor.preHandle(
+			any(HttpServletRequest.class),
+			any(HttpServletResponse.class),
+			any(Object.class)))
 			.willReturn(true);
 	}
 
@@ -100,7 +104,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			mockMvc.perform(post(REQUEST_URL, 1L)
 					.content(om.writeValueAsString(request))
@@ -108,31 +112,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					.characterEncoding(StandardCharsets.UTF_8))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.success").value("true"));
-		}
-
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermissionRequest() throws Exception {
-
-			// Given
-			ScheduleRequest request = createScheduleRequest();
-
-			// Stub
-			NoPermissionException expectedException = new NoPermissionException(Resource.MEMBER,
-				Operation.READ);
-			willThrow(expectedException)
-				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
-
-			// When & Then
-			mockMvc.perform(post(REQUEST_URL, 1L)
-					.content(om.writeValueAsString(request))
-					.contentType(MediaType.APPLICATION_JSON)
-					.characterEncoding(StandardCharsets.UTF_8))
-				.andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.success").value("false"))
-				.andExpect(jsonPath("$.code").value(expectedException.getErrorCode().getCode()))
-				.andExpect(jsonPath("$.message").value(expectedException.getMessage()));
 		}
 
 		@DisplayName("반복 종료일자가 유효하지 않으면 실패한다.")
@@ -154,7 +133,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -185,7 +164,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -215,7 +194,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -245,7 +224,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -275,7 +254,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -303,7 +282,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.createSchedule(any(Member.class), anyLong(), any(ScheduleServiceRequest.class));
+				.createSchedule(any(Member.class), any(ScheduleServiceRequest.class));
 
 			// When & Then
 			mockMvc.perform(post(REQUEST_URL, 1L)
@@ -344,8 +323,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				.map(LocalDate::toString).toList();
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
-				anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -359,35 +337,12 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermissionRequest() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.CREATE);
-			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
-				anyInt()))
-				.willThrow(exception);
-
-			// When & Then
-			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("year", String.valueOf(LocalDate.now().getYear()))
-					.param("month", String.valueOf(LocalDate.now().getMonthValue())))
-				.andExpect(status().isForbidden())
-				.andExpectAll(
-					jsonPath("$.code").value(ErrorCode.NO_PERMISSION.getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
 		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
 		@Test
 		void failWithNotConnectedRequest() throws Exception {
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
-				anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willThrow(new MemberNotConnectedException());
 
 			// When & Then
@@ -410,8 +365,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleDatesServiceResponse response = createScheduleDatesServiceResponse();
 
 			// Stubbing
-			given(scheduleReadService.readScheduleDates(any(Member.class), anyLong(), anyInt(),
-				anyInt()))
+			given(scheduleReadService.readScheduleDates(anyLong(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -451,8 +405,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			LocalDate now = LocalDate.now();
 
 			// Stubbing
-			given(scheduleReadService.readSchedules(
-				anyLong(), any(Member.class), anyInt(), anyInt(), anyInt()))
+			given(scheduleReadService.readSchedules(anyLong(), anyInt(), anyInt(), anyInt()))
 				.willReturn(response);
 
 			// When & Then
@@ -484,8 +437,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleServiceResponse response = createScheduleServiceResponse();
 
 			// Stubbing
-			given(scheduleReadService.readSchedules(anyLong(), any(Member.class),
-				anyInt(), anyInt(), anyInt())).willReturn(response);
+			given(scheduleReadService.readSchedules(anyLong(), anyInt(), anyInt(), anyInt()))
+				.willReturn(response);
 
 			// When & Then
 			mockMvc.perform(get(REQUEST_URL, 1)
@@ -500,35 +453,13 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermissionRequest() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.READ);
-			given(scheduleReadService.readSchedules(anyLong(), any(Member.class),
-				anyInt(), anyInt(), anyInt())).willThrow(exception);
-
-			mockMvc.perform(get(REQUEST_URL, 1L)
-					.param("year", String.valueOf(LocalDate.now().getYear()))
-					.param("month", String.valueOf(LocalDate.now().getMonthValue()))
-					.param("day", String.valueOf(LocalDate.now().getDayOfMonth())))
-				.andExpect(status().is(exception.getErrorCode().getHttpStatusCode().value()))
-				.andExpectAll(
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
 		@DisplayName("현재 로그인한 회원이 연결되어 있지 않다면 실패한다.")
 		@Test
 		void failWithNotConnected() throws Exception {
 
 			// Stubbing
 			MemberNotConnectedException exception = new MemberNotConnectedException();
-			given(scheduleReadService.readSchedules(
-				anyLong(), any(Member.class), anyInt(), anyInt(), anyInt()))
+			given(scheduleReadService.readSchedules(anyLong(), anyInt(), anyInt(), anyInt()))
 				.willThrow(exception);
 
 			// When & Then
@@ -570,7 +501,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
 					any(Member.class), anyBoolean());
 
 			// When & Then
@@ -586,65 +517,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("올바르지 않은 pathvariable을 입력하면 실패한다.")
-		@CsvSource({"1,a", "a,1"})
-		@ParameterizedTest
-		void failWithInvalidPathVariable(String memberId, String scheduleId) throws Exception {
-
-			// Given
-			ScheduleUpdateRequest request = createScheduleUpdateRequest();
-
-			// Stubbing
-			willDoNothing()
-				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
-					any(Member.class), anyBoolean());
-
-			// When & Then
-			mockMvc.perform(
-					put(REQUEST_URL, memberId, scheduleId)
-						.param("updateRepeat", "true")
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpectAll(
-					status().isBadRequest(),
-					jsonPath("$.success").value(false),
-					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
-					jsonPath("$.message").value(containsString("Long"))
-				);
-		}
-
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWIthNoPermission() throws Exception {
-
-			// Given
-			ScheduleUpdateRequest request = createScheduleUpdateRequest();
-			NoPermissionException exception =
-				new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
-
-			// Stubbing
-			willThrow(exception)
-				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
-
-			// When & Then
-			mockMvc.perform(
-					put(REQUEST_URL, 1, 1)
-						.param("updateRepeat", "true")
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value(false),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
 		@DisplayName("요청에 해당하는 schedule이 존재하지 않으면 실패한다")
 		@Test
 		void failWithScheduleNotFoundException() throws Exception {
@@ -656,8 +528,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willThrow(exception)
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -685,8 +557,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willThrow(exception)
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -719,8 +591,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -753,8 +625,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -785,8 +657,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -817,8 +689,8 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stub
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(
-					ScheduleUpdateServiceRequest.class), any(Member.class), anyBoolean());
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
+					any(Member.class), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -843,7 +715,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
+				.updateSchedule(anyLong(), any(ScheduleUpdateServiceRequest.class),
 					any(Member.class), anyBoolean());
 
 			// When & Then
@@ -858,31 +730,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 					jsonPath("$.success").value(false),
 					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
 					jsonPath("$.message").value(containsString("updateRepeat"))
-				);
-		}
-
-		@Test
-		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() throws Exception {
-
-			ScheduleUpdateRequest request = createScheduleUpdateRequest();
-
-			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
-				Operation.UPDATE);
-			willThrow(exception)
-				.given(scheduleService)
-				.updateSchedule(anyLong(), anyLong(), any(ScheduleUpdateServiceRequest.class),
-					any(Member.class), anyBoolean());
-
-			mockMvc.perform(
-					put(REQUEST_URL, 1, 1)
-						.content(om.writeValueAsString(request))
-						.contentType(MediaType.APPLICATION_JSON)
-						.characterEncoding(StandardCharsets.UTF_8))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
 				);
 		}
 	}
@@ -910,7 +757,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+				.deleteSchedule(anyLong(), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -922,28 +769,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("올바르지 않은 pathvariable을 입력하면 실패한다.")
-		@CsvSource({"1,a", "a,1"})
-		@ParameterizedTest
-		void failWithInvalidPathVariable(String memberId, String scheduleId) throws Exception {
-
-			// Stubbing
-			willDoNothing()
-				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
-
-			// When & Then
-			mockMvc.perform(
-					delete(REQUEST_URL, memberId, scheduleId)
-						.param("deleteRepeat", "true"))
-				.andExpectAll(
-					status().isBadRequest(),
-					jsonPath("$.success").value(false),
-					jsonPath("$.code").value(METHOD_ARGUMENT_TYPE_MISMATCH.getCode()),
-					jsonPath("$.message").value(containsString("Long"))
-				);
-		}
-
 		@DisplayName("request param의 타입이 올바르지 않으면 실패한다.")
 		@Test
 		void failWithInvalidRequestParam() throws Exception {
@@ -951,7 +776,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			// Stubbing
 			willDoNothing()
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+				.deleteSchedule(anyLong(), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -965,29 +790,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 				);
 		}
 
-		@DisplayName("현재 로그인한 회원의 id와 요청의 member_id가 다르면 실패한다.")
-		@Test
-		void failWithNoPermission() throws Exception {
-
-			// Stubbing
-			NoPermissionException exception = new NoPermissionException(Resource.MEMBER,
-				Operation.DELETE);
-			willThrow(exception)
-				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
-
-			// When & Then
-			mockMvc.perform(
-					delete(REQUEST_URL, 1, 1)
-						.param("deleteRepeat", "true"))
-				.andExpectAll(
-					status().isForbidden(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
 		@DisplayName("요청에 해당하는 일정이 존재하지 않으면 실패한다")
 		@Test
 		void failWithScheduleNotFound() throws Exception {
@@ -996,7 +798,7 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 			ScheduleNotFoundException exception = new ScheduleNotFoundException();
 			willThrow(exception)
 				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
+				.deleteSchedule(anyLong(), anyBoolean());
 
 			// When & Then
 			mockMvc.perform(
@@ -1004,25 +806,6 @@ public class ScheduleControllerTest extends ControllerTestSupport {
 						.param("deleteRepeat", "true"))
 				.andExpectAll(
 					status().isNotFound(),
-					jsonPath("$.success").value("false"),
-					jsonPath("$.code").value(exception.getErrorCode().getCode()),
-					jsonPath("$.message").value(exception.getMessage())
-				);
-		}
-
-		@Test
-		void 실패_요청한memberId와_조회한개인일정의memberId가다르면_예외를반환한다() throws Exception {
-
-			NoPermissionException exception = new NoPermissionException(Resource.SCHEDULE,
-				Operation.DELETE);
-			willThrow(exception)
-				.given(scheduleService)
-				.deleteSchedule(anyLong(), anyLong(), any(Member.class), anyBoolean());
-
-			mockMvc.perform(
-					delete(REQUEST_URL, 1, 1))
-				.andExpectAll(
-					status().isForbidden(),
 					jsonPath("$.success").value("false"),
 					jsonPath("$.code").value(exception.getErrorCode().getCode()),
 					jsonPath("$.message").value(exception.getMessage())

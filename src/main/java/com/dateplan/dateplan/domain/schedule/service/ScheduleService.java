@@ -10,16 +10,12 @@ import com.dateplan.dateplan.domain.schedule.repository.SchedulePatternRepositor
 import com.dateplan.dateplan.domain.schedule.repository.ScheduleRepository;
 import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleServiceRequest;
 import com.dateplan.dateplan.domain.schedule.service.dto.request.ScheduleUpdateServiceRequest;
-import com.dateplan.dateplan.global.constant.Operation;
 import com.dateplan.dateplan.global.constant.RepeatRule;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,12 +31,7 @@ public class ScheduleService {
 	private final ScheduleReadService scheduleReadService;
 	private final ScheduleRepository scheduleRepository;
 
-	public void createSchedule(Member loginMember, Long memberId, ScheduleServiceRequest request) {
-
-		if (!isSameMember(memberId, loginMember.getId())) {
-			throw new NoPermissionException(Resource.MEMBER, Operation.CREATE);
-		}
-
+	public void createSchedule(Member loginMember, ScheduleServiceRequest request) {
 		SchedulePattern schedulePattern = request.toSchedulePatternEntity(loginMember);
 		schedulePatternRepository.save(schedulePattern);
 
@@ -50,21 +41,12 @@ public class ScheduleService {
 	}
 
 	public void updateSchedule(
-		Long memberId,
 		Long scheduleId,
 		ScheduleUpdateServiceRequest request,
 		Member loginMember,
 		Boolean updateRepeat
 	) {
-		if (!isSameMember(memberId, loginMember.getId())) {
-			throw new NoPermissionException(Resource.MEMBER, Operation.UPDATE);
-		}
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
-
-		if (isNotScheduleOwner(loginMember.getId(),
-			schedule.getSchedulePattern().getMember().getId())) {
-			throw new NoPermissionException(Resource.SCHEDULE, Operation.UPDATE);
-		}
 
 		if (updateRepeat) {
 			updateRepeatSchedules(request, schedule);
@@ -116,17 +98,8 @@ public class ScheduleService {
 		originalSchedulePattern.updateDateTime(minStart.get(), maxStart.get());
 	}
 
-	public void deleteSchedule(Long memberId, Long scheduleId, Member loginMember,
-		Boolean deleteRepeat) {
-		if (!isSameMember(memberId, loginMember.getId())) {
-			throw new NoPermissionException(Resource.MEMBER, Operation.DELETE);
-		}
+	public void deleteSchedule(Long scheduleId, Boolean deleteRepeat) {
 		Schedule schedule = scheduleReadService.findScheduleByIdOrElseThrow(scheduleId);
-
-		if (isNotScheduleOwner(loginMember.getId(),
-			schedule.getSchedulePattern().getMember().getId())) {
-			throw new NoPermissionException(Resource.SCHEDULE, Operation.DELETE);
-		}
 
 		if (deleteRepeat) {
 			deleteRepeatSchedule(schedule);
@@ -186,15 +159,6 @@ public class ScheduleService {
 
 	private boolean isBeforeOfRepeatEndDate(LocalDate repeatEndTime, LocalDateTime now) {
 		return !now.toLocalDate().isAfter(repeatEndTime);
-	}
-
-	private boolean isSameMember(Long memberId, Long loginMemberId) {
-
-		return Objects.equals(memberId, loginMemberId);
-	}
-
-	private boolean isNotScheduleOwner(Long memberId, Long scheduleOwnerId) {
-		return !Objects.equals(memberId, scheduleOwnerId);
 	}
 
 	private boolean checkSingleScheduleAndUpdate(

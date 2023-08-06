@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
@@ -20,10 +19,6 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
-import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
 import java.time.LocalDate;
@@ -58,22 +53,18 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 	@Autowired
 	private DatingReadService datingReadService;
 
-	@SpyBean
-	private DatingQueryRepository queryRepository;
-
 	@DisplayName("일정 날짜를 조회할 때")
 	@Nested
 	class ReadDatingDate {
 
 		private static final String NEED_DATING = "needDating";
 
-		private Member member;
 		private Couple couple;
 		private List<LocalDate> savedDatingDates;
 
 		@BeforeEach
 		void setUp(TestInfo testInfo) {
-			member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member member = memberRepository.save(createMember("01012345678", "aaa"));
 			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
 			couple = coupleRepository.save(createCouple(member, partner));
 			MemberThreadLocal.set(member);
@@ -110,7 +101,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 
 			// Given & When
 			DatingDatesServiceResponse response = datingReadService.readDatingDates(
-				member, couple.getId(), null, null);
+				couple.getId(), null, null);
 
 			// Then
 			List<LocalDate> actualDates = response.getDatingDates();
@@ -134,7 +125,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 
 			// When
 			DatingDatesServiceResponse response = datingReadService.readDatingDates(
-				member, couple.getId(), year, month);
+				couple.getId(), year, month);
 
 			// Then
 			List<LocalDate> actualDates = response.getDatingDates();
@@ -147,47 +138,6 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 			);
 			assertThat(actualDates)
 				.isSortedAccordingTo(LocalDate::compareTo);
-		}
-
-		@DisplayName("로그인한 회원이 연결된 커플의 id와 요청한 coupldId가 다르면 실패한다.")
-		@Test
-		void failWithNoPermission() {
-
-			// Stubbing
-			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
-				.willReturn(couple);
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			assertThatThrownBy(
-				() -> datingReadService.readDatingDates(member, couple.getId() + 100, null, null))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			// Verify
-			then(queryRepository)
-				.shouldHaveNoInteractions();
-		}
-
-		@DisplayName("회원이 연결되어 있지 않으면 실패한다.")
-		@Test
-		void failWithNotConnected() {
-
-			// Stubbing
-			MemberNotConnectedException exception = new MemberNotConnectedException();
-			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
-				.willThrow(exception);
-
-			// When & Then
-			assertThatThrownBy(
-				() -> datingReadService.readDatingDates(member, couple.getId(), null, null))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			// Verify
-			then(queryRepository)
-				.shouldHaveNoInteractions();
 		}
 	}
 
@@ -253,7 +203,7 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 
 			// When
 			LocalDate now = LocalDate.now();
-			DatingServiceResponse response = datingReadService.readDating(member,
+			DatingServiceResponse response = datingReadService.readDating(
 				couple.getId(), now.getYear(), now.getMonthValue(), now.getDayOfMonth());
 
 			// Then
@@ -264,37 +214,6 @@ public class DatingReadServiceTest extends ServiceTestSupport {
 			assertThat(datingEntryResponse.getContent()).isEqualTo(today.getContent());
 			assertThat(datingEntryResponse.getStartDateTime()).isEqualTo(today.getStartDateTime());
 			assertThat(datingEntryResponse.getEndDateTime()).isEqualTo(today.getEndDateTime());
-		}
-
-		@Test
-		void 실패_회원이_커플에연결되어있지않으면_예외를반환한다() {
-
-			// Stubbing
-			MemberNotConnectedException exception = new MemberNotConnectedException();
-			given(coupleReadService.findCoupleByMemberOrElseThrow(any(Member.class)))
-				.willThrow(exception);
-
-			// When & Then
-			assertThatThrownBy(
-				() -> datingReadService.readDating(member, couple.getId() + 100, 2010, 10, 10))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
-
-		@Test
-		void 실패_요청한coupleId와_회원이연결된커플의id가다르면_예외를반환한다() {
-
-			// Stubbing
-			given(coupleReadService.findCoupleByMemberOrElseThrow(member))
-				.willReturn(couple);
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.READ);
-			assertThatThrownBy(
-				() -> datingReadService.readDating(member, couple.getId() + 100, 2010, 10, 10))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
 		}
 	}
 

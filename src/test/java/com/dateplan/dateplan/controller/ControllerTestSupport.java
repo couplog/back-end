@@ -10,6 +10,7 @@ import com.dateplan.dateplan.domain.couple.controller.CoupleController;
 import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.couple.service.CoupleService;
 import com.dateplan.dateplan.domain.dating.controller.DatingController;
+import com.dateplan.dateplan.domain.dating.interceptor.DatingAuthInterceptor;
 import com.dateplan.dateplan.domain.dating.service.DatingReadService;
 import com.dateplan.dateplan.domain.dating.service.DatingService;
 import com.dateplan.dateplan.domain.member.controller.AuthController;
@@ -89,4 +90,7 @@ public abstract class ControllerTestSupport {
 
 	@MockBean
 	protected CalenderReadService calenderReadService;
+
+	@MockBean
+	protected DatingAuthInterceptor datingAuthInterceptor;
 }

@@ -2,7 +2,6 @@ package com.dateplan.dateplan.service.dating;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.then;
 
 import com.dateplan.dateplan.domain.couple.entity.Couple;
 import com.dateplan.dateplan.domain.couple.repository.CoupleRepository;
@@ -16,9 +15,6 @@ import com.dateplan.dateplan.domain.member.entity.Member;
 import com.dateplan.dateplan.domain.member.repository.MemberRepository;
 import com.dateplan.dateplan.global.auth.MemberThreadLocal;
 import com.dateplan.dateplan.global.constant.Gender;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.couple.MemberNotConnectedException;
 import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import com.dateplan.dateplan.service.ServiceTestSupport;
@@ -49,9 +45,6 @@ public class DatingServiceTest extends ServiceTestSupport {
 
 	@Autowired
 	private DatingService datingService;
-
-	@SpyBean
-	private DatingReadService datingReadService;
 
 	@Nested
 	@DisplayName("데이트 일정 생성 시")
@@ -99,7 +92,7 @@ public class DatingServiceTest extends ServiceTestSupport {
 			DatingCreateServiceRequest request = createServiceRequest();
 
 			// When
-			datingService.createDating(member, couple.getId(), request);
+			datingService.createDating(member, request);
 
 			// Then
 			List<Dating> datingList = datingRepository.findAll();
@@ -112,23 +105,6 @@ public class DatingServiceTest extends ServiceTestSupport {
 			assertThat(dating.getEndDateTime()).isEqualTo(request.getEndDateTime());
 		}
 
-		@Tag(NEED_COUPLE)
-		@DisplayName("로그인한 회원의 coupleId와 요청의 coupleId가 다르면 실패한다")
-		@Test
-		void failWithNoPermission() {
-
-			// Given
-			DatingCreateServiceRequest request = createServiceRequest();
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.CREATE);
-			assertThatThrownBy(
-				() -> datingService.createDating(member, couple.getId() + 100, request))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
-
 		@DisplayName("회원이 연결되어 있지 않으면 실패한다")
 		@Test
 		void failWithMemberNotConnected() {
@@ -138,7 +114,7 @@ public class DatingServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			MemberNotConnectedException exception = new MemberNotConnectedException();
-			assertThatThrownBy(() -> datingService.createDating(member, 1L, request))
+			assertThatThrownBy(() -> datingService.createDating(member, request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -148,16 +124,14 @@ public class DatingServiceTest extends ServiceTestSupport {
 	@DisplayName("데이트 일정 삭제 시")
 	class DeleteDating {
 
-		private Member member;
-		private Couple couple;
 		private Dating savedDating;
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member member = memberRepository.save(createMember("01012345678", "aaa"));
 			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
 
-			couple = coupleRepository.save(Couple.builder()
+			Couple couple = coupleRepository.save(Couple.builder()
 				.member1(member)
 				.member2(partner)
 				.firstDate(LocalDate.now())
@@ -183,44 +157,10 @@ public class DatingServiceTest extends ServiceTestSupport {
 		void 성공_올바른coupleId와_존재하는데이트일정의Id를요청하면_해당데이트일정이삭제된다() {
 
 			// When
-			datingService.deleteDating(member, couple.getId(), savedDating.getId());
+			datingService.deleteDating(savedDating.getId());
 
 			// When
 			assertThat(datingRepository.findById(savedDating.getId())).isEmpty();
-		}
-
-		@Test
-		void 실패_요청한coupldId와_회원이연결된커플의id가다르면_예외를반환한다() {
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.DELETE);
-			assertThatThrownBy(() ->
-				datingService.deleteDating(member, couple.getId() + 100, savedDating.getId()))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			// Verify
-			then(datingReadService)
-				.shouldHaveNoInteractions();
-		}
-
-		@Test
-		void 실패_회원이_연결되어있지않으면_예외를반환한다() {
-
-			// Given
-			Member other = memberRepository.save(createMember("01011112222", "ccc"));
-
-			// When & Then
-			MemberNotConnectedException exception = new MemberNotConnectedException();
-			assertThatThrownBy(
-				() -> datingService.deleteDating(other, couple.getId(), savedDating.getId()))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			// Verify
-			then(datingReadService)
-				.shouldHaveNoInteractions();
 		}
 
 		@Test
@@ -229,34 +169,7 @@ public class DatingServiceTest extends ServiceTestSupport {
 			// When & Then
 			DatingNotFoundException exception = new DatingNotFoundException();
 			assertThatThrownBy(() ->
-				datingService.deleteDating(member, couple.getId(), savedDating.getId() + 100))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
-
-		@Test
-		void 실패_요청한coupleId와_조회한데이트일정의coupleId가다르면_예외를반환한다() {
-			Member otherMember1 = memberRepository.save(createMember("01012345670", "ccc"));
-			Member otherMember2 = memberRepository.save(createMember("01012345671", "ddd"));
-
-			Couple other = coupleRepository.save(Couple.builder()
-				.member1(otherMember1)
-				.member2(otherMember2)
-				.firstDate(LocalDate.now())
-				.build());
-
-			Dating otherDating = datingRepository.save(Dating.builder()
-				.title("otherDating")
-				.startDateTime(LocalDateTime.now())
-				.endDateTime(LocalDateTime.now())
-				.couple(other)
-				.build());
-
-			NoPermissionException exception = new NoPermissionException(Resource.DATING,
-				Operation.DELETE);
-
-			assertThatThrownBy(() ->
-				datingService.deleteDating(member, couple.getId(), otherDating.getId()))
+				datingService.deleteDating(savedDating.getId() + 100))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}
@@ -266,16 +179,14 @@ public class DatingServiceTest extends ServiceTestSupport {
 	@DisplayName("데이트 일정 수정 시")
 	class UpdateDating {
 
-		private Member member;
-		private Couple couple;
 		private Dating savedDating;
 
 		@BeforeEach
 		void setUp() {
-			member = memberRepository.save(createMember("01012345678", "aaa"));
+			Member member = memberRepository.save(createMember("01012345678", "aaa"));
 			Member partner = memberRepository.save(createMember("01012345679", "bbb"));
 
-			couple = coupleRepository.save(Couple.builder()
+			Couple couple = coupleRepository.save(Couple.builder()
 				.member1(member)
 				.member2(partner)
 				.firstDate(LocalDate.now())
@@ -306,7 +217,7 @@ public class DatingServiceTest extends ServiceTestSupport {
 			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
 
 			// When
-			datingService.updateDating(member, couple.getId(), savedDating.getId(), request);
+			datingService.updateDating(savedDating.getId(), request);
 
 			// Then
 			Dating updatedDating = datingRepository.findById(savedDating.getId()).get();
@@ -318,42 +229,6 @@ public class DatingServiceTest extends ServiceTestSupport {
 		}
 
 		@Test
-		void 실패_회원이_연결되어있지않으면_예외를반환한다() {
-
-			// Given
-			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
-			Member other = memberRepository.save(createMember("01011112222", "ccc"));
-
-			// When & Then
-			MemberNotConnectedException exception = new MemberNotConnectedException();
-			assertThatThrownBy(() -> datingService.updateDating(other, couple.getId(),
-				savedDating.getId(), request))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			then(datingReadService)
-				.shouldHaveNoInteractions();
-		}
-
-		@Test
-		void 실패_요청한coupleId와_연결된커플의Id가다르면_예외를반환한다() {
-
-			// Given
-			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
-
-			// When & Then
-			NoPermissionException exception = new NoPermissionException(Resource.COUPLE,
-				Operation.UPDATE);
-			assertThatThrownBy(() -> datingService.updateDating(member, couple.getId() + 100,
-				savedDating.getId(), request))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-
-			then(datingReadService)
-				.shouldHaveNoInteractions();
-		}
-
-		@Test
 		void 실패_요청에해당하는_데이트일정이존재하지않으면_예외를반환한다() {
 
 			// Given
@@ -361,38 +236,7 @@ public class DatingServiceTest extends ServiceTestSupport {
 
 			// When & Then
 			DatingNotFoundException exception = new DatingNotFoundException();
-			assertThatThrownBy(() -> datingService.updateDating(member, couple.getId(),
-				savedDating.getId() + 100, request))
-				.isInstanceOf(exception.getClass())
-				.hasMessage(exception.getMessage());
-		}
-
-		@Test
-		void 실패_요청한coupleId와_조회한데이트일정의coupleId가다르면_예외를반환한다() {
-			Member otherMember1 = memberRepository.save(createMember("01012345670", "ccc"));
-			Member otherMember2 = memberRepository.save(createMember("01012345671", "ddd"));
-
-			Couple other = coupleRepository.save(Couple.builder()
-				.member1(otherMember1)
-				.member2(otherMember2)
-				.firstDate(LocalDate.now())
-				.build());
-
-			Dating otherDating = datingRepository.save(Dating.builder()
-				.title("otherDating")
-				.startDateTime(LocalDateTime.now())
-				.endDateTime(LocalDateTime.now())
-				.couple(other)
-				.build());
-
-			DatingUpdateServiceRequest request = createDatingUpdateServiceRequest();
-
-			NoPermissionException exception = new NoPermissionException(Resource.DATING,
-				Operation.UPDATE);
-
-			assertThatThrownBy(() ->
-				datingService.updateDating(member, couple.getId(), otherDating.getId(),
-					request))
+			assertThatThrownBy(() -> datingService.updateDating(savedDating.getId() + 100, request))
 				.isInstanceOf(exception.getClass())
 				.hasMessage(exception.getMessage());
 		}

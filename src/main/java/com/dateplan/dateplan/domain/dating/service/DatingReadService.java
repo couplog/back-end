@@ -1,20 +1,13 @@
 package com.dateplan.dateplan.domain.dating.service;
 
-import com.dateplan.dateplan.domain.couple.entity.Couple;
-import com.dateplan.dateplan.domain.couple.service.CoupleReadService;
 import com.dateplan.dateplan.domain.dating.entity.Dating;
 import com.dateplan.dateplan.domain.dating.repository.DatingQueryRepository;
 import com.dateplan.dateplan.domain.dating.repository.DatingRepository;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingDatesServiceResponse;
 import com.dateplan.dateplan.domain.dating.service.dto.response.DatingServiceResponse;
-import com.dateplan.dateplan.domain.member.entity.Member;
-import com.dateplan.dateplan.global.constant.Operation;
-import com.dateplan.dateplan.global.constant.Resource;
-import com.dateplan.dateplan.global.exception.auth.NoPermissionException;
 import com.dateplan.dateplan.global.exception.dating.DatingNotFoundException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DatingReadService {
 
 	private final DatingQueryRepository datingQueryRepository;
-	private final CoupleReadService coupleReadService;
 	private final DatingRepository datingRepository;
 
 	public Dating findByDatingId(Long datingId) {
@@ -35,34 +27,21 @@ public class DatingReadService {
 	}
 
 	public DatingServiceResponse readDating(
-		Member member,
 		Long coupleId,
 		Integer year,
 		Integer month,
 		Integer day
 	) {
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
-		if (isNotSameCouple(coupleId, couple.getId())) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
-
 		List<Dating> datingList = datingQueryRepository
 			.findByDateBetween(coupleId, year, month, day);
 		return DatingServiceResponse.from(datingList);
 	}
 
 	public DatingDatesServiceResponse readDatingDates(
-		Member member,
 		Long coupleId,
 		Integer year,
 		Integer month
 	) {
-		Couple couple = coupleReadService.findCoupleByMemberOrElseThrow(member);
-
-		if (isNotSameCouple(coupleId, couple.getId())) {
-			throw new NoPermissionException(Resource.COUPLE, Operation.READ);
-		}
-
 		List<Dating> datingList = datingQueryRepository.findByYearAndMonthOrderByDate(coupleId,
 			year, month);
 		return DatingDatesServiceResponse.builder()
@@ -100,9 +79,5 @@ public class DatingReadService {
 			return date.getMonthValue() == month;
 		}
 		return date.getYear() == year && date.getMonthValue() == month;
-	}
-
-	private boolean isNotSameCouple(Long requestId, Long coupleId) {
-		return !Objects.equals(requestId, coupleId);
 	}
 }
